@@ -1,0 +1,13 @@
+ok: OK
+internal: "internal server err: {{.error}}"
+invalid_request: "invalid request: {{.error}}"
+invalid_params: "invalid params: {{.error}}"
+invalid_link: "invalid link: {{.link}}"
+invalid_host: "invalid host: {{.host}}"
+invalid_channel: "invalid channel: {{.channel}}"
+duplicate_user: "duplicate user"
+account_verify_failed: "email or password error"
+invalid_token: "invalid token"
+file_processing: "processing, please wait a moment"
+link_blocked: "link blocked"
+submit_too_many_links: "up to {{.count}} links are allowed to be submitted each time"

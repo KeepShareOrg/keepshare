@@ -1,0 +1,72 @@
+# The program will search configuration file in ./conf/ and /etc/keepshare/ for the first file named config.json or config.yaml or config.ini.
+# It also supports reading from environment variables, non-empty environment variables have a higher priority than files.
+# Available configurations:
+
+# Domain for this project, including web pages or keep sharing links.
+root_domain: localhost
+
+# HTTP server listen address.
+listen_http: ':8080'
+
+# HTTPS server listen address.
+listen_https: ''
+
+# Mysql dsn.
+db_mysql: user:password@(127.0.0.1:3306)/keepshare?parseTime=True&loc=Local
+
+# Redis url.
+db_redis: redis://localhost:6379?dial_timeout=2s&read_timeout=2s&max_retries=2
+
+# Mail server to receive and send emails.
+mail_server: http://localhost
+
+# When no host is specified, this host is used by default.
+host_default: pikpak
+
+# Configration for logs.
+# Options: panic, fatal, error, warn, info, debug, trace.
+log_level: info
+
+# Options: json, text.
+log_format: json
+
+# The log output, default to stdout.
+log_output: ''
+
+# Print indented json logs if this value is true and log_format is json.
+log_pretty: false
+
+# The access log output, default same to log_output.
+log_access_output: ''
+
+# Configration for token.
+# The secret key to sign token.
+token_secret_key: '000000'
+
+# The expiration for access token.
+access_token_expiration: 2h
+
+# The expiration for refresh token.
+refresh_token_expiration: 168h
+
+# The google reCAPTCHA secret key
+google_recaptcha_secret: ''
+
+# If not empty, all the `/console/*` requests will be proxy to this url, mainly used for local testing.
+console_proxy_url: ''
+
+#Configration for PikPak host.
+pikpak:
+  # Master accounts buffer pool size.
+  master_buffer_size: 2
+
+  # Master accounts buffer pool scan interval.
+  # If the number of not bound master accounts less than `master_buffer_size`, register a new one immediately.
+  master_buffer_interval: 10s
+
+  # Worker accounts buffer pool size.
+  worker_buffer_size: 5
+
+  # Worker accounts buffer pool scan interval.
+  # If the number of not bound worker accounts less than `worker_buffer_size`, register a new one immediately.
+  worker_buffer_interval: 1s
