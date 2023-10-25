@@ -4,12 +4,50 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"github.com/spf13/viper"
 	"mime/quotedprintable"
 	"net/smtp"
 	"time"
 )
 
+var emailClient *EmailClient
+
+func GetEmailClient() (*EmailClient, error) {
+	if emailClient == nil {
+		username := viper.GetString("email.username")
+		if username == "" {
+			return nil, fmt.Errorf("email username config is empty")
+		}
+		server := viper.GetString("email.server")
+		if server == "" {
+			return nil, fmt.Errorf("email server config is empty")
+		}
+		port := viper.GetInt("email.port")
+		if port == 0 {
+			return nil, fmt.Errorf("email port config is empty")
+		}
+		email := viper.GetString("email.email")
+		if email == "" {
+			return nil, fmt.Errorf("email email config is empty")
+		}
+		password := viper.GetString("email.password")
+		if password == "" {
+			return nil, fmt.Errorf("email password config is empty")
+		}
+
+		emailClient = &EmailClient{
+			username: username,
+			server:   server,
+			port:     port,
+			email:    email,
+			password: password,
+		}
+	}
+	return emailClient, nil
+}
+
 type EmailClient struct {
+	username string
 	server   string
 	port     int
 	email    string
@@ -19,14 +57,14 @@ type EmailClient struct {
 	multipartBoundary string
 }
 
-func (e *EmailClient) Message(from string, subject string) *EmailClient {
+func (e *EmailClient) NewMessage(subject string) *EmailClient {
 	e.message = bytes.Buffer{}
 	if e.multipartBoundary == "" {
 		e.multipartBoundary = fmt.Sprintf("%v", time.Now().UnixNano())
 	}
 
 	// Create a MIME multi-part message
-	e.message.WriteString(fmt.Sprintf("From: %s<%s>\r\n", from, e.email))
+	e.message.WriteString(fmt.Sprintf("From: %s<%s>\r\n", e.username, e.email))
 	e.message.WriteString(fmt.Sprintf("Subject: %s\r\n", subject))
 	e.message.WriteString("MIME-Version: 1.0\r\n")
 	e.message.WriteString(fmt.Sprintf("Content-Type: multipart/alternative; charset=UTF-8; boundary=%s\r\n", e.multipartBoundary))

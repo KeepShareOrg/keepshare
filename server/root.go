@@ -117,9 +117,12 @@ func apiRouter(router *gin.Engine) {
 	g.Use(mdw.ContextWithAcceptLanguage)
 
 	g.GET("/verification", verifyAccount)
-	g.POST("/verification", mdw.Auth, sendVerificationCode)
-	g.POST("/reset_password", mdw.Auth, resetPassword)
-	g.POST("/send_verification_link", mdw.Auth, sendVerificationCode)
+	g.POST("/verification", mdw.Auth, sendVerificationLink)
+	g.POST("/change_email", mdw.Auth, changeAccountEmail)
+	g.POST("/change_password", mdw.Auth, changeAccountPassword)
+	g.POST("/send_verification_code", sendVerificationCode)
+	g.POST("/reset_password", resetPassword)
+	g.POST("/send_verification_link", mdw.Auth, sendVerificationLink)
 
 	g.GET("/shared_link", querySharedLinkInfo) // front-end query shared link status, authentication is not required
 	g.GET("/shared_links", mdw.Auth, listSharedLinks)
