@@ -48,7 +48,7 @@ func sendVerificationCode(c *gin.Context) {
 	}
 	verificationCode := GenerateVerificationCode(verificationCodeLength)
 
-	verificationToken := CalcSha265Hash(fmt.Sprintf("%v-%v", req.Email, verificationCode), viper.GetString("verify_code_salt"))
+	verificationToken := CalcSha265Hash(fmt.Sprintf("%v-%v", req.Email, time.Now().UnixNano()), viper.GetString("verify_code_salt"))
 
 	if _, err := config.Redis().
 		SetEx(ctx, verificationToken, verificationCode, verificationCodeExpire).
@@ -80,6 +80,7 @@ func sendVerificationCode(c *gin.Context) {
 }
 
 func resetPassword(c *gin.Context) {
+	// TODO: Limit the number of retries
 	type Req struct {
 		VerificationCode  string `json:"verification_code"`
 		VerificationToken string `json:"verification_token"`
@@ -99,7 +100,7 @@ func resetPassword(c *gin.Context) {
 	ctx := c.Request.Context()
 	verificationCode, err := config.Redis().Get(ctx, req.VerificationToken).Result()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "invalid_params", i18n.WithDataMap("error", err.Error())))
+		c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "invalid_params", i18n.WithDataMap("error", "invalid verification code")))
 		return
 	}
 

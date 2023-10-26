@@ -70,3 +70,40 @@ pikpak:
   # Worker accounts buffer pool scan interval.
   # If the number of not bound worker accounts less than `worker_buffer_size`, register a new one immediately.
   worker_buffer_interval: 1s
+
+# Configuration for email.
+email:
+  # Email from username.
+  username: "KeepShare Official"
+  # SMTP server address.
+  server: "smtp.gmail.com"
+  # SMTP server port.
+  port: 587
+  # Email address.
+  email: "YOUR_EMAIL_ADDRESS"
+  # Email password.
+  password: "YOUR_GMAIL_APP_PASSWORD"
+
+# HTML version account verification email
+confirm_email_html_template: "<h1>this is a html version confirm page for email: %s<h1>"
+
+# Text version account verification email
+confirm_email_text_template: "this is a text version confirm page for email: %s"
+
+# HTML version reset password email
+reset_password_verify_email_html_template: "<h1>your html version verification code: %s</h1>"
+
+# Text version reset password email
+reset_password_verify_email_text_template: "your text version verification code: %s"
+
+# Verify email link salt
+verify_email_link_salt: "SHA256_CRYPTO_SECRET"
+
+# Verify email link expires
+verify_email_link_expires: 24h
+
+# Verification code expires
+verify_code_expires: 10m
+
+# Verification code length
+verification_code_length: 6
