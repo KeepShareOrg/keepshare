@@ -21,3 +21,11 @@ var (
 	EmailVerificationDone        = 1
 	EmailVerificationUncompolete = 0
 )
+
+type VerificationAction string
+
+const (
+	VerificationActionResetPassword  VerificationAction = "reset_password"
+	VerificationActionChangeEmail    VerificationAction = "change_email"
+	VerificationActionChangePassword VerificationAction = "change_password"
+)
