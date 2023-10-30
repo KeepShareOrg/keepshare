@@ -10,6 +10,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
 	mdw "github.com/KeepShareOrg/keepshare/server/middleware"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"net/http"
 	"time"
@@ -80,7 +81,6 @@ func sendVerificationCode(c *gin.Context) {
 }
 
 func resetPassword(c *gin.Context) {
-	// TODO: Limit the number of retries
 	type Req struct {
 		VerificationCode  string `json:"verification_code"`
 		VerificationToken string `json:"verification_token"`
@@ -104,7 +104,34 @@ func resetPassword(c *gin.Context) {
 		return
 	}
 
+	verificationCodeExpireConfig := viper.GetString("verify_code_expires")
+	if verificationCodeExpireConfig == "" {
+		verificationCodeExpireConfig = "10m"
+	}
+	verificationRetryCountLimit := viper.GetInt64("verification_retry_count_limit")
+	if verificationRetryCountLimit == 0 {
+		verificationRetryCountLimit = 3
+	}
+	verificationCodeExpire, err := time.ParseDuration(verificationCodeExpireConfig)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, mdw.ErrResp(c, "internal", i18n.WithDataMap("error", err.Error())))
+		return
+	}
+
 	if req.VerificationCode != verificationCode {
+		retryCountKey := fmt.Sprintf("retry_count_%v", req.VerificationToken)
+		if count, err := config.Redis().Incr(ctx, retryCountKey).Result(); err == nil {
+			if err := config.Redis().ExpireAt(ctx, retryCountKey, time.Now().Add(verificationCodeExpire)).Err(); err != nil {
+				log.Errorf("set retry count expired err: %v", err)
+			}
+
+			if count > verificationRetryCountLimit {
+				config.Redis().Del(ctx, req.VerificationToken)
+				c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "invalid_params", i18n.WithDataMap("error", "Too many retries, please resend the verification code")))
+				return
+			}
+		}
+
 		c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "invalid_params", i18n.WithDataMap("error", "invalid verification code")))
 		return
 	}
