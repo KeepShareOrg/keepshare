@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/KeepShareOrg/keepshare/pkg/mail"
@@ -169,47 +168,22 @@ func (api *API) signupSendEmail(ctx context.Context, email, captcha, deviceID st
 	return r.VerificationID, nil
 }
 
-var signupCodeRegexp = regexp.MustCompile(`[0-9]{6}`)
+var (
+	signupCodeRegexp      = regexp.MustCompile(`[0-9]{6}`)
+	signupEmailFromRegexp = regexp.MustCompile(`noreply@accounts.mypikpak.com`)
+)
 
 func (api *API) signupGetCode(ctx context.Context, email string, sentTime time.Time) (code string, found bool, err error) {
-	headers, err := api.Mailer.List(ctx, email)
+	code, found, err = mail.FindText(ctx, api.Mailer, email, signupCodeRegexp, &mail.Filter{
+		SendTime:   sentTime,
+		FromRegexp: signupEmailFromRegexp,
+	})
 	if err != nil {
-		return "", false, fmt.Errorf("list mail err: %w", err)
+		log.WithField("email", email).WithError(err).Error("signupGetCode err")
+	} else {
+		log.WithField("email", email).Debugf("signupGetCode found: %t, code: %s", found, code)
 	}
-
-	const from = "<noreply@accounts.mypikpak.com>"
-	var header *mail.Header
-	// The newest emails are at the end of the list.
-	for i := len(headers) - 1; i >= 0; i-- {
-		h := headers[i]
-		if h.Date.Before(sentTime) {
-			continue
-		}
-		if strings.Contains(h.From, from) {
-			header = headers[i]
-			break
-		}
-	}
-
-	l := log.WithField("email", email)
-	if header == nil {
-		l.Debugf("not found the email from %s and sent after %s", from, sentTime.Format(time.RFC3339))
-		return "", false, nil
-	}
-
-	body, err := api.Mailer.Get(ctx, email, header.ID)
-	if err != nil {
-		return "", false, fmt.Errorf("get mail body err: %w", err)
-	}
-	code = signupCodeRegexp.FindString(body.Text)
-	if code != "" {
-		// clear mail records after find code.
-		api.Mailer.Clear(ctx, email)
-		l.Debugf("signup code: %s", code)
-		return code, true, nil
-	}
-	l.Debugf("email found but code not found")
-	return "", false, nil
+	return
 }
 
 func (api *API) signupVerifyCode(ctx context.Context, code string, verificationID, deviceID string) (token string, err error) {

@@ -63,7 +63,7 @@ func (t *fileTask) toFile(master, worker, link string) *model.File {
 
 // CreateFilesFromLink create files from link.
 func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link string) (file *model.File, err error) {
-	token, err := api.getToken(ctx, worker)
+	token, err := api.getToken(ctx, worker, false)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link st
 // UpdateFilesStatus update files status.
 // All files must belong to the same worker.
 func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, files []*model.File, updateRunningTasks ...bool) (err error) {
-	token, err := api.getToken(ctx, workerUserID)
+	token, err := api.getToken(ctx, workerUserID, false)
 	if err != nil {
 		return err
 	}
@@ -312,7 +312,7 @@ func (api *API) DeleteFilesByIDs(ctx context.Context, worker string, fileIDs []s
 	if len(fileIDs) == 0 {
 		return nil
 	}
-	token, err := api.getToken(ctx, worker)
+	token, err := api.getToken(ctx, worker, false)
 	if err != nil {
 		return err
 	}

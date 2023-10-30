@@ -16,7 +16,7 @@ import (
 
 // GetStorageSize returns the used and limit size of the worker.
 func (api *API) GetStorageSize(ctx context.Context, worker string) (used, limit int64, err error) {
-	token, err := api.getToken(ctx, worker)
+	token, err := api.getToken(ctx, worker, false)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -59,7 +59,7 @@ var defaultExpiration, _ = time.ParseInLocation("2006-01-02", "2000-01-01", time
 
 // GetPremiumExpiration get the premium expiration for the worker account.
 func (api *API) GetPremiumExpiration(ctx context.Context, worker string) (*time.Time, error) {
-	token, err := api.getToken(ctx, worker)
+	token, err := api.getToken(ctx, worker, false)
 	if err != nil {
 		return nil, err
 	}

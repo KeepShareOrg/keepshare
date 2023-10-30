@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (api *API) getToken(ctx context.Context, userID string) (token string, err error) {
+func (api *API) getToken(ctx context.Context, userID string, isMaster bool) (token string, err error) {
 	key := []byte("token:" + userID)
 	ttl := 2 * time.Minute
 
@@ -38,13 +38,23 @@ func (api *API) getToken(ctx context.Context, userID string) (token string, err 
 		return r.AccessToken, nil
 	}
 
-	return api.createToken(ctx, userID)
+	return api.createToken(ctx, userID, isMaster)
 }
 
-func (api *API) createToken(ctx context.Context, userID string) (string, error) {
-	account, err := api.q.WorkerAccount.WithContext(ctx).Where(api.q.WorkerAccount.UserID.Eq(userID)).Take()
-	if err != nil {
-		return "", fmt.Errorf("get worker account err: %w", err)
+func (api *API) createToken(ctx context.Context, userID string, isMaster bool) (string, error) {
+	var email, password string
+	if isMaster {
+		account, err := api.q.MasterAccount.WithContext(ctx).Where(api.q.MasterAccount.UserID.Eq(userID)).Take()
+		if err != nil {
+			return "", fmt.Errorf("get master account err: %w", err)
+		}
+		email, password = account.Email, account.Password
+	} else {
+		account, err := api.q.WorkerAccount.WithContext(ctx).Where(api.q.WorkerAccount.UserID.Eq(userID)).Take()
+		if err != nil {
+			return "", fmt.Errorf("get worker account err: %w", err)
+		}
+		email, password = account.Email, account.Password
 	}
 
 	var e RespErr
@@ -58,8 +68,8 @@ func (api *API) createToken(ctx context.Context, userID string) (string, error) 
 		SetResult(&r).
 		SetError(&e).
 		SetBody(JSON{
-			"username":  account.Email,
-			"password":  account.Password,
+			"username":  email,
+			"password":  password,
 			"client_id": clientID,
 		}).
 		Post(userURL("/v1/auth/signin"))

@@ -22,7 +22,7 @@ import (
 
 // CreateShare create a sharing link by files.
 func (api *API) CreateShare(ctx context.Context, master string, worker string, fileID string) (sharedLink string, err error) {
-	token, err := api.getToken(ctx, worker)
+	token, err := api.getToken(ctx, worker, false)
 	if err != nil {
 		return "", err
 	}
@@ -141,7 +141,7 @@ func (api *API) GetStatistics(ctx context.Context, sharedLink string) (*share.St
 		return nil, err
 	}
 
-	token, err := api.getToken(ctx, sh.WorkerUserID)
+	token, err := api.getToken(ctx, sh.WorkerUserID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +220,7 @@ func (api *API) DeleteShare(ctx context.Context, worker string, shareIDs []strin
 		return nil
 	}
 
-	token, err := api.getToken(ctx, worker)
+	token, err := api.getToken(ctx, worker, false)
 	if err != nil {
 		return err
 	}

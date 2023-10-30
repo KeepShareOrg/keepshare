@@ -21,8 +21,9 @@ import (
 
 // configs.
 const (
-	apiServer      = "https://api-drive.mypikpak.com"
 	userServer     = "https://user.mypikpak.com"
+	apiServer      = "https://api-drive.mypikpak.com"
+	referralServer = "https://api-referral.mypikpak.com"
 	clientID       = "YNxT9w7GMdWvEOKa"
 	deviceID       = "c858a46bfca5c5f61b1702ed6c303acb"
 	acceptLanguage = "en,en-US;q=0.9"
@@ -86,6 +87,13 @@ func userURL(path string) string {
 		return path
 	}
 	return fmt.Sprintf("%s/%s", userServer, strings.TrimLeft(path, "/"))
+}
+
+func referralURL(path string) string {
+	if strings.HasPrefix(path, "http") {
+		return path
+	}
+	return fmt.Sprintf("%s/%s", referralServer, strings.TrimLeft(path, "/"))
 }
 
 // Error check error and implement error interface..
