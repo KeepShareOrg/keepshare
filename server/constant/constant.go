@@ -15,3 +15,9 @@ var (
 	Email       = "email"
 	Username    = "username"
 )
+
+// about email verification
+var (
+	EmailVerificationDone        = 1
+	EmailVerificationUncompolete = 0
+)

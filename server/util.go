@@ -9,12 +9,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/config"
+	lk "github.com/KeepShareOrg/keepshare/pkg/link"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/KeepShareOrg/keepshare/config"
-	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 )
 
 // VerifyRecaptchaToken verify google recaptcha token
@@ -76,4 +76,19 @@ func CalcSha265Hash(input string, secret string) string {
 	hashedPassword := hex.EncodeToString(hash.Sum(nil))
 
 	return hashedPassword
+}
+
+// GenerateVerificationCode generate random verification code
+func GenerateVerificationCode(length int) string {
+	if length <= 0 {
+		length = 6
+	}
+
+	code := ""
+	for i := 0; i < length; i++ {
+		digit := rand.Intn(10)
+		code += fmt.Sprint(digit)
+	}
+
+	return code
 }

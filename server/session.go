@@ -195,11 +195,19 @@ func getUserInfo(c *gin.Context) {
 	email := c.GetString(constant.Email)
 	username := c.GetString(constant.Username)
 
+	ctx := c.Request.Context()
+	user, err := query.User.WithContext(ctx).Where(query.User.ID.Eq(userID)).Take()
+	if err != nil {
+		c.JSON(http.StatusBadGateway, mdw.ErrResp(c, "internal", i18n.WithDataMap("error", err.Error())))
+		return
+	}
+
 	c.JSON(http.StatusOK, Map{
-		"ok":         true,
-		"user_id":    userID,
-		"channel_id": channelID,
-		"email":      email,
-		"username":   username,
+		"ok":             true,
+		"user_id":        userID,
+		"channel_id":     channelID,
+		"email":          email,
+		"username":       username,
+		"email_verified": user.EmailVerified,
 	})
 }
