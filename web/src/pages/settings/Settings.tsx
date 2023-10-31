@@ -22,15 +22,15 @@ const Settings = () => {
           </Button>
           <Space>
             <Text>
-              In order to avoid being unable to log in after you forget your
-              password,
+              You can reset your password if you forget it or get necessary notifications 
+              if you
               <TextLink
                 style={{
                   color: token.colorPrimaryHover,
                   marginLeft: token.marginXS,
                 }}
               >
-                Please Verify Your Email.
+                Verify Your Email.
               </TextLink>
             </Text>
           </Space>

@@ -70,7 +70,7 @@ const General = () => {
       <Space align="start" wrap>
         <Space style={{ width: "200px", marginRight: token.marginLG }}>
           <Text style={{ color: token.colorTextSecondary }}>
-            Master Account
+            Rewards
           </Text>
         </Space>
         <Space direction="vertical">
@@ -92,9 +92,8 @@ const General = () => {
           <Space>
             <InfoCircleOutlined style={{ color: token.colorTextSecondary }} />
             <Text style={{ color: token.colorTextSecondary }}>
-              KeepShare currently does not support direct cash withdrawal,
-              please go to the official PikPak referral program page to withdraw
-              income
+              Please go to the PikPak official referral program pro page, log in with 
+              the above master account and then withdraw your reward money.
             </Text>
           </Space>
         </Space>
