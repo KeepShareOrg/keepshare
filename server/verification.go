@@ -49,8 +49,8 @@ func sendVerificationLink(c *gin.Context) {
 		return
 	}
 
-	emailHTMLContent := fmt.Sprintf(viper.GetString("confirm_email_html_template"), hash)
-	emailTextContent := fmt.Sprintf(viper.GetString("confirm_email_text_template"), hash)
+	emailHTMLContent := fmt.Sprintf(viper.GetString("confirm_email_html_template"), verifyLink)
+	emailTextContent := fmt.Sprintf(viper.GetString("confirm_email_text_template"), verifyLink)
 	if err := emailClient.NewMessage("Verify Email").
 		AddHtmlContent(emailHTMLContent).
 		AddTextContent(emailTextContent).
