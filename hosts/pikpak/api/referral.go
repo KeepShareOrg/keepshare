@@ -100,3 +100,41 @@ func (api *API) VerifyInviteSubAccountToken(ctx context.Context, token string) e
 
 	return nil
 }
+
+// GetCommissionsResponse is the response of the GetCommissions API.
+type GetCommissionsResponse struct {
+	Total     float64 `json:"total"`
+	Pending   float64 `json:"pending"`
+	Available float64 `json:"available"`
+}
+
+// GetCommissions get commissions from server.
+func (api *API) GetCommissions(ctx context.Context, userID string) (*GetCommissionsResponse, error) {
+	token, err := api.getToken(ctx, userID, true)
+	if err != nil {
+		return nil, err
+	}
+
+	var e RespErr
+	var r GetCommissionsResponse
+
+	body, err := resCli.R().
+		SetContext(ctx).
+		SetAuthToken(token).
+		SetError(&e).
+		SetResult(&r).
+		Get(referralURL("/promoting/v1/commissions/summary"))
+
+	if err != nil {
+		return nil, fmt.Errorf("get commissions err: %w", err)
+	}
+
+	log.WithField("user_id", userID).Debugf("get commissions response body: %s", body.Body())
+
+	if err = e.Error(); err != nil {
+		// TODO token expired
+		return nil, fmt.Errorf("get commissions err: %w", err)
+	}
+
+	return &r, nil
+}
