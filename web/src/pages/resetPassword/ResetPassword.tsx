@@ -1,9 +1,10 @@
 import AccountBanner from "@/components/account/accountBanner/AccountBanner";
 import DefaultLayout from "@/layout/DefaultLayout";
 import { Wrapper } from "./style";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ResetPasswordSteps } from "@/constant";
+import useStore from "@/store";
 import StepSendVerification from "@/components/resetPassword/StepSendVerification";
 import StepEnterVerificationCode from "@/components/resetPassword/StepEnterVerificationCode";
 import StepEnterNewPassword from "@/components/resetPassword/StepEnterNewPassword";
@@ -14,6 +15,15 @@ const ResetPassword = () => {
   const [currentStep, setStep] = useState<ResetPasswordSteps>(
     ResetPasswordSteps.SEND_VERIFICATION_CODE,
   );
+  const setResetInfo = useStore((state) => state.setResetInfo);
+
+  useEffect(() => {
+    setResetInfo({
+      email: '',
+      verificationCode: '',
+      verificationToken: '',
+    });
+  }, []);
 
   return (
     <DefaultLayout>
