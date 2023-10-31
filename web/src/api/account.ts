@@ -108,3 +108,39 @@ export const changeAccountPassword = (params: ChangeAccountPasswordParams) => {
     data: params,
   });
 };
+
+export interface SendVerificationCodeParams {
+  action: 'reset_password',
+  email: string;
+}
+export interface SendVerificationCodeResponse {
+  success: boolean;
+  verification_token: string;
+}
+// send verification code
+export const sendVerificationCode = (params: SendVerificationCodeParams) => {
+  return axiosWrapper<SendVerificationCodeResponse>({
+    method: "post",
+    url: "/api/send_verification_code",
+    data: params,
+  });
+};
+
+export interface ResetAccountPasswordParams {
+  email: string;
+  password_hash: string;
+  action: 'reset_password';
+  verification_token: string;
+  verification_code: string;
+}
+export interface ResetAccountPasswordResponse {
+  success: boolean;
+}
+// reset account password
+export const resetAccountPassword = (params: ResetAccountPasswordParams) => {
+  return axiosWrapper<ResetAccountPasswordResponse>({
+    method: "post",
+    url: "/api/reset_password",
+    data: params,
+  });
+};

@@ -1,8 +1,11 @@
 import { ResetPasswordSteps, StepComponentParams } from "@/constant";
-import { StyledButton, StyledForm, StyledInput } from "@/pages/signUp/style";
+import { StyledButton, StyledForm, PasswordInput } from "@/pages/signUp/style";
 import { type AlertProps, theme, Form, Alert } from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { resetAccountPassword } from '@/api/account';
+import useStore from "@/store";
+import { calcPasswordHash } from "@/util";
 
 interface FieldType {
   password?: string;
@@ -33,6 +36,8 @@ const StepEnterNewPassword = ({ setStep }: StepComponentParams) => {
     confirmPassword?: string;
   }>();
 
+  const resetInfo = useStore(state => state.resetInfo);
+  const setResetInfo = useStore(state => state.setResetInfo);
   const { token } = theme.useToken();
 
   const [formMessage, setFormMessage] = useState<{
@@ -42,8 +47,33 @@ const StepEnterNewPassword = ({ setStep }: StepComponentParams) => {
     type: "error",
     message: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
+
+    const params = form.getFieldsValue();
+
+    setIsLoading(true);
+
+    const result = await resetAccountPassword({
+      email: resetInfo.email,
+      password_hash: calcPasswordHash(params.password!),
+      action: 'reset_password',
+      verification_token: resetInfo.verificationToken,
+      verification_code: resetInfo.verificationCode,
+    });
+
+    setIsLoading(false);
+
+    if (result.error) {
+      return setFormMessage({ type: "error", message: result.error.message || 'reset fail.' });
+    }
+
+    setResetInfo({
+      email: '',
+      verificationCode: '',
+      verificationToken: '',
+    });
     setStep(ResetPasswordSteps.RESET_PASSWORD_RESULT);
   };
 
@@ -57,6 +87,7 @@ const StepEnterNewPassword = ({ setStep }: StepComponentParams) => {
       form={form}
       layout="vertical"
       onFinish={handleResetPassword}
+      onValuesChange={handleInputPassword}
       validateTrigger={[]}
       autoComplete="off"
     >
@@ -65,13 +96,11 @@ const StepEnterNewPassword = ({ setStep }: StepComponentParams) => {
         label="Please set a new password"
         style={{ marginBottom: token.marginSM }}
       >
-        <StyledInput
-          placeholder="Verification code"
-          onChange={handleInputPassword}
-        />
+        <PasswordInput placeholder="Password" />
       </Form.Item>
       <Form.Item name="confirmPassword">
-        <StyledInput placeholder="Password" onChange={handleInputPassword} />
+        <PasswordInput 
+        placeholder="Confirm your password" />
       </Form.Item>
 
       {formMessage.message && (
@@ -84,7 +113,7 @@ const StepEnterNewPassword = ({ setStep }: StepComponentParams) => {
         </Form.Item>
       )}
       <Form.Item>
-        <StyledButton type="primary" htmlType="submit">
+        <StyledButton type="primary" htmlType="submit" loading={isLoading}>
           {t("4QBwNXfHi4cI7j1q7aFw")}
         </StyledButton>
       </Form.Item>

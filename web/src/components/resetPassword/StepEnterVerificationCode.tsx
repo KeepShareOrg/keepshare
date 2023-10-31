@@ -3,6 +3,21 @@ import { StyledButton, StyledForm, StyledInput } from "@/pages/signUp/style";
 import { theme, type AlertProps, Form, Alert } from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import useStore from "@/store";
+
+const validateFormFailed = ({
+  verificationCode,
+}: { verificationCode?: string }): string => {
+  if (verificationCode?.trim() === "") {
+    return "VerificationCode is null";
+  }
+
+  if (verificationCode && verificationCode.trim().length < 6) {
+    return "Length is at least 6";
+  }
+
+  return "";
+};
 
 // Reset the second step of the password and verify the received mailbox verification code
 const StepEnterVerificationCode = ({ setStep }: StepComponentParams) => {
@@ -16,11 +31,23 @@ const StepEnterVerificationCode = ({ setStep }: StepComponentParams) => {
     message: "",
   });
   const { token } = theme.useToken();
-
-  // TODO:
-  console.log(setFormMessage);
+  const email = useStore(state => state.resetInfo.email);
+  const setResetInfo = useStore(state => state.setResetInfo);
 
   const handleVerify = () => {
+    const params = form.getFieldsValue();
+    const errorMessage = validateFormFailed(params);
+    if (errorMessage) {
+      setFormMessage({
+        type: 'error',
+        message: errorMessage,
+      });
+      return;
+    }
+
+    setResetInfo({
+      verificationCode: params.verificationCode,
+    });
     setStep(ResetPasswordSteps.ENTER_NEW_PASSWORD);
   };
 
@@ -34,7 +61,7 @@ const StepEnterVerificationCode = ({ setStep }: StepComponentParams) => {
     >
       <Form.Item
         name="verificationCode"
-        label="An email with a verification code was just sent to ••••••"
+        label={`An email with a verification code was just sent to ${email}`}
       >
         <StyledInput placeholder="Verification code" maxLength={6} />
       </Form.Item>
