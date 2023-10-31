@@ -57,21 +57,23 @@ const Settings = () => {
           <Button icon={<MailOutlined style={{ color: token.colorPrimary }} />} onClick={handleOpenModifyEmailModal}>
             Modify Email
           </Button>
-          <Space>
-            <Text>
-              You can reset your password if you forget it or get necessary notifications 
-              if you
-              <TextLink
-                style={{
-                  color: token.colorPrimaryHover,
-                  marginLeft: token.marginXS,
-                }}
-                onClick={handleSendVerifyEmail}
-              >
-                Verify Your Email.
-              </TextLink>
-            </Text>
-          </Space>
+          {userInfo.email_verified ? null : (
+            <Space>
+              <Text>
+                You can reset your password if you forget it or get necessary notifications 
+                if you
+                <TextLink
+                  style={{
+                    color: token.colorPrimaryHover,
+                    marginLeft: token.marginXS,
+                  }}
+                  onClick={handleSendVerifyEmail}
+                >
+                  Verify Your Email.
+                </TextLink>
+              </Text>
+            </Space>
+          )}
         </Space>
       </Space>
       <Divider />

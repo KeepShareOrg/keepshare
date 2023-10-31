@@ -56,6 +56,7 @@ export const refreshToken = (refreshToken: string) => {
 export interface GetUserInfoResponse {
   user_id: string;
   channel_id: string;
+  email_verified: number;
   email: string;
   username: string;
 }
