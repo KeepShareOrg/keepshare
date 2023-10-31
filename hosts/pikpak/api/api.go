@@ -113,10 +113,19 @@ func (e *RespErr) Error() error {
 var (
 	apiRand       = rand.New(rand.NewSource(time.Now().UnixNano()))
 	emailSequence = apiRand.Uint64()
+	passwordChars = []byte(`ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~!@#$%^&_+-=.`)
 )
 
 func randomPassword() string {
-	return fmt.Sprintf("#Pk.%d", apiRand.Uint32())
+	const length = 12
+	b := make([]byte, length)
+	b[0] = passwordChars[apiRand.Intn(26)]   // start with a random uppercase letter
+	b[1] = strconv.Itoa(apiRand.Intn(10))[0] // then a random number
+	for i := 2; i < length; i++ {            // then random letters
+		n := apiRand.Intn(len(passwordChars))
+		b[i] = passwordChars[n]
+	}
+	return string(b)
 }
 
 func randomDevice() string {
