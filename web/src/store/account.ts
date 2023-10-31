@@ -2,6 +2,11 @@ import type { GetUserInfoResponse } from "@/api/account";
 import { TokenInfo, removeTokenInfo, setTokenInfo } from "@/util";
 import { StateCreator } from "zustand";
 
+interface ResetInfo {
+  email: string;
+  verificationCode: string;
+  verificationToken: string;
+}
 export interface AccountState {
   isLogin: boolean;
   changeLoginStatus: (isLogin: boolean) => void;
@@ -13,6 +18,8 @@ export interface AccountState {
   setUserInfo: (userInfo: Partial<GetUserInfoResponse>) => void;
   keepLogin: boolean;
   setKeepLogin: (keepLogin: boolean) => void;
+  resetInfo: ResetInfo;
+  setResetInfo: (values: Partial<ResetInfo>) => void;
 
   signIn: (info: TokenInfo) => void;
   signOut: () => void;
@@ -29,6 +36,19 @@ export const createAccountStore: StateCreator<AccountState> = (set) => ({
   setUserInfo: (userInfo) => set({ userInfo }),
   keepLogin: true,
   setKeepLogin: (keepLogin) => set({ keepLogin }),
+  resetInfo: {
+    email: '',
+    verificationCode: '',
+    verificationToken: '',
+  },
+  setResetInfo: (values) => {
+    set((state) => ({
+      resetInfo: {
+        ...state.resetInfo,
+        ...values,
+      },
+    }))
+  },
 
   signOut: () => {
     set({ isLogin: false, accessToken: "", refreshToken: "", userInfo: {} });
