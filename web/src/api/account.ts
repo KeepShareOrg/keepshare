@@ -66,3 +66,45 @@ export const getUserInfo = () => {
     url: "/session/me",
   });
 };
+
+
+export interface SendVerifyEmailResponse {
+  success: boolean;
+}
+// send verification email
+export const sendVerifyEmail = () => {
+  return axiosWrapper<SendVerifyEmailResponse>({
+    method: "post",
+    url: "/api/verification",
+  });
+};
+
+export interface ChangeAccountEmailParams {
+  new_email: string;
+  password_hash: string;
+}
+export interface ChangeAccountEmailResponse {
+  success: boolean;
+}
+export const changeAccountEmail = (params: ChangeAccountEmailParams) => {
+  return axiosWrapper<ChangeAccountEmailResponse>({
+    method: "post",
+    url: "/api/change_email",
+    data: params,
+  });
+};
+
+export interface ChangeAccountPasswordParams {
+  password_hash: string;
+  new_password_hash: string;
+}
+export interface ChangeAccountPasswordResponse {
+  success: boolean;
+}
+export const changeAccountPassword = (params: ChangeAccountPasswordParams) => {
+  return axiosWrapper<ChangeAccountPasswordResponse>({
+    method: "post",
+    url: "/api/change_password",
+    data: params,
+  });
+};

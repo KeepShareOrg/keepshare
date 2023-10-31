@@ -31,7 +31,12 @@ func (p *PikPak) HostInfo(ctx context.Context, userID string, options map[string
 	resp["workers"] = workers
 
 	// get total revenue.
-	resp["revenue"] = 0
+	commission, err := p.api.GetCommissions(ctx, master.UserID)
+	if err != nil {
+		log.WithError(err).Error("get revenue err")
+		return nil, err
+	}
+	resp["revenue"] = commission.Total
 
 	return resp, nil
 }
