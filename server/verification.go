@@ -107,5 +107,5 @@ func verifyAccount(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true})
+	c.Redirect(http.StatusMovedPermanently, fmt.Sprintf("https://%v/console", config.RootDomain()))
 }
