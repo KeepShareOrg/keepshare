@@ -2,7 +2,7 @@ import { Form, Input } from "antd";
 import styled from "styled-components";
 
 export const StyledForm = styled(Form)`
-  width: 360px;
+  max-width: 360px;
   margin: 32px auto;
 `;
 

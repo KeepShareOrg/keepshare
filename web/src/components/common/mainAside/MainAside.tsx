@@ -49,6 +49,7 @@ const MainAside = () => {
     <MainLayoutAside
       collapsed={collapsed}
       style={{ background: "var(--ks-bg)", height: "100vh" }}
+      width={208}
     >
       <AsideLogo collapsed={collapsed} />
       <Space
