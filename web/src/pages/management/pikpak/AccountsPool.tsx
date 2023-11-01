@@ -169,12 +169,12 @@ const AccountPool = () => {
         </Space>
         <Space direction="vertical">
           <Text>
-            The number of Free Accounts used is
+            The number of Free Accounts used is&nbsp;
             <Text strong>{info.workers?.free.count}</Text>, and the number of
             accounts is <Text strong>unlimited.</Text>
           </Text>
           <Text>
-            The storage used is
+            The storage used is&nbsp;
             <Text strong>{formatBytes(info.workers?.free.used || 0)}</Text>, and
             the storage is <Text strong>unlimited.</Text>
           </Text>
@@ -189,12 +189,12 @@ const AccountPool = () => {
         </Space>
         <Space direction="vertical">
           <Text>
-            The number of Free Accounts used is
+            The number of Free Accounts used is&nbsp;
             <Text strong>{info.workers?.premium.count}</Text>, and the number of
             accounts is <Text strong>unlimited.</Text>
           </Text>
           <Text>
-            The storage used is
+            The storage used is&nbsp;
             <Text strong>{formatBytes(info.workers?.premium.used || 0)}</Text>,
             and the storage is <Text strong>unlimited.</Text>
           </Text>
