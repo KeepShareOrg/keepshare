@@ -37,6 +37,8 @@ export const AsideLogo = ({ collapsed }: ComponentProps) => {
   );
 };
 
+export const ASIDE_WIDTH = 208;
+
 const MainAside = () => {
   const [collapsed, setCollapsed, isMobile] = useStore((state) => [
     state.asideCollapsed,
@@ -49,7 +51,7 @@ const MainAside = () => {
     <MainLayoutAside
       collapsed={collapsed}
       style={{ background: "var(--ks-bg)", height: "100vh" }}
-      width={208}
+      width={ASIDE_WIDTH}
     >
       <AsideLogo collapsed={collapsed} />
       <Space

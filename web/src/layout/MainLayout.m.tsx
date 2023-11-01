@@ -2,7 +2,7 @@ import { Drawer, Layout, theme } from "antd";
 import { Outlet } from "react-router-dom";
 import { Background, MainLayoutHeader } from "./style";
 import MainHeader from "@/components/common/mainHeader/MainHeader";
-import MainAside from "@/components/common/mainAside/MainAside";
+import MainAside, { ASIDE_WIDTH } from "@/components/common/mainAside/MainAside";
 import useStore from "@/store";
 
 const MainLayout = () => {
@@ -39,7 +39,7 @@ const MainLayout = () => {
       </Layout>
       <Drawer
         placement="left"
-        width={200}
+        width={ASIDE_WIDTH}
         open={showMenuDrawer}
         onClose={() => setShowMenuDrawer(!showMenuDrawer)}
         headerStyle={{ display: "none" }}
