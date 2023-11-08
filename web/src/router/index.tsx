@@ -17,6 +17,7 @@ const PikPak = lazy(() => import("@/pages/management/pikpak/PikPak"));
 const Mega = lazy(() => import("@/pages/management/mega/Mega"));
 const SharedStatus = lazy(() => import("@/pages/sharedStatus/SharedStatus"));
 const Donation = lazy(() => import("@/pages/donation/Donation"));
+const EmailVerification = lazy(() => import("@/pages/email/Verification"));
 
 export const enum RoutePaths {
   Home = "/console/",
@@ -31,6 +32,7 @@ export const enum RoutePaths {
   Mega = "/console/management/mega",
   SharedStatus = "/console/shared/status",
   Donation = "/console/donation",
+  EmailVerification = "/console/email-verification",
 }
 
 // Read some data from persistent storage into memory
@@ -128,6 +130,10 @@ const router = createBrowserRouter(
         path: RoutePaths.Donation,
         element: <Donation />,
       },
+      {
+        path: RoutePaths.EmailVerification,
+        element: <EmailVerification />,
+      }
     ],
     <PageLoading />,
   ),
