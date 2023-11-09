@@ -65,28 +65,33 @@ func sendVerificationLink(c *gin.Context) {
 func verifyAccount(c *gin.Context) {
 	ctx := c.Request.Context()
 
+	resultPageAddr := fmt.Sprintf("https://%v/console/email-verification", config.RootDomain())
+	successAddr := fmt.Sprintf("%v?success=1", resultPageAddr)
+	failedAddr := fmt.Sprintf("%v?success=0", resultPageAddr)
+	expiresAddr := fmt.Sprintf("%v?expired=1", resultPageAddr)
+
 	email := c.Query("email")
 	token := c.Query("token")
 	expiresTime := c.Query("expires")
 	if email == "" || token == "" || expiresTime == "" {
-		c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "invalid_params"))
+		c.Redirect(http.StatusMovedPermanently, failedAddr)
 		return
 	}
 
 	expiresUnix, err := strconv.ParseInt(expiresTime, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "invalid_params", i18n.WithDataMap("error", err.Error())))
+		c.Redirect(http.StatusMovedPermanently, failedAddr)
 		return
 	}
 
 	if time.Now().Unix() > expiresUnix {
-		c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "invalid_params", i18n.WithDataMap("error", "token expired")))
+		c.Redirect(http.StatusMovedPermanently, expiresAddr)
 		return
 	}
 
 	user, err := query.User.WithContext(ctx).Where(query.User.Email.Eq(email)).Take()
 	if err != nil {
-		c.JSON(http.StatusBadGateway, mdw.ErrResp(c, "internal", i18n.WithDataMap("error", err.Error())))
+		c.Redirect(http.StatusMovedPermanently, failedAddr)
 		return
 	}
 
@@ -95,7 +100,7 @@ func verifyAccount(c *gin.Context) {
 	hash := CalcSha265Hash(verifyString, salt.(string))
 
 	if token != hash {
-		c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "invalid_params", i18n.WithDataMap("error", "verify failed")))
+		c.Redirect(http.StatusMovedPermanently, failedAddr)
 		return
 	}
 
@@ -103,9 +108,9 @@ func verifyAccount(c *gin.Context) {
 		WithContext(ctx).
 		Where(query.User.ID.Eq(user.ID)).
 		Update(query.User.EmailVerified, constant.EmailVerificationDone); err != nil {
-		c.JSON(http.StatusBadGateway, mdw.ErrResp(c, "internal", i18n.WithDataMap("error", err.Error())))
+		c.Redirect(http.StatusMovedPermanently, failedAddr)
 		return
 	}
 
-	c.Redirect(http.StatusMovedPermanently, fmt.Sprintf("https://%v/console", config.RootDomain()))
+	c.Redirect(http.StatusFound, successAddr)
 }

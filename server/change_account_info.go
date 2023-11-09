@@ -49,6 +49,14 @@ func changeAccountEmail(c *gin.Context) {
 		return
 	}
 
+	if _, err := query.User.
+		WithContext(ctx).
+		Where(query.User.ID.Eq(userId)).
+		Update(query.User.EmailVerified, constant.EmailVerificationUnComplete); err != nil {
+		c.JSON(http.StatusBadGateway, mdw.ErrResp(c, "internal", i18n.WithDataMap("error", err.Error())))
+		return
+	}
+
 	c.JSON(http.StatusOK, resp)
 }
 

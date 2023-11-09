@@ -18,8 +18,8 @@ var (
 
 // about email verification
 var (
-	EmailVerificationDone        = 1
-	EmailVerificationUncompolete = 0
+	EmailVerificationDone       int32 = 1
+	EmailVerificationUnComplete int32 = 0
 )
 
 type VerificationAction string
