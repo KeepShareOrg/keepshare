@@ -83,7 +83,7 @@ func asyncTaskCheckBackground() {
 				continue
 			}
 
-			if sh.State == share.StatusOK {
+			if sh.State == share.StatusOK || sh.State == share.StatusCreated {
 				now := time.Now()
 				link := unCompleteTask.OriginalLink
 				s := &model.SharedLink{
@@ -105,7 +105,15 @@ func asyncTaskCheckBackground() {
 					HostSharedLink:     sh.HostSharedLink,
 				}
 
-				completeTasks = append(completeTasks, s)
+				if unCompleteTask.State == share.StatusPending.String() {
+					if _, err = query.SharedLink.
+						Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
+						Updates(s); err != nil {
+						log.Errorf("update share link state error: %v", err.Error())
+					}
+				} else {
+					completeTasks = append(completeTasks, s)
+				}
 				continue
 			}
 
