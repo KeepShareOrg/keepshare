@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
-import { Button, Divider, Space, Tabs, Typography, theme, message } from "antd";
+import { Button, Divider, Space, Tabs, Typography, theme } from "antd";
 import debounce from 'lodash-es/debounce';
 
 import { sendVerifyEmail } from '@/api/account';
@@ -8,13 +8,17 @@ import useStore from "@/store";
 
 import ModifyEmailModal from './ModifyEmailModal';
 import ModifyPasswordModal from './ModifyPasswordModal';
+import { TextLink } from './style';
 
-const { Text, Link: TextLink } = Typography;
+const { Text } = Typography;
 
 const Settings = () => {
   const [openModifyEmailModal, setOpenModifyEmailModal] = useState(false);
   const [openModifyPasswordModal, setOpenModifyPasswordModal] = useState(false);
+  const [sentEmailMessage, setSentEmailMessage] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
   const { token } = theme.useToken();
+  const hasSentEmail = useRef(false);
 
   const userInfo = useStore((state) => state.userInfo);
 
@@ -27,14 +31,19 @@ const Settings = () => {
   };
 
   const handleSendVerifyEmail = debounce(async () => {
+    if (hasSentEmail.current) return;
+    hasSentEmail.current = true;
+
+    setSendingEmail(true);
     const result = await sendVerifyEmail();
+    setSendingEmail(false);
 
     if (result.error) {
-      message.error(result.error.message || 'send fail');
+      setSentEmailMessage('Email sending failed, please try again later.');
       return;
     }
-
-    message.success('send successfully, please check your email');
+    
+    setSentEmailMessage('Email has been sent, please check it.');
   }, 300);
 
   const handleModifyEmailModalClose = () => {
@@ -58,20 +67,22 @@ const Settings = () => {
             Modify Email
           </Button>
           {userInfo.email_verified ? null : (
-            <Space>
+            <Space direction="vertical" align="start" >
               <Text>
                 You can reset your password if you forget it or get necessary notifications 
                 if you
                 <TextLink
-                  style={{
-                    color: token.colorPrimaryHover,
-                    marginLeft: token.marginXS,
-                  }}
+                  padding={token.paddingXS}
+                  color={token.colorPrimaryHover}
+                  loading={sendingEmail}
+                  type="link"
+                  disabled={Boolean(sentEmailMessage)}
                   onClick={handleSendVerifyEmail}
                 >
-                  Verify Your Email.
+                  {sendingEmail ? 'Email Sending...' : 'Verify Your Email.'}
                 </TextLink>
               </Text>
+              {sentEmailMessage && <Text style={{ fontWeight: token.fontWeightStrong }}>{sentEmailMessage}</Text>}
             </Space>
           )}
         </Space>
