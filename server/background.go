@@ -105,7 +105,8 @@ func asyncTaskCheckBackground() {
 					HostSharedLink:     sh.HostSharedLink,
 				}
 
-				if unCompleteTask.State == share.StatusPending.String() {
+				if unCompleteTask.State == share.StatusPending.String() &&
+					unCompleteTask.State == share.StatusCreated.String() {
 					if _, err = query.SharedLink.
 						Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
 						Updates(s); err != nil {
