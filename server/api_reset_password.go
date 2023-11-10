@@ -87,7 +87,7 @@ func sendVerificationCode(c *gin.Context) {
 	emailHTMLTemplate := viper.GetString("reset_password_verify_email_html_template")
 	emailTextTemplate := viper.GetString("reset_password_verify_email_text_template")
 
-	if err := emailClient.NewMessage("Verify Email").
+	if err := emailClient.NewMessage("KeepShare - Verify your email").
 		AddHtmlContent(fmt.Sprintf(emailHTMLTemplate, verificationCode)).
 		AddTextContent(fmt.Sprintf(emailTextTemplate, verificationCode)).
 		Send([]string{req.Email}); err != nil {
