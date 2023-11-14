@@ -27,7 +27,7 @@ import { Trans, useTranslation } from "react-i18next";
 
 const { Title, Text, Link } = Typography;
 
-const getStatusDescribeText = (
+const useStatusDescribeText = (
   status: SharedLinkStatus,
   holder: JSX.Element,
 ) => {
@@ -105,7 +105,7 @@ const SharedStatus = () => {
     </Link>
   );
   const [status, setStatus] = useState<SharedLinkStatus>("PENDING");
-  const { title, subtitle } = getStatusDescribeText(status, remoteDownload);
+  const { title, subtitle } = useStatusDescribeText(status, remoteDownload);
 
   const MAX_LOOP_TIMES = 20;
   const [loopTimes, setLoopTimes] = useState(0);
@@ -119,7 +119,7 @@ const SharedStatus = () => {
     getSharedLinkInfo(autoId).then(({ data: fileInfo, error }) => {
       if (fileInfo) {
         if (loopTimes <= MAX_LOOP_TIMES) {
-          let timer = setTimeout(() => {
+          const timer = setTimeout(() => {
             setLoopTimes(loopTimes + 1);
             timer && clearTimeout(timer);
           }, 2000);
@@ -175,7 +175,7 @@ const SharedStatus = () => {
   };
 
   useEffect(() => {
-    i18n.changeLanguage(getSupportLanguage() as any);
+    i18n.changeLanguage(getSupportLanguage());
   }, []);
 
   return (
@@ -210,14 +210,16 @@ const SharedStatus = () => {
               style={{ marginTop: "auto" }}
             >
               <img src={ShareIcon} style={{ width: "94px" }} alt="shareIcon" />
-              <Text
-                style={{
-                  color: token.colorTextTertiary,
-                  fontSize: token.fontSizeSM,
-                }}
-              >
-                {t("whMzAm8sGpQfOTqadiXu")} {size}
-              </Text>
+              {storage ? (
+                <Text
+                  style={{
+                    color: token.colorTextTertiary,
+                    fontSize: token.fontSizeSM,
+                  }}
+                >
+                  {t("whMzAm8sGpQfOTqadiXu")} {size}
+                </Text>
+              ) : null}
             </Space>
           )}
           <Text

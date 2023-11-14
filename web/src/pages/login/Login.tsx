@@ -93,6 +93,7 @@ const Login = () => {
 
       if (error !== null) {
         message.error(error?.message || "error");
+        form.resetFields(['captchaToken']);
         return;
       }
 
