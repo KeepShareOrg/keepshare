@@ -21,6 +21,7 @@ type WorkerAccount struct {
 	PremiumExpiration time.Time `gorm:"column:premium_expiration;not null;default:2000-01-01 00:00:00" json:"premium_expiration"`
 	CreatedAt         time.Time `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt         time.Time `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
+	InvalidUntil      time.Time `gorm:"column:invalid_until;not null;default:2000-01-01 00:00:00" json:"invalid_until"`
 }
 
 // TableName WorkerAccount's table name

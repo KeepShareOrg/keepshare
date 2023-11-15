@@ -6,6 +6,7 @@ package account
 
 import (
 	"context"
+	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"math/rand"
 	"strings"
 	"time"
@@ -123,7 +124,7 @@ func (m *Manager) checkWorkerBuffer() {
 			Email:             user.Email,
 			Password:          user.Password,
 			UsedSize:          0,
-			LimitSize:         0,
+			LimitSize:         6 * util.GB,
 			PremiumExpiration: time.Time{},
 			CreatedAt:         now,
 			UpdatedAt:         now,

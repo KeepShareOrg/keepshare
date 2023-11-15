@@ -180,6 +180,7 @@ func (m *Manager) getWorkerWithEnoughCapacity(ctx context.Context, master string
 	t := &m.q.WorkerAccount
 	where := []gen.Condition{
 		t.MasterUserID.Eq(master),
+		t.InvalidUntil.Lte(time.Now()),
 		t.LimitSize.GtCol(t.UsedSize.Add(size)),
 	}
 	if w := status.where(m.q); w != nil {
@@ -259,6 +260,18 @@ func (m *Manager) createWorker(ctx context.Context, master string, status Status
 	}
 
 	return t.WithContext(ctx).Where(t.MasterUserID.Eq(master), t.UpdatedAt.Eq(now)).Take()
+}
+
+// UpdateAccountInvalidUtil update worker invalid until
+func (m *Manager) UpdateAccountInvalidUtil(ctx context.Context, worker *model.WorkerAccount, until time.Time) error {
+	if _, err := m.q.WorkerAccount.WithContext(ctx).
+		Where(m.q.WorkerAccount.UserID.Eq(worker.UserID)).
+		Updates(&model.WorkerAccount{
+			InvalidUntil: until,
+		}); err != nil {
+		return fmt.Errorf("update worker err: %w", err)
+	}
+	return nil
 }
 
 type (

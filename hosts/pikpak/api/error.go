@@ -15,26 +15,32 @@ func IsSpaceNotEnoughErr(err error) bool {
 	return strings.Contains(err.Error(), "file_space_not_enough")
 }
 
-var accountLimitedErrors = []string{
-	"task_daily_create_limit",
-	"task_run_nums_limit",
+// IsTaskRunNumsLimitErr returns whether the error is caused by task run nums limit.
+func IsTaskRunNumsLimitErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "task_run_nums_limit")
 }
 
-// IsAccountLimited returns whether the error is caused by space not enough.
+// IsTaskDailyCreateLimitErr returns whether the error is caused by task daily create limit.
+func IsTaskDailyCreateLimitErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "task_daily_create_limit")
+}
+
+// IsAccountLimited returns whether the error is caused by space not enough or rate limit...
 func IsAccountLimited(err error) bool {
 	if err == nil {
 		return false
 	}
 
-	if IsSpaceNotEnoughErr(err) {
+	if IsSpaceNotEnoughErr(err) || IsTaskDailyCreateLimitErr(err) || IsTaskRunNumsLimitErr(err) {
 		return true
-	}
-
-	msg := err.Error()
-	for _, v := range accountLimitedErrors {
-		if strings.Contains(msg, v) {
-			return true
-		}
 	}
 
 	return false

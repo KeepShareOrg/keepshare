@@ -141,6 +141,11 @@ func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount
 	}
 	file, err := p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)
 	if api.IsAccountLimited(err) {
+		if api.IsTaskDailyCreateLimitErr(err) || api.IsTaskRunNumsLimitErr(err) {
+			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, time.Now().Add(24*time.Hour)); err != nil {
+				log.WithField("worker", worker).Errorf("update account invalid util err: %v", err)
+			}
+		}
 		if worker.LimitSize <= 0 || worker.LimitSize-worker.UsedSize > 5*util.GB {
 			goto tryWithPremiumAccount
 		} else {

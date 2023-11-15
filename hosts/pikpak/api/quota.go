@@ -43,10 +43,12 @@ func (api *API) GetStorageSize(ctx context.Context, worker string) (used, limit 
 	log.WithField("worker", worker).Debugf("get storage resp body: %s", body.Body())
 
 	if err = e.Error(); err != nil {
+		log.WithField("worker", worker).Errorf("get storage err: %s", err)
 		return 0, 0, fmt.Errorf("get storage err: %w", err)
 	}
 
 	if r.Quota.Limit == "" {
+		log.WithField("worker", worker).Errorf("get storage got unexpected body: %s", err)
 		return 0, 0, fmt.Errorf("get storage got unexpected body: %s", body.Body())
 	}
 
