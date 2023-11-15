@@ -134,7 +134,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 }
 
 func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount, link string) (*model.File, error) {
-	// firstly, try with a existed free worker and free size more than 1GB
+	// firstly, try with an existed free worker and free size more than 1GB
 	worker, err := p.m.GetWorkerWithEnoughCapacity(ctx, master.UserID, util.GB, account.NotPremium)
 	if err != nil {
 		return nil, err
