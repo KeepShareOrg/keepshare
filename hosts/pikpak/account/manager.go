@@ -132,8 +132,8 @@ func (m *Manager) createMaster(ctx context.Context, keepShareUserID string) (*mo
 
 // GetWorkerWithEnoughCapacity get or create a worker account with sufficient capacity
 // and with the smallest remaining capacity.
-func (m *Manager) GetWorkerWithEnoughCapacity(ctx context.Context, master string, size int64, status Status) (*model.WorkerAccount, error) {
-	a, err := m.getWorkerWithEnoughCapacity(ctx, master, size, status)
+func (m *Manager) GetWorkerWithEnoughCapacity(ctx context.Context, master string, size int64, status Status, excludeWorkers []string) (*model.WorkerAccount, error) {
+	a, err := m.getWorkerWithEnoughCapacity(ctx, master, size, status, excludeWorkers)
 	if err != nil && !gormutil.IsNotFoundError(err) {
 		return nil, fmt.Errorf("get worker err: %w", err)
 	}
@@ -176,12 +176,15 @@ func (f Status) where(q *query.Query) gen.Condition {
 }
 
 // getWorkerWithEnoughCapacity returns the worker with enough and max free size
-func (m *Manager) getWorkerWithEnoughCapacity(ctx context.Context, master string, size int64, status Status) (*model.WorkerAccount, error) {
+func (m *Manager) getWorkerWithEnoughCapacity(ctx context.Context, master string, size int64, status Status, excludeWorkers []string) (*model.WorkerAccount, error) {
 	t := &m.q.WorkerAccount
 	where := []gen.Condition{
 		t.MasterUserID.Eq(master),
 		t.InvalidUntil.Lte(time.Now()),
 		t.LimitSize.GtCol(t.UsedSize.Add(size)),
+	}
+	if len(excludeWorkers) > 0 {
+		where = append(where, t.UserID.NotIn(excludeWorkers...))
 	}
 	if w := status.where(m.q); w != nil {
 		where = append(where, w)

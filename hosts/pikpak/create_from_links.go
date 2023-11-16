@@ -134,8 +134,10 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 }
 
 func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount, link string) (*model.File, error) {
+	var excludeWorkers []string
+
 	// firstly, try with an existed free worker and free size more than 1GB
-	worker, err := p.m.GetWorkerWithEnoughCapacity(ctx, master.UserID, util.GB, account.NotPremium)
+	worker, err := p.m.GetWorkerWithEnoughCapacity(ctx, master.UserID, util.GB, account.NotPremium, excludeWorkers)
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +148,8 @@ func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount
 				log.WithField("worker", worker).Errorf("update account invalid util err: %v", err)
 			}
 		}
+
+		excludeWorkers = append(excludeWorkers, worker.UserID)
 		if worker.LimitSize <= 0 || worker.LimitSize-worker.UsedSize > 5*util.GB {
 			goto tryWithPremiumAccount
 		} else {
@@ -164,6 +168,13 @@ tryWithNewFreeAccount:
 	}
 	file, err = p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)
 	if api.IsAccountLimited(err) {
+		if api.IsTaskDailyCreateLimitErr(err) || api.IsTaskRunNumsLimitErr(err) {
+			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, time.Now().Add(24*time.Hour)); err != nil {
+				log.WithField("worker", worker).Errorf("update account invalid util err: %v", err)
+			}
+		}
+
+		excludeWorkers = append(excludeWorkers, worker.UserID)
 		goto tryWithPremiumAccount
 	}
 	if err != nil {
@@ -172,25 +183,21 @@ tryWithNewFreeAccount:
 	return file, nil
 
 tryWithPremiumAccount:
-	worker, err = p.m.GetWorkerWithEnoughCapacity(ctx, master.UserID, 6*util.GB, account.IsPremium)
+	worker, err = p.m.GetWorkerWithEnoughCapacity(ctx, master.UserID, 6*util.GB, account.IsPremium, excludeWorkers)
 	if err != nil {
 		return nil, err
 	}
 	file, err = p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)
 	if api.IsAccountLimited(err) {
-		goto tryWithNewPremiumAccount
-	}
-	if err != nil {
-		return nil, err
-	}
-	return file, nil
+		if api.IsTaskDailyCreateLimitErr(err) || api.IsTaskRunNumsLimitErr(err) {
+			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, time.Now().Add(24*time.Hour)); err != nil {
+				log.WithField("worker", worker).Errorf("update account invalid util err: %v", err)
+			}
+		}
 
-tryWithNewPremiumAccount:
-	worker, err = p.m.CreateWorker(ctx, master.UserID, account.IsPremium)
-	if err != nil {
-		return nil, err
+		excludeWorkers = append(excludeWorkers, worker.UserID)
+		goto tryWithPremiumAccount
 	}
-	file, err = p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)
 	if err != nil {
 		return nil, err
 	}
