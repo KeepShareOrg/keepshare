@@ -4,7 +4,10 @@
 
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+	"time"
+)
 
 func init() {
 	cmd := &cobra.Command{
@@ -12,6 +15,7 @@ func init() {
 		Short: "Restart server",
 		Run: func(_ *cobra.Command, _ []string) {
 			stop()
+			time.Sleep(time.Millisecond * 500)
 			start(true)
 		},
 	}

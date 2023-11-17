@@ -114,7 +114,7 @@ func querySharedLinkInfo(c *gin.Context) {
 	}
 
 	if res.State == share.StatusOK.String() {
-		res.HostSharedLink = fmt.Sprintf("%v?act=play", res.HostSharedLink)
+		res.HostSharedLink = fmt.Sprintf("%v?act=enter_subdir", res.HostSharedLink)
 	}
 
 	c.JSON(http.StatusOK, res)

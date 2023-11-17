@@ -84,7 +84,7 @@ func autoSharingLink(c *gin.Context) {
 	switch share.State(sh.State) {
 	case share.StatusOK:
 		l.Debug("got shared_link")
-		c.Redirect(http.StatusFound, fmt.Sprintf("%v?act=play", sh.HostSharedLink))
+		c.Redirect(http.StatusFound, fmt.Sprintf("%v?act=enter_subdir", sh.HostSharedLink))
 
 	default: // include StatusSensitive
 		l.Debug("share status:", sh.State)
