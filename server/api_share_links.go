@@ -8,6 +8,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -109,6 +111,10 @@ func querySharedLinkInfo(c *gin.Context) {
 	if err != nil {
 		mdw.RespInternal(c, err.Error())
 		return
+	}
+
+	if res.State == share.StatusOK.String() {
+		res.HostSharedLink = fmt.Sprintf("%v?act=play", res.HostSharedLink)
 	}
 
 	c.JSON(http.StatusOK, res)
