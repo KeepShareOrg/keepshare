@@ -47,6 +47,7 @@ func asyncTaskCheckBackground() {
 		err := config.MySQL().WithContext(gormutil.IgnoreTraceContext(ctx)).
 			Where(w).
 			Order(updatedAt).
+			Order(fmt.Sprintf("%v DESC", state)).
 			Limit(checkBatchSize).
 			Find(&unCompleteTasks).
 			Error
