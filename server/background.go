@@ -20,15 +20,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var checkBatchSize = 100
+var checkBatchSize = 2000
 
 // asyncTaskCheckBackground checks uncompleted shared links task in background
 func asyncTaskCheckBackground() {
-	for f := 0; ; f++ {
-		if f != 0 {
-			time.Sleep(1 * time.Second)
-		}
-
+	for {
 		s := query.SharedLink
 		state := s.State.ColumnName().String()
 		createdAt := s.CreatedAt.ColumnName().String()

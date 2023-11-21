@@ -27,7 +27,7 @@ const (
 	RunningFilesMaxAge = 48 * time.Hour
 
 	// RunningFilesSelectLimit is the maximum number of running files selected from mysql each time.
-	RunningFilesSelectLimit = 100
+	RunningFilesSelectLimit = 1000
 
 	// MaxPremiumWorkers is the maximum number of premium workers bound to a master.
 	MaxPremiumWorkers = 10
