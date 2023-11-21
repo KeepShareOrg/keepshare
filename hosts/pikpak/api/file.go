@@ -259,8 +259,8 @@ func (api *API) getRunningFiles() map[string][]*model.File {
 	createdAt := t.CreatedAt.ColumnName().String()
 	updatedAt := t.UpdatedAt.ColumnName().String()
 
-	w := fmt.Sprintf("`%s`='%s' AND `%s`>'%s' AND TIMESTAMPDIFF(SECOND, `%s`, NOW())*60 > TIMESTAMPDIFF(SECOND, `%s`, `%s`)",
-		status, comm.StatusRunning,
+	w := fmt.Sprintf("`%s` in ('%s', '%s') AND `%s`>'%s' AND TIMESTAMPDIFF(SECOND, `%s`, NOW())*60 > TIMESTAMPDIFF(SECOND, `%s`, `%s`)",
+		status, comm.StatusRunning, comm.StatusPending,
 		createdAt, time.Now().Add(-1*comm.RunningFilesMaxAge).Format(time.DateTime),
 		updatedAt, createdAt, updatedAt,
 	)

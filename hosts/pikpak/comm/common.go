@@ -11,6 +11,7 @@ const (
 	StatusOK      = "PHASE_TYPE_COMPLETE"
 	StatusError   = "PHASE_TYPE_ERROR"
 	StatusRunning = "PHASE_TYPE_RUNNING"
+	StatusPending = "PHASE_TYPE_PENDING"
 )
 
 // IsFinalStatus returns whether this status is a final state which can not be updated anymore.
