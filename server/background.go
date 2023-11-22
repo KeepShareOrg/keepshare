@@ -59,7 +59,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 			host := hosts.Get(unCompleteTask.Host)
 			if host == nil {
 				log.Errorf("host not found: %s", unCompleteTask.Host)
-				return
+				continue
 			}
 
 			sharedLinks, err := host.CreateFromLinks(
@@ -70,14 +70,14 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 			)
 			if err != nil {
 				log.Errorf("create share link error: %v", err.Error())
-				return
+				continue
 			}
 
 			sh := sharedLinks[unCompleteTask.OriginalLink]
 
 			if sh == nil {
 				log.Errorf("link not found: %s", unCompleteTask.OriginalLink)
-				return
+				continue
 			}
 
 			if sh.State == share.StatusOK || sh.State == share.StatusCreated {
@@ -107,7 +107,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 					Updates(s); err != nil {
 					log.Errorf("update share link state error: %v", err.Error())
 				}
-				return
+				continue
 			}
 
 			// if task processing duration grate than 48 hour, it's failed
@@ -117,7 +117,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 					Update(query.SharedLink.State, share.StatusError); err != nil {
 					log.Errorf("update share link error: %v", err.Error())
 				}
-				return
+				continue
 			}
 
 			if _, err = query.SharedLink.
@@ -131,7 +131,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 
 func (a *AsyncBackgroundTask) Run() {
 	if a.concurrency <= 0 {
-		a.concurrency = 2
+		a.concurrency = 100
 	}
 
 	go a.GetTaskFromDB()
