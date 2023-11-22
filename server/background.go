@@ -7,6 +7,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	"github.com/spf13/viper"
 	"sync"
 	"time"
@@ -148,7 +149,7 @@ func (a *AsyncBackgroundTask) Run() {
 }
 
 func NewAsyncBackgroundTask(concurrency int) *AsyncBackgroundTask {
-	chSize := viper.GetInt("background_task_concurrency")
+	chSize := viper.GetInt("background_task_channel_size")
 	if chSize <= 0 {
 		chSize = 2000
 	}
@@ -163,7 +164,11 @@ var abt *AsyncBackgroundTask
 
 func GetAsyncBackgroundTaskInstance() *AsyncBackgroundTask {
 	if abt == nil {
-		abt = NewAsyncBackgroundTask(200)
+		concurrency := viper.GetInt("background_task_concurrency")
+		if concurrency <= 0 {
+			concurrency = 100
+		}
+		abt = NewAsyncBackgroundTask(concurrency)
 	}
 	return abt
 }
@@ -192,8 +197,7 @@ func getUnCompletedSharedLinks(limitSize int, token GetUnCompletedToken) ([]*mod
 		createdAt, time.Now().Add(-1*comm.RunningFilesMaxAge).Format(time.DateTime),
 		updatedAt, createdAt, updatedAt,
 	)
-	//err := config.MySQL().WithContext(gormutil.IgnoreTraceContext(ctx)).
-	err := config.MySQL().WithContext(ctx).
+	err := config.MySQL().WithContext(gormutil.IgnoreTraceContext(ctx)).
 		Where(w).
 		Order(fmt.Sprintf("%v DESC", state)).
 		Order(updatedAt).
