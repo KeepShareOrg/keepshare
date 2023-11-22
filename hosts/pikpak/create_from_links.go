@@ -54,6 +54,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		default:
 			// TODO delete timeout files
 			linksPending[l] = f
+			p.api.TriggerRunningFile(f)
 		}
 	}
 

@@ -190,62 +190,74 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 	return nil
 }
 
-func (api *API) checkFilesBackground() {
-	const interval = 1 * time.Second
-
-	update := func(api *API, worker string, files []*model.File) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		if err := api.UpdateFilesStatus(ctx, worker, files, true); err != nil {
-			log.WithField("worker", worker).WithError(err).Error("update files status err")
-			return
-		}
-
-		// if all the files are completed, update immediately,
-		// otherwise control the update frequency by redis.
-		hasCompleted := false
-		hasRunning := false
-		for _, f := range files {
-			if !comm.IsFinalStatus(f.Status) {
-				hasRunning = true
-			} else if f.Status == comm.StatusOK {
-				hasCompleted = true
+func (api *API) handelTriggerChan() {
+	for {
+		// externalTriggerChan has higher priority than internalTriggerChan.
+		select {
+		case wfs := <-api.externalTriggerChan:
+			api.updateRunningFiles(wfs.worker, wfs.files)
+		default:
+			select {
+			case wfs := <-api.internalTriggerChan:
+				api.updateRunningFiles(wfs.worker, wfs.files)
+			default:
+				time.Sleep(time.Second)
 			}
 		}
+	}
+}
 
-		if !hasCompleted {
-			// nothing changed, no need to update
-			return
+func (api *API) triggerFilesFromDB() {
+	for {
+		workerFiles := api.getRunningFiles()
+		for worker, files := range workerFiles {
+			api.internalTriggerChan <- runningFiles{worker, files}
 		}
-
-		if hasRunning {
-			key := fmt.Sprintf("pikpak:updateStorage:%s", worker)
-			ok, err := api.Redis.SetNX(ctx, key, "", time.Minute).Result()
-			if err == nil && !ok {
-				// Updated within 1 minute, no need to update at this time
-				return
-			}
+		if len(workerFiles) == 0 {
+			time.Sleep(2 * time.Second)
 		}
+	}
+}
 
-		ctx, cancel2 := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel2()
-		if err := api.UpdateWorkerStorage(ctx, worker); err != nil {
-			log.WithField("worker", worker).WithError(err).Error("update storage err")
+func (api *API) updateRunningFiles(worker string, files []*model.File) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := api.UpdateFilesStatus(ctx, worker, files, true); err != nil {
+		log.WithField("worker", worker).WithError(err).Error("update files status err")
+		return
+	}
+
+	// if all the files are completed, update immediately,
+	// otherwise control the update frequency by redis.
+	hasCompleted := false
+	hasRunning := false
+	for _, f := range files {
+		if !comm.IsFinalStatus(f.Status) {
+			hasRunning = true
+		} else if f.Status == comm.StatusOK {
+			hasCompleted = true
 		}
 	}
 
-	for {
-		time.Sleep(interval)
+	if !hasCompleted {
+		// nothing changed, no need to update
+		return
+	}
 
-		workerToFiles := api.getRunningFiles()
-		for worker, files := range workerToFiles {
-			update(api, worker, files)
+	if hasRunning {
+		key := fmt.Sprintf("pikpak:updateStorage:%s", worker)
+		ok, err := api.Redis.SetNX(ctx, key, "", time.Minute).Result()
+		if err == nil && !ok {
+			// Updated within 1 minute, no need to update at this time
+			return
 		}
+	}
 
-		if len(workerToFiles) == 0 {
-			time.Sleep(5 * interval)
-		}
+	ctx, cancel2 := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel2()
+	if err := api.UpdateWorkerStorage(ctx, worker); err != nil {
+		log.WithField("worker", worker).WithError(err).Error("update storage err")
 	}
 }
 
@@ -352,4 +364,25 @@ func (api *API) DeleteFilesByIDs(ctx context.Context, worker string, fileIDs []s
 	}
 
 	return nil
+}
+
+// TriggerRunningFile try to update the status of the running or pending files.
+func (api *API) TriggerRunningFile(file *model.File) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	set, err := api.Redis.SetNX(ctx, "trigger_running:"+file.TaskID, "", 30*time.Second).Result()
+	if err != nil {
+		log.WithError(err).Error("trigger running check err")
+		return
+	}
+	if !set {
+		log.Debug("trigger running ignore task:", file.TaskID)
+		return
+	}
+
+	select {
+	case api.externalTriggerChan <- runningFiles{file.WorkerUserID, []*model.File{file}}:
+	default:
+		log.Debug("externalTriggerChan maybe full")
+	}
 }
