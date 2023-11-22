@@ -97,7 +97,7 @@ func Start() error {
 		Handler: router,
 	}
 
-	go asyncTaskCheckBackground()
+	GetAsyncBackgroundTaskInstance().Run()
 	return serveGraceful(srv)
 }
 

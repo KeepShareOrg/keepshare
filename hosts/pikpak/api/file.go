@@ -208,12 +208,21 @@ func (api *API) handelTriggerChan() {
 }
 
 func (api *API) triggerFilesFromDB() {
+	getRunningFilesToken := &GetRunningFilesToken{
+		UpdatedTime: time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
+		OrderID:     0,
+	}
 	for {
-		workerFiles := api.getRunningFiles()
-		for worker, files := range workerFiles {
-			api.internalTriggerChan <- runningFiles{worker, files}
+		workerFiles, token := api.getRunningFiles(*getRunningFilesToken)
+		if token != nil {
+			getRunningFilesToken = token
 		}
-		if len(workerFiles) == 0 {
+
+		if len(workerFiles) > 0 {
+			for worker, files := range workerFiles {
+				api.internalTriggerChan <- runningFiles{worker, files}
+			}
+		} else {
 			time.Sleep(2 * time.Second)
 		}
 	}
@@ -261,8 +270,13 @@ func (api *API) updateRunningFiles(worker string, files []*model.File) {
 	}
 }
 
+type GetRunningFilesToken struct {
+	UpdatedTime time.Time
+	OrderID     int64
+}
+
 // getRunningFiles returns a map of worker -> files.
-func (api *API) getRunningFiles() map[string][]*model.File {
+func (api *API) getRunningFiles(token GetRunningFilesToken) (map[string][]*model.File, *GetRunningFilesToken) {
 	t := &api.q.File
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -270,9 +284,11 @@ func (api *API) getRunningFiles() map[string][]*model.File {
 	status := t.Status.ColumnName().String()
 	createdAt := t.CreatedAt.ColumnName().String()
 	updatedAt := t.UpdatedAt.ColumnName().String()
+	autoID := t.AutoID.ColumnName().String()
 
-	w := fmt.Sprintf("`%s` in ('%s', '%s') AND `%s`>'%s' AND TIMESTAMPDIFF(SECOND, `%s`, NOW())*60 > TIMESTAMPDIFF(SECOND, `%s`, `%s`)",
+	w := fmt.Sprintf("`%s` in ('%s', '%s') AND (`%s`, `%s`) > ('%s', '%v') AND `%s`>'%s' AND TIMESTAMPDIFF(SECOND, `%s`, NOW())*60 > TIMESTAMPDIFF(SECOND, `%s`, `%s`)",
 		status, comm.StatusRunning, comm.StatusPending,
+		updatedAt, autoID, token.UpdatedTime.String(), token.OrderID,
 		createdAt, time.Now().Add(-1*comm.RunningFilesMaxAge).Format(time.DateTime),
 		updatedAt, createdAt, updatedAt,
 	)
@@ -281,16 +297,17 @@ func (api *API) getRunningFiles() map[string][]*model.File {
 	err := api.Mysql.WithContext(gormutil.IgnoreTraceContext(ctx)).
 		Where(w).
 		Order(updatedAt).
+		Order(t.AutoID).
 		Limit(comm.RunningFilesSelectLimit).
 		Find(&files).
 		Error
 	if err != nil && !gormutil.IsNotFoundError(err) {
 		log.Error("get running files err:", err)
-		return nil
+		return nil, nil
 	}
 
 	if len(files) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	log.Debugf("condition: %s, running files count: %d", w, len(files))
@@ -299,7 +316,15 @@ func (api *API) getRunningFiles() map[string][]*model.File {
 	for _, f := range files {
 		m[f.WorkerUserID] = append(m[f.WorkerUserID], f)
 	}
-	return m
+
+	var nextToken *GetRunningFilesToken = nil
+	if len(files) > comm.RunningFilesSelectLimit {
+		nextToken = &GetRunningFilesToken{
+			UpdatedTime: files[len(files)-1].UpdatedAt,
+			OrderID:     files[len(files)-1].AutoID,
+		}
+	}
+	return m, nextToken
 }
 
 // GetFileByOriginalLinkHash get file by original link.
