@@ -55,84 +55,82 @@ func (a *AsyncBackgroundTask) GetTaskFromDB() {
 
 func (a *AsyncBackgroundTask) taskConsumer() {
 	for {
-		select {
-		case unCompleteTask := <-a.unCompletedChan:
-			host := hosts.Get(unCompleteTask.Host)
-			if host == nil {
-				log.Errorf("host not found: %s", unCompleteTask.Host)
-				continue
+		unCompleteTask := <-a.unCompletedChan
+		host := hosts.Get(unCompleteTask.Host)
+		if host == nil {
+			log.Errorf("host not found: %s", unCompleteTask.Host)
+			continue
+		}
+
+		sharedLinks, err := host.CreateFromLinks(
+			context.Background(),
+			unCompleteTask.UserID,
+			[]string{unCompleteTask.OriginalLink},
+			unCompleteTask.CreatedBy,
+		)
+		if err != nil {
+			log.Errorf("create share link error: %v", err.Error())
+			continue
+		}
+
+		sh := sharedLinks[unCompleteTask.OriginalLink]
+
+		if sh == nil {
+			log.Errorf("link not found: %s", unCompleteTask.OriginalLink)
+			continue
+		}
+
+		// if task processing duration grate than 48 hour, it's failed
+		if sh.State == share.StatusCreated && time.Now().Sub(sh.CreatedAt).Hours() > 48 {
+			if _, err := query.SharedLink.
+				Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
+				Update(query.SharedLink.State, share.StatusError); err != nil {
+				log.Errorf("update share link error: %v", err.Error())
 			}
+			continue
+		}
 
-			sharedLinks, err := host.CreateFromLinks(
-				context.Background(),
-				unCompleteTask.UserID,
-				[]string{unCompleteTask.OriginalLink},
-				unCompleteTask.CreatedBy,
-			)
-			if err != nil {
-				log.Errorf("create share link error: %v", err.Error())
-				continue
-			}
-
-			sh := sharedLinks[unCompleteTask.OriginalLink]
-
-			if sh == nil {
-				log.Errorf("link not found: %s", unCompleteTask.OriginalLink)
-				continue
-			}
-
-			if sh.State == share.StatusOK || sh.State == share.StatusCreated {
-				now := time.Now()
-				link := unCompleteTask.OriginalLink
-				s := &model.SharedLink{
-					AutoID:             unCompleteTask.AutoID,
-					UserID:             unCompleteTask.UserID,
-					State:              sh.State.String(),
-					Host:               unCompleteTask.Host,
-					CreatedBy:          sh.CreatedBy,
-					CreatedAt:          unCompleteTask.CreatedAt,
-					UpdatedAt:          now,
-					Size:               sh.Size,
-					Visitor:            sh.Visitor,
-					Stored:             sh.Stored,
-					Revenue:            sh.Revenue,
-					Title:              sh.Title,
-					OriginalLinkHash:   lk.Hash(link),
-					HostSharedLinkHash: lk.Hash(sh.HostSharedLink),
-					OriginalLink:       link,
-					HostSharedLink:     sh.HostSharedLink,
-				}
-
-				if _, err = query.SharedLink.
-					Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
-					Updates(s); err != nil {
-					log.Errorf("update share link state error: %v", err.Error())
-				}
-				continue
-			}
-
-			// if task processing duration grate than 48 hour, it's failed
-			if sh.State == share.StatusCreated && time.Now().Sub(sh.CreatedAt).Hours() > 48 {
-				if _, err := query.SharedLink.
-					Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
-					Update(query.SharedLink.State, share.StatusError); err != nil {
-					log.Errorf("update share link error: %v", err.Error())
-				}
-				continue
+		if sh.State == share.StatusOK || sh.State == share.StatusCreated {
+			now := time.Now()
+			link := unCompleteTask.OriginalLink
+			s := &model.SharedLink{
+				AutoID:             unCompleteTask.AutoID,
+				UserID:             unCompleteTask.UserID,
+				State:              sh.State.String(),
+				Host:               unCompleteTask.Host,
+				CreatedBy:          sh.CreatedBy,
+				CreatedAt:          unCompleteTask.CreatedAt,
+				UpdatedAt:          now,
+				Size:               sh.Size,
+				Visitor:            sh.Visitor,
+				Stored:             sh.Stored,
+				Revenue:            sh.Revenue,
+				Title:              sh.Title,
+				OriginalLinkHash:   lk.Hash(link),
+				HostSharedLinkHash: lk.Hash(sh.HostSharedLink),
+				OriginalLink:       link,
+				HostSharedLink:     sh.HostSharedLink,
 			}
 
 			if _, err = query.SharedLink.
 				Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
-				Update(query.SharedLink.UpdatedAt, time.Now()); err != nil {
-				log.Errorf("update share link updated_at error: %v", err.Error())
+				Updates(s); err != nil {
+				log.Errorf("update share link state error: %v", err.Error())
 			}
+			continue
+		}
+
+		if _, err = query.SharedLink.
+			Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
+			Update(query.SharedLink.UpdatedAt, time.Now()); err != nil {
+			log.Errorf("update share link updated_at error: %v", err.Error())
 		}
 	}
 }
 
 func (a *AsyncBackgroundTask) Run() {
 	if a.concurrency <= 0 {
-		a.concurrency = 100
+		a.concurrency = 16
 	}
 
 	go a.GetTaskFromDB()
@@ -151,7 +149,7 @@ func (a *AsyncBackgroundTask) Run() {
 func NewAsyncBackgroundTask(concurrency int) *AsyncBackgroundTask {
 	chSize := viper.GetInt("background_task_channel_size")
 	if chSize <= 0 {
-		chSize = 2000
+		chSize = 16 * 1024
 	}
 
 	return &AsyncBackgroundTask{
@@ -166,7 +164,7 @@ func GetAsyncBackgroundTaskInstance() *AsyncBackgroundTask {
 	if abt == nil {
 		concurrency := viper.GetInt("background_task_concurrency")
 		if concurrency <= 0 {
-			concurrency = 100
+			concurrency = 16
 		}
 		abt = NewAsyncBackgroundTask(concurrency)
 	}

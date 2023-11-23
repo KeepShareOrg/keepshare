@@ -294,7 +294,8 @@ func (api *API) getRunningFiles(token GetRunningFilesToken) (map[string][]*model
 	)
 
 	var files []*model.File
-	err := api.Mysql.WithContext(gormutil.IgnoreTraceContext(ctx)).
+	//err := api.Mysql.WithContext(gormutil.IgnoreTraceContext(ctx)).
+	err := api.Mysql.WithContext(ctx).
 		Where(w).
 		Order(updatedAt).
 		Order(t.AutoID).
