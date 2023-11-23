@@ -57,9 +57,9 @@ func LogWriter(output string) io.Writer {
 	default:
 		return &lumberjack.Logger{
 			Filename:   output,
-			MaxSize:    200 * 1024 * 1024, // 200MB
-			MaxAge:     31,                // 31 days
-			MaxBackups: 0,
+			MaxSize:    1024, // 1G
+			MaxAge:     31,   // 31 days
+			MaxBackups: 10,
 			LocalTime:  true,
 			Compress:   false,
 		}
