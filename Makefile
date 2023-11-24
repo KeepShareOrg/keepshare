@@ -41,7 +41,7 @@ build-fe:
 .PHONY: build
 build:
 	go mod tidy
-	CGO_ENABLED=0 go build -ldflags="${BUILD_FLAGS}" -o ${APP_NAME} .
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="${BUILD_FLAGS}" -o ${APP_NAME} .
 
 .PHONY: build-release
 build-release:

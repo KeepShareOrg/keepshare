@@ -7,6 +7,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -220,7 +221,11 @@ func (api *API) triggerFilesFromDB() {
 
 		if len(workerFiles) > 0 {
 			for worker, files := range workerFiles {
-				api.internalTriggerChan <- runningFiles{worker, files}
+				splitLength := 200
+				for i := 0; i < len(files); i += splitLength {
+					end := int(math.Min(float64(i+splitLength), float64(len(files))))
+					api.internalTriggerChan <- runningFiles{worker: worker, files: files[i:end]}
+				}
 			}
 		} else {
 			time.Sleep(2 * time.Second)
@@ -319,7 +324,7 @@ func (api *API) getRunningFiles(token GetRunningFilesToken) (map[string][]*model
 	}
 
 	var nextToken *GetRunningFilesToken = nil
-	if len(files) > comm.RunningFilesSelectLimit {
+	if len(files) > 0 {
 		nextToken = &GetRunningFilesToken{
 			UpdatedTime: files[len(files)-1].UpdatedAt,
 			OrderID:     files[len(files)-1].AutoID,

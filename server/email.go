@@ -43,7 +43,8 @@ func GetEmailClient() (*EmailClient, error) {
 			password: password,
 		}
 	}
-	return emailClient, nil
+	newClient := *emailClient
+	return &newClient, nil
 }
 
 type EmailClient struct {
