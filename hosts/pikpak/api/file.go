@@ -243,9 +243,16 @@ func (api *API) updateRunningFiles(worker string, files []*model.File) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := api.UpdateFilesStatus(ctx, worker, files, true); err != nil {
-		log.WithField("worker", worker).WithError(err).Error("update files status err")
-		return
+	// update files status in batch, 100 per batch.
+	batchSize := 100
+	if len(files) > batchSize {
+		for i := 0; i < len(files); i += batchSize {
+			end := int(math.Min(float64(i+batchSize), float64(len(files))))
+			if err := api.UpdateFilesStatus(ctx, worker, files[i:end]); err != nil {
+				log.WithField("worker", worker).WithError(err).Error("update files status err")
+				return
+			}
+		}
 	}
 
 	// if all the files are completed, update immediately,
