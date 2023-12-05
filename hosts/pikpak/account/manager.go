@@ -190,6 +190,24 @@ func (m *Manager) getWorkerWithEnoughCapacity(ctx context.Context, master string
 		where = append(where, w)
 	}
 
+	f := &m.q.File
+	// query the worker account that running task less 100
+	if freeWorkers, err := f.WithContext(ctx).
+		Select(f.WorkerUserID, f.WorkerUserID.Count().As("count")).
+		Where(f.Status.In(comm.StatusRunning), f.MasterUserID.Eq(master)).
+		Group(f.WorkerUserID).
+		Having(f.WorkerUserID.Count().Lt(100)).
+		Find(); err == nil || !gormutil.IsNotFoundError(err) {
+		if len(freeWorkers) > 0 {
+			workerIds := make([]string, len(freeWorkers))
+			for i, w := range freeWorkers {
+				workerIds[i] = w.WorkerUserID
+			}
+			log.Debugf("eligible workers ids: %v", workerIds)
+			where = append(where, t.UserID.In(workerIds...))
+		}
+	}
+
 	return t.WithContext(ctx).Where(where...).Order(t.UsedSize.SubCol(t.LimitSize)).Limit(1).Take()
 }
 
