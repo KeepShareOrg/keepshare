@@ -218,7 +218,13 @@ func (api *API) triggerFilesFromDB() {
 		if token != nil {
 			getRunningFilesToken = token
 		}
-
+		log.Debugf("current internal trigger chan length: %v, from db length: %v", len(api.internalTriggerChan), len(workerFiles))
+		if len(api.internalTriggerChan) < 10 && len(workerFiles) < 10 {
+			getRunningFilesToken = &GetRunningFilesToken{
+				UpdatedTime: time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
+				OrderID:     0,
+			}
+		}
 		if len(workerFiles) > 0 {
 			for worker, files := range workerFiles {
 				splitLength := 200
@@ -249,7 +255,8 @@ func (api *API) updateRunningFiles(worker string, files []*model.File) {
 	for _, f := range files {
 		if !comm.IsFinalStatus(f.Status) {
 			hasRunning = true
-		} else if f.Status == comm.StatusOK {
+		}
+		if f.Status == comm.StatusOK {
 			hasCompleted = true
 		}
 	}

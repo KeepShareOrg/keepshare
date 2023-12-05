@@ -36,11 +36,15 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		hashToLink[h] = v
 	}
 
-	files, err := p.q.File.WithContext(ctx).Where(p.q.File.OriginalLinkHash.In(hashes...), p.q.File.MasterUserID.Eq(master.UserID)).Find()
+	files, err := p.q.File.WithContext(ctx).Where(
+		p.q.File.OriginalLinkHash.In(hashes...),
+		p.q.File.MasterUserID.Eq(master.UserID),
+	).Find()
 	if err != nil && !gormutil.IsNotFoundError(err) {
 		return nil, fmt.Errorf("query files err: %w", err)
 	}
 
+	// completed include ok and failed state.
 	linksCompleted := map[string]*model.File{}
 	linksPending := map[string]*model.File{}
 	for _, f := range files {
@@ -51,6 +55,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		case comm.StatusError:
 			// delete error files
 			p.q.File.WithContext(ctx).Delete(f)
+			linksCompleted[l] = f
 		default:
 			// TODO delete timeout files
 			linksPending[l] = f
@@ -144,8 +149,15 @@ func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount
 	}
 	file, err := p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)
 	if api.IsAccountLimited(err) {
-		if api.IsTaskDailyCreateLimitErr(err) || api.IsTaskRunNumsLimitErr(err) {
-			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, time.Now().Add(24*time.Hour)); err != nil {
+		invalidUtil := time.Now()
+		if api.IsTaskDailyCreateLimitErr(err) {
+			invalidUtil = time.Now().Add(24 * time.Hour)
+		}
+		if api.IsTaskRunNumsLimitErr(err) {
+			invalidUtil = time.Now().Add(time.Hour)
+		}
+		if invalidUtil.Sub(time.Now()) > 0 {
+			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, invalidUtil); err != nil {
 				log.WithField("worker", worker).Errorf("update account invalid util err: %v", err)
 			}
 		}
@@ -169,8 +181,15 @@ tryWithNewFreeAccount:
 	}
 	file, err = p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)
 	if api.IsAccountLimited(err) {
-		if api.IsTaskDailyCreateLimitErr(err) || api.IsTaskRunNumsLimitErr(err) {
-			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, time.Now().Add(24*time.Hour)); err != nil {
+		invalidUtil := time.Now()
+		if api.IsTaskDailyCreateLimitErr(err) {
+			invalidUtil = time.Now().Add(24 * time.Hour)
+		}
+		if api.IsTaskRunNumsLimitErr(err) {
+			invalidUtil = time.Now().Add(time.Hour)
+		}
+		if invalidUtil.Sub(time.Now()) > 0 {
+			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, invalidUtil); err != nil {
 				log.WithField("worker", worker).Errorf("update account invalid util err: %v", err)
 			}
 		}
@@ -190,8 +209,15 @@ tryWithPremiumAccount:
 	}
 	file, err = p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)
 	if api.IsAccountLimited(err) {
-		if api.IsTaskDailyCreateLimitErr(err) || api.IsTaskRunNumsLimitErr(err) {
-			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, time.Now().Add(24*time.Hour)); err != nil {
+		invalidUtil := time.Now()
+		if api.IsTaskDailyCreateLimitErr(err) {
+			invalidUtil = time.Now().Add(24 * time.Hour)
+		}
+		if api.IsTaskRunNumsLimitErr(err) {
+			invalidUtil = time.Now().Add(time.Hour)
+		}
+		if invalidUtil.Sub(time.Now()) > 0 {
+			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, invalidUtil); err != nil {
 				log.WithField("worker", worker).Errorf("update account invalid util err: %v", err)
 			}
 		}

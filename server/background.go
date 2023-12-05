@@ -44,6 +44,12 @@ func (a *AsyncBackgroundTask) GetTaskFromDB() {
 			log.Debugf("get uncompleted tasks err: %v", err)
 		}
 		log.Infof("current uncomplete chan length: %v, from db length: %v", len(a.unCompletedChan), len(unCompleteTasks))
+		if len(a.unCompletedChan) < 10 && len(unCompleteTasks) < 10 {
+			getUncompletedToken = &GetUnCompletedToken{
+				UpdatedTime: time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
+				OrderID:     0,
+			}
+		}
 		if len(unCompleteTasks) == 0 {
 			time.Sleep(time.Second * 2)
 		}
@@ -57,7 +63,6 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 	for {
 		select {
 		case unCompleteTask := <-a.unCompletedChan:
-			//log.Infof("current uncomplete chan length: %v", len(a.unCompletedChan))
 			host := hosts.Get(unCompleteTask.Host)
 			if host == nil {
 				log.Errorf("host not found: %s", unCompleteTask.Host)
