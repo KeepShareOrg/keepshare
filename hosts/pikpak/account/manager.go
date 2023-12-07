@@ -9,9 +9,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/config"
+	"gorm.io/gorm"
 	"net/http"
 	"net/url"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/KeepShareOrg/keepshare/hosts"
@@ -141,7 +144,13 @@ func (m *Manager) GetWorkerWithEnoughCapacity(ctx context.Context, master string
 	if a == nil {
 		a, err = m.CreateWorker(ctx, master, status)
 		if err != nil {
-			return nil, err
+			log.Debugf("create worker err: %v", err)
+			// if create worker failed, try to use premium worker
+			a, err := m.getWorkerWithEnoughCapacity(ctx, master, size, IsPremium, excludeWorkers)
+			if err != nil {
+				return nil, err
+			}
+			return a, nil
 		}
 	}
 
@@ -178,37 +187,27 @@ func (f Status) where(q *query.Query) gen.Condition {
 // getWorkerWithEnoughCapacity returns the worker with enough and max free size
 func (m *Manager) getWorkerWithEnoughCapacity(ctx context.Context, master string, size int64, status Status, excludeWorkers []string) (*model.WorkerAccount, error) {
 	t := &m.q.WorkerAccount
-	where := []gen.Condition{
-		t.MasterUserID.Eq(master),
-		t.InvalidUntil.Lte(time.Now()),
-		t.LimitSize.GtCol(t.UsedSize.Add(size)),
-	}
-	if len(excludeWorkers) > 0 {
-		where = append(where, t.UserID.NotIn(excludeWorkers...))
-	}
-	if w := status.where(m.q); w != nil {
-		where = append(where, w)
-	}
-
 	f := &m.q.File
 	// query the worker account that running task less 100
-	if freeWorkers, err := f.WithContext(ctx).
-		Select(f.WorkerUserID, f.WorkerUserID.Count().As("count")).
-		Where(f.Status.In(comm.StatusRunning), f.MasterUserID.Eq(master)).
-		Group(f.WorkerUserID).
-		Having(f.WorkerUserID.Count().Lt(100)).
-		Find(); err == nil || !gormutil.IsNotFoundError(err) {
-		if len(freeWorkers) > 0 {
-			workerIds := make([]string, len(freeWorkers))
-			for i, w := range freeWorkers {
-				workerIds[i] = w.WorkerUserID
-			}
-			log.Debugf("eligible workers ids: %v", workerIds)
-			where = append(where, t.UserID.In(workerIds...))
-		}
+	if len(excludeWorkers) == 0 {
+		excludeWorkers = []string{""}
+	}
+	ews := make([]string, len(excludeWorkers))
+	for i, v := range excludeWorkers {
+		ews[i] = fmt.Sprintf("'%s'", v)
+	}
+	ids := strings.Join(ews, ",")
+	var res []*model.WorkerAccount
+	w := fmt.Sprintf(`select * from %s pwa inner join(select distinct pwa.user_id from %s as pf left join %s as pwa on pf.worker_user_id = pwa.user_id where pwa.master_user_id = '%s' and pf.status = '%s' and pwa.user_id not in (%s) group by pwa.user_id having count(*) < 100) as sub_pwa on pwa.user_id = sub_pwa.user_id and pwa.invalid_until <= now() and pwa.limit_size > pwa.used_size + %v limit 1`,
+		t.TableName(), f.TableName(), t.TableName(), master, comm.StatusRunning, ids, size)
+	if err := config.MySQL().Raw(w).Scan(&res).Error; err != nil {
+		return nil, err
+	}
+	if len(res) == 0 {
+		return nil, gorm.ErrRecordNotFound
 	}
 
-	return t.WithContext(ctx).Where(where...).Order(t.UsedSize.SubCol(t.LimitSize)).Limit(1).Take()
+	return res[0], nil
 }
 
 type inviteSubAccountRequest struct {

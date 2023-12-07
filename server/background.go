@@ -7,13 +7,13 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/config"
+	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	"github.com/spf13/viper"
 	"sync"
 	"time"
 
-	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/hosts"
-	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"github.com/KeepShareOrg/keepshare/server/model"
@@ -50,11 +50,13 @@ func (a *AsyncBackgroundTask) GetTaskFromDB() {
 				OrderID:     0,
 			}
 		}
-		if len(unCompleteTasks) == 0 {
-			time.Sleep(time.Second * 2)
-		}
-		for _, task := range unCompleteTasks {
-			a.PushAsyncTask(task)
+		// this file in `pikpak_file` status is `PHASE_TYPE_COMPLETE`
+		if len(unCompleteTasks) > 0 {
+			for _, task := range unCompleteTasks {
+				a.PushAsyncTask(task)
+			}
+		} else {
+			time.Sleep(2 * time.Second)
 		}
 	}
 }
@@ -69,6 +71,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 				continue
 			}
 
+			log.Debugf("handle uncomplete task: %#v", unCompleteTask)
 			sharedLinks, err := host.CreateFromLinks(
 				context.Background(),
 				unCompleteTask.UserID,
@@ -77,13 +80,34 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 			)
 			if err != nil {
 				log.Errorf("create share link error: %v", err.Error())
+				update := model.SharedLink{
+					UpdatedAt: time.Now(),
+					State:     share.StatusError.String(),
+				}
+				if gormutil.IsNotFoundError(err) {
+					update.CreatedAt = time.Now()
+					update.State = share.StatusPending.String()
+				}
+				if _, err = query.SharedLink.
+					Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
+					Updates(update); err != nil {
+					log.Errorf("update share link updated_at error: %v", err.Error())
+				}
 				continue
 			}
 
 			sh := sharedLinks[unCompleteTask.OriginalLink]
-
 			if sh == nil {
 				log.Errorf("link not found: %s", unCompleteTask.OriginalLink)
+				if _, err = query.SharedLink.
+					Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
+					Updates(model.SharedLink{
+						CreatedAt: time.Now(),
+						UpdatedAt: time.Now(),
+						State:     share.StatusPending.String(),
+					}); err != nil {
+					log.Errorf("update share link updated_at error: %v", err.Error())
+				}
 				continue
 			}
 
@@ -91,7 +115,10 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 			if sh.State == share.StatusCreated && time.Now().Sub(sh.CreatedAt).Hours() > 48 {
 				if _, err := query.SharedLink.
 					Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
-					Update(query.SharedLink.State, share.StatusError); err != nil {
+					Updates(model.SharedLink{
+						UpdatedAt: time.Now(),
+						State:     share.StatusError.String(),
+					}); err != nil {
 					log.Errorf("update share link error: %v", err.Error())
 				}
 				continue
@@ -140,7 +167,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 
 func (a *AsyncBackgroundTask) Run() {
 	if a.concurrency <= 0 {
-		a.concurrency = 16
+		a.concurrency = 500
 	}
 
 	go a.GetTaskFromDB()
@@ -199,10 +226,9 @@ func getUnCompletedSharedLinks(limitSize int, token GetUnCompletedToken) ([]*mod
 
 	unCompleteTasks := make([]*model.SharedLink, 0)
 
-	w := fmt.Sprintf("`%s` in ('%s', '%s') AND (`%s`, `%s`) > ('%s', '%v') AND `%s`>'%s' AND TIMESTAMPDIFF(SECOND, `%s`, NOW())*60 > TIMESTAMPDIFF(SECOND, `%s`, `%s`)",
+	w := fmt.Sprintf("`%s` in ('%s', '%s') AND (`%s`, `%s`) > ('%s', '%v') AND TIMESTAMPDIFF(SECOND, `%s`, NOW())*300 > TIMESTAMPDIFF(SECOND, `%s`, `%s`)",
 		state, string(share.StatusPending), string(share.StatusCreated),
 		updatedAt, autoID, token.UpdatedTime.String(), token.OrderID,
-		createdAt, time.Now().Add(-1*comm.RunningFilesMaxAge).Format(time.DateTime),
 		updatedAt, createdAt, updatedAt,
 	)
 	//err := config.MySQL().WithContext(gormutil.IgnoreTraceContext(ctx)).

@@ -7,13 +7,13 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	"math"
 	"strings"
 	"time"
 
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
-	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/samber/lo"
@@ -188,7 +188,31 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 		t.Select(t.FileID, t.Status, t.IsDir, t.Size, t.Name, t.UpdatedAt).Where(t.TaskID.Eq(task.ID)).Updates(file)
 	}
 
+	// if query task is null, remvoe form pikpak_file table.
+	if len(files) > len(r.Tasks) {
+		shouldRemoveTaskIds := make([]string, 0)
+		for _, f := range files[len(r.Tasks):] {
+			if isTaskNotFound(r.Tasks, f.TaskID) {
+				shouldRemoveTaskIds = append(shouldRemoveTaskIds, f.TaskID)
+				continue
+			}
+		}
+		log.Debugf("shoule delete pikpak_file tasks: %v", shouldRemoveTaskIds)
+		if len(shouldRemoveTaskIds) > 0 {
+			t.Where(t.TaskID.In(shouldRemoveTaskIds...)).Delete()
+		}
+	}
+
 	return nil
+}
+
+func isTaskNotFound(tasks []*fileTask, id string) bool {
+	for _, t := range tasks {
+		if t.ID == id {
+			return false
+		}
+	}
+	return true
 }
 
 func (api *API) handelTriggerChan() {
@@ -227,11 +251,7 @@ func (api *API) triggerFilesFromDB() {
 		}
 		if len(workerFiles) > 0 {
 			for worker, files := range workerFiles {
-				splitLength := 200
-				for i := 0; i < len(files); i += splitLength {
-					end := int(math.Min(float64(i+splitLength), float64(len(files))))
-					api.internalTriggerChan <- runningFiles{worker: worker, files: files[i:end]}
-				}
+				api.internalTriggerChan <- runningFiles{worker: worker, files: files}
 			}
 		} else {
 			time.Sleep(2 * time.Second)
@@ -252,6 +272,11 @@ func (api *API) updateRunningFiles(worker string, files []*model.File) {
 				log.WithField("worker", worker).WithError(err).Error("update files status err")
 				return
 			}
+		}
+	} else {
+		if err := api.UpdateFilesStatus(ctx, worker, files); err != nil {
+			log.WithField("worker", worker).WithError(err).Error("update files status err")
+			return
 		}
 	}
 
@@ -329,8 +354,6 @@ func (api *API) getRunningFiles(token GetRunningFilesToken) (map[string][]*model
 	if len(files) == 0 {
 		return nil, nil
 	}
-
-	log.Debugf("condition: %s, running files count: %d", w, len(files))
 
 	m := map[string][]*model.File{}
 	for _, f := range files {

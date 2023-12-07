@@ -76,6 +76,8 @@ func StatusFromFileStatus(s string) State {
 		return StatusSensitive
 	case comm.StatusRunning:
 		return StatusCreated
+	case comm.StatusPending:
+		return StatusCreated
 	default:
 		return StatusSensitive
 	}

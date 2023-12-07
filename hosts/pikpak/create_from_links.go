@@ -76,30 +76,6 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 
 		linksPending[link] = file
 	}
-
-	//const intervalSeconds = 1
-	//loop check if the task is done within N seconds.
-	//for i := 0; i < comm.CreateFileSyncWaitSeconds/intervalSeconds && len(linksPending) > 0; i++ {
-	//	time.Sleep(intervalSeconds * time.Second)
-	//	workerFiles := map[string][]*model.File{}
-	//	for _, file := range linksPending {
-	//		workerFiles[file.WorkerUserID] = append(workerFiles[file.WorkerUserID], file)
-	//	}
-	//	for worker, files := range workerFiles {
-	//		err := p.api.UpdateFilesStatus(ctx, worker, files)
-	//		if err != nil {
-	//			continue
-	//		}
-	//		for _, file := range files {
-	//			if comm.IsFinalStatus(file.Status) {
-	//				link := hashToLink[file.OriginalLinkHash]
-	//				linksCompleted[link] = file
-	//				delete(linksPending, link)
-	//			}
-	//		}
-	//	}
-	//}
-
 	sharedLinks = map[string]*share.Share{}
 
 	for _, f := range linksPending {
@@ -153,7 +129,7 @@ func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount
 		if api.IsTaskDailyCreateLimitErr(err) {
 			invalidUtil = time.Now().Add(24 * time.Hour)
 		}
-		if api.IsTaskRunNumsLimitErr(err) {
+		if api.IsTaskRunNumsLimitErr(err) || api.IsSpaceNotEnoughErr(err) {
 			invalidUtil = time.Now().Add(time.Hour)
 		}
 		if invalidUtil.Sub(time.Now()) > 0 {
@@ -185,7 +161,7 @@ tryWithNewFreeAccount:
 		if api.IsTaskDailyCreateLimitErr(err) {
 			invalidUtil = time.Now().Add(24 * time.Hour)
 		}
-		if api.IsTaskRunNumsLimitErr(err) {
+		if api.IsTaskRunNumsLimitErr(err) || api.IsSpaceNotEnoughErr(err) {
 			invalidUtil = time.Now().Add(time.Hour)
 		}
 		if invalidUtil.Sub(time.Now()) > 0 {
@@ -213,7 +189,7 @@ tryWithPremiumAccount:
 		if api.IsTaskDailyCreateLimitErr(err) {
 			invalidUtil = time.Now().Add(24 * time.Hour)
 		}
-		if api.IsTaskRunNumsLimitErr(err) {
+		if api.IsTaskRunNumsLimitErr(err) || api.IsSpaceNotEnoughErr(err) {
 			invalidUtil = time.Now().Add(time.Hour)
 		}
 		if invalidUtil.Sub(time.Now()) > 0 {

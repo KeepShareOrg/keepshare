@@ -67,7 +67,8 @@ func New(q *query.Query, d *hosts.Dependencies) *API {
 
 	consumers := viper.GetInt("pikpak_trigger_consumers")
 	if consumers <= 0 {
-		consumers = 16
+		//consumers = 16
+		consumers = 64
 	}
 	for i := 0; i < consumers; i++ {
 		go api.handelTriggerChan()
