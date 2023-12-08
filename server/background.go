@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/KeepShareOrg/keepshare/config"
+	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	"github.com/spf13/viper"
 	"sync"
@@ -61,6 +62,33 @@ func (a *AsyncBackgroundTask) GetTaskFromDB() {
 	}
 }
 
+func (a *AsyncBackgroundTask) BatchProcessCompleteTask() {
+	for {
+		var sharedLinks []*model.SharedLink
+		// this file in `pikpak_file` status is `PHASE_TYPE_COMPLETE`
+		r := fmt.Sprintf("select * from `keepshare_shared_link` where state = '%s' and original_link_hash in (select original_link_hash from `pikpak_file` where status = '%s')", share.StatusCreated.String(), comm.StatusOK)
+		if err := config.MySQL().Raw(r).Scan(&sharedLinks).Error; err != nil {
+			log.Errorf("select shared link err: %v", err)
+		}
+
+		if len(sharedLinks) > 0 {
+			log.Debugf("handle complete task length: %v", len(sharedLinks))
+			ctx := context.Background()
+			redis := config.Redis()
+			for _, task := range sharedLinks {
+				key := fmt.Sprintf("%v", task.AutoID)
+				if redis.Get(ctx, key).Val() == "" {
+					log.Debugf("handle complete task: %#v", task)
+					a.PushAsyncTask(task)
+					redis.SetEx(ctx, key, "1", time.Minute*10)
+				}
+			}
+		}
+
+		time.Sleep(30 * time.Second)
+	}
+}
+
 func (a *AsyncBackgroundTask) taskConsumer() {
 	for {
 		select {
@@ -85,8 +113,9 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 					State:     share.StatusError.String(),
 				}
 				if gormutil.IsNotFoundError(err) {
+					log.Debugf("create share link not found")
 					update.CreatedAt = time.Now()
-					update.State = share.StatusPending.String()
+					update.State = share.StatusError.String()
 				}
 				if _, err = query.SharedLink.
 					Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
@@ -166,11 +195,8 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 }
 
 func (a *AsyncBackgroundTask) Run() {
-	if a.concurrency <= 0 {
-		a.concurrency = 500
-	}
-
 	go a.GetTaskFromDB()
+	go a.BatchProcessCompleteTask()
 
 	wg := sync.WaitGroup{}
 	for i := 0; i < a.concurrency; i++ {

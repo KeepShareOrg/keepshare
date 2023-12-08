@@ -71,7 +71,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 
 		file, err := p.createFromLink(ctx, master, link)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("creat from link error: %v", err)
 		}
 
 		linksPending[link] = file
