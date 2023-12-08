@@ -6,10 +6,12 @@ package account
 
 import (
 	"context"
-	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/KeepShareOrg/keepshare/pkg/util"
 
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
@@ -23,11 +25,18 @@ func (m *Manager) initConfig() {
 	if v := viper.GetInt("pikpak.master_buffer_size"); v > 0 {
 		m.masterBufferSize = v
 	}
+	if v := viper.GetInt("pikpak.master_buffer_concurrency"); v > 0 {
+		m.masterBufferConcurrency = v
+	}
 	if v := viper.GetDuration("pikpak.master_buffer_interval"); v > 0 {
 		m.masterBufferInterval = v
 	}
+
 	if v := viper.GetInt("pikpak.worker_buffer_size"); v > 0 {
 		m.workerBufferSize = v
+	}
+	if v := viper.GetInt("pikpak.worker_buffer_concurrency"); v > 0 {
+		m.workerBufferConcurrency = v
 	}
 	if v := viper.GetDuration("pikpak.worker_buffer_interval"); v > 0 {
 		m.workerBufferInterval = v
@@ -35,7 +44,7 @@ func (m *Manager) initConfig() {
 }
 
 func (m *Manager) checkMasterBuffer() {
-	const timeout = 20 * time.Second
+	const timeout = 30 * time.Second
 
 	do := func() error {
 		t := &m.q.MasterAccount
@@ -53,29 +62,41 @@ func (m *Manager) checkMasterBuffer() {
 			return nil
 		}
 
-		// register get a new account with random email.
-		user, err := m.api.SignUp(ctx, "", timeout)
-		if err != nil {
-			log.WithError(err).Error("sign up err")
-			return err
+		var wg sync.WaitGroup
+		var we error
+		for i := 0; i < m.masterBufferConcurrency; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+
+				// register get a new account with random email.
+				user, err := m.api.SignUp(ctx, "", timeout)
+				if err != nil {
+					log.WithError(err).Error("sign up err")
+					we = err
+					return
+				}
+
+				now := time.Now()
+				a := &model.MasterAccount{
+					UserID:          user.UserID,
+					KeepshareUserID: "",
+					Email:           user.Email,
+					Password:        user.Password,
+					CreatedAt:       now,
+					UpdatedAt:       now,
+				}
+
+				if err = t.WithContext(ctx).Create(a); err != nil {
+					log.WithError(err).Error("create master account err")
+					we = err
+					return
+				}
+			}()
 		}
 
-		now := time.Now()
-		a := &model.MasterAccount{
-			UserID:          user.UserID,
-			KeepshareUserID: "",
-			Email:           user.Email,
-			Password:        user.Password,
-			CreatedAt:       now,
-			UpdatedAt:       now,
-		}
-
-		if err = t.WithContext(ctx).Create(a); err != nil {
-			log.WithError(err).Error("create master account err")
-			return err
-		}
-
-		return nil
+		wg.Wait()
+		return we
 	}
 
 	for {
@@ -110,32 +131,44 @@ func (m *Manager) checkWorkerBuffer() {
 			return nil
 		}
 
-		// register get a new account with random email.
-		user, err := m.api.SignUp(ctx, "", timeout)
-		if err != nil {
-			log.WithError(err).Error("sign up err")
-			return err
+		var wg sync.WaitGroup
+		var we error
+		for i := 0; i < m.workerBufferConcurrency; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+
+				// register get a new account with random email.
+				user, err := m.api.SignUp(ctx, "", timeout)
+				if err != nil {
+					log.WithError(err).Error("sign up err")
+					we = err
+					return
+				}
+
+				now := time.Now()
+				a := &model.WorkerAccount{
+					UserID:            user.UserID,
+					MasterUserID:      "",
+					Email:             user.Email,
+					Password:          user.Password,
+					UsedSize:          0,
+					LimitSize:         6 * util.GB,
+					PremiumExpiration: time.Time{},
+					CreatedAt:         now,
+					UpdatedAt:         now,
+				}
+
+				if err = t.WithContext(ctx).Create(a); err != nil {
+					log.WithError(err).Error("create worker account err")
+					we = err
+					return
+				}
+			}()
 		}
 
-		now := time.Now()
-		a := &model.WorkerAccount{
-			UserID:            user.UserID,
-			MasterUserID:      "",
-			Email:             user.Email,
-			Password:          user.Password,
-			UsedSize:          0,
-			LimitSize:         6 * util.GB,
-			PremiumExpiration: time.Time{},
-			CreatedAt:         now,
-			UpdatedAt:         now,
-		}
-
-		if err = t.WithContext(ctx).Create(a); err != nil {
-			log.WithError(err).Error("create worker account err")
-			return err
-		}
-
-		return nil
+		wg.Wait()
+		return we
 	}
 
 	for {

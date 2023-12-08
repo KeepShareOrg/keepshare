@@ -9,14 +9,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/KeepShareOrg/keepshare/config"
-	"gorm.io/gorm"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/hosts"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/api"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
@@ -27,6 +26,7 @@ import (
 	"github.com/hibiken/asynq"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gen"
+	"gorm.io/gorm"
 )
 
 const taskTypeInviteSubAccount = "invite_sub_account"
@@ -38,11 +38,13 @@ type Manager struct {
 	q   *query.Query
 	api *api.API
 
-	masterBufferSize     int
-	masterBufferInterval time.Duration
+	masterBufferSize        int
+	masterBufferConcurrency int
+	masterBufferInterval    time.Duration
 
-	workerBufferSize     int
-	workerBufferInterval time.Duration
+	workerBufferSize        int
+	workerBufferConcurrency int
+	workerBufferInterval    time.Duration
 }
 
 // NewManager returns a manager instance.
@@ -53,10 +55,13 @@ func NewManager(q *query.Query, api *api.API, d *hosts.Dependencies) *Manager {
 		q:   q,
 		api: api,
 
-		masterBufferSize:     2,
-		masterBufferInterval: 10 * time.Second,
-		workerBufferSize:     5,
-		workerBufferInterval: 1 * time.Second,
+		masterBufferSize:        5,
+		masterBufferConcurrency: 1,
+		masterBufferInterval:    5 * time.Second,
+
+		workerBufferSize:        10,
+		workerBufferConcurrency: 2,
+		workerBufferInterval:    1 * time.Second,
 	}
 
 	m.initConfig()
