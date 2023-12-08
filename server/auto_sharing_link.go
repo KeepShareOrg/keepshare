@@ -119,6 +119,8 @@ func createShareLinkIfNotExist(ctx *gin.Context, userID string, host *hosts.Host
 
 	if sh != nil {
 		status := getShareStatus(ctx, userID, host, sh)
+		updateVisitTimeAndState(ctx, sh, status)
+
 		switch status {
 		case share.StatusUnknown, share.StatusOK, share.StatusCreated, share.StatusPending:
 			break
@@ -240,10 +242,13 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 
 // ignore errors.
 func getShareStatus(ctx context.Context, userID string, host hosts.Host, record *model.SharedLink) share.State {
-	const statusCacheTTL = time.Minute
-
-	id := record.AutoID
 	link := record.HostSharedLink
+	if link == "" {
+		return share.State(record.State)
+	}
+
+	const statusCacheTTL = time.Minute
+	id := record.AutoID
 	key := fmt.Sprintf("status:%d", id)
 
 	cache, _ := config.Redis().Get(ctx, key).Result()
@@ -266,19 +271,32 @@ func getShareStatus(ctx context.Context, userID string, host hosts.Host, record 
 		status = share.StatusUnknown
 	}
 
-	// update state and last visit time.
-	now := time.Now()
-	_, _ = query.SharedLink.WithContext(ctx).Updates(&model.SharedLink{
-		AutoID:        id,
-		State:         status.String(),
-		LastVisitedAt: now,
-		UpdatedAt:     now,
-	})
-
 	async.Run(func() { getStatisticsLater(id) })
 
 	if status == share.StatusOK {
 		config.Redis().Set(ctx, key, status.String(), statusCacheTTL)
 	}
 	return status
+}
+
+// update state and last visit time.
+func updateVisitTimeAndState(ctx context.Context, record *model.SharedLink, status share.State) {
+	now := time.Now()
+	updates := &model.SharedLink{
+		AutoID:        record.AutoID,
+		LastVisitedAt: now,
+		UpdatedAt:     now,
+	}
+
+	var needUpdate = now.Sub(record.LastVisitedAt) > time.Minute
+	if status != "" && status != share.StatusUnknown && status != share.State(record.State) {
+		updates.State = status.String()
+		needUpdate = true
+	}
+
+	if !needUpdate {
+		return
+	}
+
+	_, _ = query.SharedLink.WithContext(ctx).Updates(updates)
 }
