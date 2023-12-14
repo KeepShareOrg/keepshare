@@ -68,12 +68,13 @@ func autoSharingLink(c *gin.Context) {
 		return
 	}
 
-	l := log.WithContext(ctx).WithFields(Map{
+	log.ContextWithFields(ctx, log.Fields{
 		constant.UserID: user.ID,
 		"link":          linkRaw,
 		"host":          hostName,
 	})
 
+	l := log.WithContext(ctx)
 	sh, err := createShareLinkIfNotExist(ctx, user.ID, host, link, share.AutoShare)
 	if err != nil {
 		mdw.RespInternal(c, err.Error())

@@ -23,6 +23,12 @@ import (
 
 // CreateFromLinks create shared links based on the input original links.
 func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, originalLinks []string, createBy string) (sharedLinks map[string]*share.Share, err error) {
+	defer func() {
+		if err != nil {
+			log.WithContext(ctx).Error("CreateFromLinks err:", err)
+		}
+	}()
+
 	master, err := p.m.GetMaster(ctx, keepShareUserID)
 	if err != nil {
 		return nil, err
@@ -117,7 +123,9 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 
 func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount, link string) (*model.File, error) {
 	var excludeWorkers []string
+	var tryPremium int
 
+	log.ContextWithFields(ctx, log.Fields{"tryFree": 1})
 	// firstly, try with an existed free worker and free size more than 1GB
 	worker, err := p.m.GetWorkerWithEnoughCapacity(ctx, master.UserID, util.GB, account.NotPremium, excludeWorkers)
 	if err != nil {
@@ -151,6 +159,7 @@ func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount
 	return file, nil
 
 tryWithNewFreeAccount:
+	log.ContextWithFields(ctx, log.Fields{"tryNewFree": 1})
 	worker, err = p.m.CreateWorker(ctx, master.UserID, account.NotPremium)
 	if err != nil {
 		return nil, err
@@ -179,6 +188,8 @@ tryWithNewFreeAccount:
 	return file, nil
 
 tryWithPremiumAccount:
+	tryPremium++
+	log.ContextWithFields(ctx, log.Fields{"tryPremium": tryPremium})
 	worker, err = p.m.GetWorkerWithEnoughCapacity(ctx, master.UserID, 6*util.GB, account.IsPremium, excludeWorkers)
 	if err != nil {
 		return nil, err
