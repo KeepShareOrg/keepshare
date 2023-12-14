@@ -15,7 +15,7 @@ import (
 )
 
 type contextData struct {
-	lock         *sync.RWMutex
+	lock         *sync.Mutex
 	requestID    string
 	requestStart time.Time
 	fields       Fields
@@ -45,7 +45,7 @@ func DataContext(ctx context.Context, opts ...DataContextOptions) context.Contex
 	}
 
 	return context.WithValue(ctx, dataContextHook{}, &contextData{
-		lock:         new(sync.RWMutex),
+		lock:         new(sync.Mutex),
 		requestID:    requestID,
 		requestStart: time.Now(),
 		fields:       fields,
@@ -64,7 +64,7 @@ func ContextWithFields(ctx context.Context, fields Fields) {
 	}
 
 	data.lock.Lock()
-	defer data.lock.RUnlock()
+	defer data.lock.Unlock()
 	for k, v := range fields {
 		data.fields[k] = v
 	}
@@ -92,8 +92,8 @@ func (hook *dataContextHook) Fire(entry *logrus.Entry) error {
 		entry.Data = make(logrus.Fields)
 	}
 
-	data.lock.RLock()
-	defer data.lock.RUnlock()
+	data.lock.Lock()
+	defer data.lock.Unlock()
 	for k, v := range data.fields {
 		if _, ok := entry.Data[k]; !ok {
 			entry.Data[k] = v // lowest priority
