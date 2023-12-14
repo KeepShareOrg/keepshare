@@ -9,11 +9,11 @@ import (
 	"fmt"
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	mdw "github.com/KeepShareOrg/keepshare/server/middleware"
 	"github.com/KeepShareOrg/keepshare/server/query"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
 	"net/http"
@@ -157,7 +157,7 @@ func resetPassword(c *gin.Context) {
 		retryCountKey := fmt.Sprintf("retry_count_%v", req.VerificationToken)
 		if count, err := config.Redis().Incr(ctx, retryCountKey).Result(); err == nil {
 			if err := config.Redis().ExpireAt(ctx, retryCountKey, time.Now().Add(verificationCodeExpire)).Err(); err != nil {
-				log.Errorf("set retry count expired err: %v", err)
+				log.WithContext(ctx).Errorf("set retry count expired err: %v", err)
 			}
 
 			if count > verificationRetryCountLimit {

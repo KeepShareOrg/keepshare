@@ -20,6 +20,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/KeepShareOrg/keepshare/server/constant"
@@ -27,8 +28,8 @@ import (
 	"github.com/KeepShareOrg/keepshare/server/model"
 	"github.com/KeepShareOrg/keepshare/server/query"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gen"
+	"gorm.io/gorm/clause"
 )
 
 var channelIDPattern = regexp.MustCompile(`[a-z0-9]{8}`)
@@ -67,13 +68,13 @@ func autoSharingLink(c *gin.Context) {
 		return
 	}
 
-	l := log.WithFields(Map{
+	l := log.WithContext(ctx).WithFields(Map{
 		constant.UserID: user.ID,
 		"link":          linkRaw,
 		"host":          hostName,
 	})
 
-	sh, err := createShareLinkIfNotExist(c, user.ID, host, link, share.AutoShare)
+	sh, err := createShareLinkIfNotExist(ctx, user.ID, host, link, share.AutoShare)
 	if err != nil {
 		mdw.RespInternal(c, err.Error())
 		return
@@ -101,7 +102,7 @@ func autoSharingLink(c *gin.Context) {
 }
 
 // createShareLinkIfNotExist if the shared link does not exist, create a new one and return it.
-func createShareLinkIfNotExist(ctx *gin.Context, userID string, host *hosts.HostWithProperties, link string, createBy string) (*model.SharedLink, error) {
+func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.HostWithProperties, link string, createBy string) (*model.SharedLink, error) {
 	linkRaw, linkHash, ok := validateLink(link)
 	if !ok || linkHash == "" {
 		return nil, errors.New("invalid link")
@@ -125,11 +126,12 @@ func createShareLinkIfNotExist(ctx *gin.Context, userID string, host *hosts.Host
 		case share.StatusUnknown, share.StatusOK, share.StatusCreated, share.StatusPending:
 			break
 
-		case share.StatusDeleted, share.StatusNotFound, share.StatusSensitive:
+		case share.StatusDeleted, share.StatusNotFound, share.StatusSensitive, share.StatusError:
 			sh = nil // re-create a shared link
 
 		case share.StatusBlocked:
 			return nil, errors.New("link_blocked")
+
 		default:
 			return nil, fmt.Errorf("unexpected share status: %s", status)
 		}
@@ -230,12 +232,15 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 		s.LastVisitedAt = now
 	}
 
-	if err = query.SharedLink.Create(s); err != nil {
+	if err = query.SharedLink.
+		WithContext(ctx).
+		Clauses(clause.OnConflict{UpdateAll: true}).
+		Create(s); err != nil {
 		err = fmt.Errorf("create shared record err: %w", err)
-		log.WithField("shared_record", s).Error(err)
+		log.WithContext(ctx).WithField("shared_record", s).Error(err)
 		return nil, err
 	}
-	log.WithField("shared_record", s).Info("create shared record done")
+	log.WithContext(ctx).WithField("shared_record", s).Info("create shared record done")
 
 	return s, nil
 }
@@ -258,7 +263,7 @@ func getShareStatus(ctx context.Context, userID string, host hosts.Host, record 
 
 	sts, err := host.GetStatuses(ctx, userID, []string{link})
 	if err != nil {
-		log.WithFields(Map{
+		log.WithContext(ctx).WithFields(Map{
 			constant.SharedLink: link,
 			constant.Error:      err,
 			constant.UserID:     userID,

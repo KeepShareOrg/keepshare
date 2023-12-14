@@ -15,9 +15,9 @@ import (
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/samber/lo"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gen"
 )
 
@@ -91,7 +91,7 @@ func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link st
 		return nil, fmt.Errorf("create file err: %w", err)
 	}
 
-	log.WithFields(map[string]any{
+	log.WithContext(ctx).WithFields(map[string]any{
 		"master": master,
 		"worker": worker,
 		"link":   link,
@@ -160,7 +160,7 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 		return fmt.Errorf("query task err: %w", err)
 	}
 
-	log.WithFields(map[string]any{
+	log.WithContext(ctx).WithFields(map[string]any{
 		"worker":  workerUserID,
 		"task_id": strings.Join(taskIDs, ","),
 	}).Debugf("query task resp body: %s", body.Body())
@@ -197,7 +197,7 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 				continue
 			}
 		}
-		log.Debugf("shoule delete pikpak_file tasks: %v", shouldRemoveTaskIds)
+		log.WithContext(ctx).Debugf("shoule delete pikpak_file tasks: %v", shouldRemoveTaskIds)
 		if len(shouldRemoveTaskIds) > 0 {
 			t.Where(t.TaskID.In(shouldRemoveTaskIds...)).Delete()
 		}
@@ -269,13 +269,13 @@ func (api *API) updateRunningFiles(worker string, files []*model.File) {
 		for i := 0; i < len(files); i += batchSize {
 			end := int(math.Min(float64(i+batchSize), float64(len(files))))
 			if err := api.UpdateFilesStatus(ctx, worker, files[i:end]); err != nil {
-				log.WithField("worker", worker).WithError(err).Error("update files status err")
+				log.WithContext(ctx).WithField("worker", worker).WithError(err).Error("update files status err")
 				return
 			}
 		}
 	} else {
 		if err := api.UpdateFilesStatus(ctx, worker, files); err != nil {
-			log.WithField("worker", worker).WithError(err).Error("update files status err")
+			log.WithContext(ctx).WithField("worker", worker).WithError(err).Error("update files status err")
 			return
 		}
 	}
@@ -310,7 +310,7 @@ func (api *API) updateRunningFiles(worker string, files []*model.File) {
 	ctx, cancel2 := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel2()
 	if err := api.UpdateWorkerStorage(ctx, worker); err != nil {
-		log.WithField("worker", worker).WithError(err).Error("update storage err")
+		log.WithContext(ctx).WithField("worker", worker).WithError(err).Error("update storage err")
 	}
 }
 
@@ -347,7 +347,7 @@ func (api *API) getRunningFiles(token GetRunningFilesToken) (map[string][]*model
 		Find(&files).
 		Error
 	if err != nil && !gormutil.IsNotFoundError(err) {
-		log.Error("get running files err:", err)
+		log.WithContext(ctx).Error("get running files err:", err)
 		return nil, nil
 	}
 
@@ -414,8 +414,8 @@ func (api *API) DeleteFilesByIDs(ctx context.Context, worker string, fileIDs []s
 		return fmt.Errorf("delete files err: %w", err)
 	}
 
-	if log.IsLevelEnabled(log.DebugLevel) {
-		log.WithFields(map[string]any{
+	if log.IsDebugEnabled() {
+		log.WithContext(ctx).WithFields(map[string]any{
 			"worker":   worker,
 			"file_ids": fileIDs,
 		}).Debugf("delete files response body: %s", body.Body())
@@ -440,17 +440,17 @@ func (api *API) TriggerRunningFile(file *model.File) {
 	defer cancel()
 	set, err := api.Redis.SetNX(ctx, "trigger_running:"+file.TaskID, "", 30*time.Second).Result()
 	if err != nil {
-		log.WithError(err).Error("trigger running check err")
+		log.WithContext(ctx).WithError(err).Error("trigger running check err")
 		return
 	}
 	if !set {
-		log.Debug("trigger running ignore task:", file.TaskID)
+		log.WithContext(ctx).Debug("trigger running ignore task:", file.TaskID)
 		return
 	}
 
 	select {
 	case api.externalTriggerChan <- runningFiles{file.WorkerUserID, []*model.File{file}}:
 	default:
-		log.Debug("externalTriggerChan maybe full")
+		log.WithContext(ctx).Debug("externalTriggerChan maybe full")
 	}
 }

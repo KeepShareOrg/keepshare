@@ -19,6 +19,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/hosts"
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	mdw "github.com/KeepShareOrg/keepshare/server/middleware"
@@ -26,7 +27,6 @@ import (
 	"github.com/KeepShareOrg/keepshare/server/query"
 	"github.com/alecthomas/participle/v2"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gen"
 	"gorm.io/gen/field"
 )
@@ -86,7 +86,7 @@ func listSharedLinks(c *gin.Context) {
 		t.WithContext(ctx).Where(t.UserID.Eq(userID), t.OriginalLinkHash.In(hashes...))
 	}
 
-	log.WithField("shared_records", ret).Debugf("condition query result")
+	log.WithContext(ctx).WithField("shared_records", ret).Debugf("condition query result")
 
 	c.JSON(http.StatusOK, Map{
 		"total":     total,

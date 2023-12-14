@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/KeepShareOrg/keepshare/config"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -27,16 +28,24 @@ func AccessLogger(pathPatterns ...*regexp.Regexp) gin.HandlerFunc {
 		return accessLogger
 	}
 
-	log := logrus.New()
-	log.SetLevel(logrus.InfoLevel)
-	log.SetFormatter(config.JSONLogFormatter)
-	log.SetOutput(config.LogWriter(config.AccessLogOutput()))
+	var logger *logrus.Logger
+	if o := config.AccessLogOutput(); o == "" || o == config.LogOutput() {
+		logger = log.Log()
+	} else {
+		logger = log.New()
+		logger.SetLevel(logrus.InfoLevel)
+		logger.SetFormatter(log.JSONLogFormatter)
+		logger.SetOutput(log.Writer(o))
+	}
 
 	server, _ := os.Hostname()
 
 	accessLogger = func(c *gin.Context) {
+		ctx := log.RequestIDContext(c.Request.Context())
+		c.Request = c.Request.WithContext(ctx)
+
 		start := time.Now()
-		path := c.Request.URL.Path
+		path := c.Request.URL.RawPath
 		query := c.Request.URL.RawQuery
 
 		// Process request
@@ -71,7 +80,7 @@ func AccessLogger(pathPatterns ...*regexp.Regexp) gin.HandlerFunc {
 			}
 		}
 
-		log.WithFields(data).Info(c.GetString(constant.Message))
+		logger.WithContext(ctx).WithFields(data).Info(c.GetString(constant.Message))
 	}
 
 	return accessLogger

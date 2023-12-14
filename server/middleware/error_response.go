@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
 // ErrResp response the localized message according to the set key
@@ -24,7 +24,7 @@ func ErrResp(c *gin.Context, key string, opts ...i18n.Option) map[string]any {
 
 	msg, err := i18n.Get(context.Background(), key, opts...)
 	if err != nil {
-		log.Errorf("get i18n message for key:%s, language:%s, err:%v", key, lang, err)
+		log.WithContext(c.Request.Context()).Errorf("get i18n message for key:%s, language:%s, err:%v", key, lang, err)
 	}
 
 	// for access log

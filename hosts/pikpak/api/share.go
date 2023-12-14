@@ -14,10 +14,10 @@ import (
 
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/KeepShareOrg/keepshare/server/constant"
-	log "github.com/sirupsen/logrus"
 )
 
 // CreateShare create a sharing link by files.
@@ -120,7 +120,7 @@ func (api *API) GetShareStatus(ctx context.Context, sharedLink string) (status s
 		status = share.StatusUnknown
 	}
 
-	log.WithFields(map[string]any{
+	log.WithContext(ctx).WithFields(map[string]any{
 		constant.SharedLink:  sharedLink,
 		constant.ShareStatus: status,
 	}).Debugf("get status `%s` from server", r.ShareStatus)
@@ -191,7 +191,7 @@ func (api *API) GetStatistics(ctx context.Context, sharedLink string) (*share.St
 		Revenue: 0, // TODO
 	}
 
-	log.WithFields(map[string]any{
+	log.WithContext(ctx).WithFields(map[string]any{
 		constant.SharedLink:  sharedLink,
 		constant.ShareStatus: r.Data[0].ShareStatus,
 		"statistics":         st,
@@ -242,8 +242,8 @@ func (api *API) DeleteShare(ctx context.Context, worker string, shareIDs []strin
 		return fmt.Errorf("delete share from server err: %w", err)
 	}
 
-	if log.IsLevelEnabled(log.DebugLevel) {
-		log.WithFields(map[string]any{
+	if log.IsDebugEnabled() {
+		log.WithContext(ctx).WithFields(map[string]any{
 			"worker":    worker,
 			"share_ids": shareIDs,
 		}).Debugf("delete share resp body: %s", body)

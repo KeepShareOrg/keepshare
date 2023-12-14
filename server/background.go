@@ -7,19 +7,20 @@ package server
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	"github.com/spf13/viper"
-	"sync"
-	"time"
 
 	"github.com/KeepShareOrg/keepshare/hosts"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"github.com/KeepShareOrg/keepshare/server/model"
 	"github.com/KeepShareOrg/keepshare/server/query"
-	log "github.com/sirupsen/logrus"
 )
 
 type AsyncBackgroundTask struct {
@@ -42,8 +43,11 @@ func (a *AsyncBackgroundTask) GetTaskFromDB() {
 			getUncompletedToken = token
 		}
 		if err != nil {
-			log.Debugf("get uncompleted tasks err: %v", err)
+			log.Errorf("get uncompleted tasks err: %v", err)
+			time.Sleep(2 * time.Second)
+			continue
 		}
+
 		log.Infof("current uncomplete chan length: %v, from db length: %v", len(a.unCompletedChan), len(unCompleteTasks))
 		if len(a.unCompletedChan) < 10 && len(unCompleteTasks) < 10 {
 			getUncompletedToken = &GetUnCompletedToken{
@@ -93,6 +97,8 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 	for {
 		select {
 		case unCompleteTask := <-a.unCompletedChan:
+			ctx := log.RequestIDContext(context.Background())
+			log := log.WithContext(ctx)
 			host := hosts.Get(unCompleteTask.Host)
 			if host == nil {
 				log.Errorf("host not found: %s", unCompleteTask.Host)
@@ -101,7 +107,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 
 			log.Debugf("handle uncomplete task: %#v", unCompleteTask)
 			sharedLinks, err := host.CreateFromLinks(
-				context.Background(),
+				ctx,
 				unCompleteTask.UserID,
 				[]string{unCompleteTask.OriginalLink},
 				unCompleteTask.CreatedBy,
@@ -118,6 +124,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 					update.State = share.StatusError.String()
 				}
 				if _, err = query.SharedLink.
+					WithContext(ctx).
 					Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
 					Updates(update); err != nil {
 					log.Errorf("update share link updated_at error: %v", err.Error())
@@ -129,6 +136,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 			if sh == nil {
 				log.Errorf("link not found: %s", unCompleteTask.OriginalLink)
 				if _, err = query.SharedLink.
+					WithContext(ctx).
 					Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
 					Updates(model.SharedLink{
 						CreatedAt: time.Now(),
@@ -143,6 +151,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 			// if task processing duration grate than 48 hour, it's failed
 			if sh.State == share.StatusCreated && time.Now().Sub(sh.CreatedAt).Hours() > 48 {
 				if _, err := query.SharedLink.
+					WithContext(ctx).
 					Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
 					Updates(model.SharedLink{
 						UpdatedAt: time.Now(),
@@ -176,6 +185,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 				}
 
 				if _, err = query.SharedLink.
+					WithContext(ctx).
 					Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
 					Updates(s); err != nil {
 					log.Errorf("update share link state error: %v", err.Error())
@@ -184,6 +194,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 			}
 
 			if _, err = query.SharedLink.
+				WithContext(ctx).
 				Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
 				Update(query.SharedLink.UpdatedAt, time.Now()); err != nil {
 				log.Errorf("update share link updated_at error: %v", err.Error())

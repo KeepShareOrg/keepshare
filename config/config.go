@@ -6,11 +6,10 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/spf13/viper"
 )
 
@@ -65,11 +64,6 @@ type properties struct {
 const envPrefix = "KS"
 
 func init() {
-	log.SetReportCaller(true)
-	log.SetLevel(log.DebugLevel)
-	log.SetOutput(os.Stdout)
-	log.SetFormatter(JSONLogFormatter)
-
 	viper.SetEnvPrefix(envPrefix)
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
@@ -85,7 +79,9 @@ func Load() error {
 		return err
 	}
 
-	initLogger()
+	log.SetLevel(LogLevel())
+	log.SetOutput(LogOutput())
+	log.SetFormatter(LogFormat(), LogPretty())
 
 	if err := initMysql(); err != nil {
 		return err

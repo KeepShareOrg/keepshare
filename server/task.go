@@ -12,12 +12,12 @@ import (
 
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/hosts"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	q "github.com/KeepShareOrg/keepshare/pkg/queue"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	"github.com/KeepShareOrg/keepshare/server/model"
 	"github.com/KeepShareOrg/keepshare/server/query"
 	"github.com/hibiken/asynq"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -41,9 +41,9 @@ func getStatisticsLater(recordID int64) {
 	if ok {
 		payload, _ := json.Marshal(getStatisticsMessage{RecordID: recordID})
 		if t, err := queue.Enqueue(statisticTask, payload, asynq.ProcessIn(statisticTaskDelay)); err != nil {
-			log.WithField(constant.Error, err).Errorf("enqueue statistics task for record %d err: %v", recordID, err)
+			log.WithContext(ctx).WithField(constant.Error, err).Errorf("enqueue statistics task for record %d err: %v", recordID, err)
 		} else {
-			log.Debugf("enqueue statistics task for record %d done, task id: %s", recordID, t.ID)
+			log.WithContext(ctx).Debugf("enqueue statistics task for record %d done, task id: %s", recordID, t.ID)
 		}
 	}
 }
@@ -73,11 +73,11 @@ func handleGetStatistics(ctx context.Context, task *asynq.Task) error {
 	}
 
 	link := rec.HostSharedLink
-	log := log.WithFields(Map{constant.SharedLink: link, constant.UserID: rec.UserID})
+	log := log.WithContext(ctx).WithFields(Map{constant.SharedLink: link, constant.UserID: rec.UserID})
 
 	stats, err := host.GetStatistics(ctx, rec.UserID, []string{link})
 	if err != nil {
-		log.WithField(constant.Error, err).Error("get statistics error")
+		log.WithContext(ctx).WithField(constant.Error, err).Error("get statistics error")
 		return err
 	}
 
@@ -99,10 +99,10 @@ func handleGetStatistics(ctx context.Context, task *asynq.Task) error {
 
 	_, err = t.WithContext(ctx).Updates(update)
 	if err != nil {
-		log.WithField(constant.Error, err).Error("update statistics error")
+		log.WithContext(ctx).WithField(constant.Error, err).Error("update statistics error")
 		return err
 	}
 
-	log.Debugf("update statistics done: %+v", stat)
+	log.WithContext(ctx).Debugf("update statistics done: %+v", stat)
 	return nil
 }
