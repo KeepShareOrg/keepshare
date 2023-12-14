@@ -183,7 +183,7 @@ const SharedStatus = () => {
       <Link href="/">
         <LogoPng src={LogoIcon} />
       </Link>
-      {status === "PENDING" ? (
+      {loopTimes <= 5 ? (
         <Loading />
       ) : (
         <ContentWrapper>
