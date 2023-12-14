@@ -66,6 +66,7 @@ const getBasicUsageInfo = async (): Promise<React.ReactNode[]> => {
   }
 };
 
+const MAX_PREMIUM_LIMIT = 20;
 const AccountPool = () => {
   const { token } = theme.useToken();
 
@@ -174,7 +175,7 @@ const AccountPool = () => {
             accounts is <Text strong>unlimited.</Text>
           </Text>
           <Text>
-            The storage used is&nbsp;
+            Used storage is&nbsp;
             <Text strong>{formatBytes(info.workers?.free.used || 0)}</Text>, and
             the storage is <Text strong>unlimited.</Text>
           </Text>
@@ -189,21 +190,22 @@ const AccountPool = () => {
         </Space>
         <Space direction="vertical">
           <Text>
-            The number of Free Accounts used is&nbsp;
-            <Text strong>{info.workers?.premium.count}</Text>, and the number of
-            accounts is <Text strong>unlimited.</Text>
+            Used Donated Premium Accounts is&nbsp;
+            <Text strong>{info.workers?.premium.count}</Text>, and limit number
+            is <Text strong>{MAX_PREMIUM_LIMIT}.</Text>
           </Text>
           <Text>
-            The storage used is&nbsp;
+            Used storage is&nbsp;
             <Text strong>{formatBytes(info.workers?.premium.used || 0)}</Text>,
-            and the storage is <Text strong>unlimited.</Text>
+            and the storage limit is{" "}
+            <Text strong>{MAX_PREMIUM_LIMIT * 10} TB.</Text>
           </Text>
           <Space style={{ marginTop: token.margin }}>
             <InfoCircleOutlined />
             <Text style={{ color: token.colorTextSecondary }}>
               To avoid account abuse, KeepShare provides each webmaster with up
-              to 10 Premium sub-accounts, which are automatically assigned when
-              needed
+              to {MAX_PREMIUM_LIMIT} Premium sub-accounts, which are
+              automatically assigned when needed
             </Text>
           </Space>
         </Space>

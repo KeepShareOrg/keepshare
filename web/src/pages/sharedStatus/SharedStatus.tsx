@@ -1,29 +1,18 @@
-import { Button, Space, Typography, message, theme } from "antd";
-import {
-  Background,
-  BannerImage,
-  BannerWrapper,
-  ContentWrapper,
-  LogoPng,
-  ResourceLink,
-  SharedInfoBox,
-} from "./style";
+import { Space, Typography, message, theme } from "antd";
+import { Background, ContentWrapper, LogoPng } from "./style";
 import LogoIcon from "@/assets/images/logo-with-text.png";
 import { useEffect, useState } from "react";
 import {
-  SharedLinkInfo,
   SharedLinkStatus,
   getLinkInfoFromWhatsLink,
   getSharedLinkInfo,
 } from "@/api/link";
 import { useSearchParams } from "react-router-dom";
-import ShareIcon from "@/assets/images/prepare-status-banner.png";
-import LoadingAPng from "@/assets/images/keepshare-loading.png";
-import LinkPng from "@/assets/images/icon-link.png";
-import { copyToClipboard, formatBytes, getSupportLanguage } from "@/util";
-import { CopyOutlined } from "@ant-design/icons";
+import { getSupportLanguage } from "@/util";
 import useStore from "@/store";
 import { Trans, useTranslation } from "react-i18next";
+import Loading from "./Loading";
+import LinkInfo, { type LinkFileInfo } from "./LinkInfo";
 
 const { Title, Text, Link } = Typography;
 
@@ -54,34 +43,12 @@ const useStatusDescribeText = (
   };
 };
 
-const Loading = () => {
-  const { t } = useTranslation();
-
-  return (
-    <Space
-      direction="vertical"
-      align="center"
-      style={{
-        position: "fixed",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-      }}
-    >
-      <img src={LoadingAPng} alt="loading" width={100} />
-      <Text>{t("tHxXtk0qRYf6Kh4qNcuHh")}</Text>
-    </Space>
-  );
-};
-
 const SharedStatus = () => {
   const { t, i18n } = useTranslation();
 
   const { token } = theme.useToken();
 
-  const [fileInfo, setFileInfo] = useState<
-    Partial<SharedLinkInfo> & { screenshot?: string }
-  >({});
+  const [fileInfo, setFileInfo] = useState<LinkFileInfo>({});
 
   const [params] = useSearchParams();
 
@@ -89,8 +56,7 @@ const SharedStatus = () => {
   // status page keep light mode
   useEffect(() => setThemeMode("light"), []);
 
-  const { original_link: link, title: filename, size: storage } = fileInfo;
-  const size = formatBytes((storage as number) || 0);
+  const { original_link: link } = fileInfo;
 
   const isMobile = useStore((state) => state.isMobile);
 
@@ -165,15 +131,6 @@ const SharedStatus = () => {
     });
   }, [loopTimes]);
 
-  const handleCopyLink = () => {
-    try {
-      link && copyToClipboard(link);
-      message.success(t("xKhHo2JwfdzWgJXiJ0GeI"));
-    } catch {
-      message.error(t("aiCd4EgbrLDu4cdLlBy"));
-    }
-  };
-
   useEffect(() => {
     i18n.changeLanguage(getSupportLanguage());
   }, []);
@@ -183,76 +140,18 @@ const SharedStatus = () => {
       <Link href="/">
         <LogoPng src={LogoIcon} />
       </Link>
-      {loopTimes <= 5 ? (
-        <Loading />
+      {loopTimes < 5 ? (
+        <Loading>
+          <ContentWrapper style={{ minHeight: "auto" }}>
+            <LinkInfo
+              fileInfo={fileInfo}
+              visibleBlocks={["banner", "filename"]}
+            />
+          </ContentWrapper>
+        </Loading>
       ) : (
         <ContentWrapper>
-          {fileInfo.screenshot ? (
-            <BannerWrapper style={{ marginInline: token.margin }}>
-              {fileInfo.screenshot && (
-                <BannerImage
-                  src={fileInfo.screenshot}
-                  alt="banner"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                  }}
-                />
-              )}
-              <SharedInfoBox>
-                {t("whMzAm8sGpQfOTqadiXu")} {size}
-              </SharedInfoBox>
-            </BannerWrapper>
-          ) : (
-            <Space
-              direction="vertical"
-              align="center"
-              style={{ marginTop: "auto" }}
-            >
-              <img src={ShareIcon} style={{ width: "94px" }} alt="shareIcon" />
-              {storage ? (
-                <Text
-                  style={{
-                    color: token.colorTextTertiary,
-                    fontSize: token.fontSizeSM,
-                  }}
-                >
-                  {t("whMzAm8sGpQfOTqadiXu")} {size}
-                </Text>
-              ) : null}
-            </Space>
-          )}
-          <Text
-            style={{
-              maxWidth: "min(600px, 100vw)",
-              marginTop: "12px",
-              textAlign: "center",
-              lineHeight: "1.4em",
-            }}
-          >
-            {filename}
-          </Text>
-          <Space
-            align="start"
-            style={{ marginTop: token.marginLG, maxWidth: "660px" }}
-          >
-            <img
-              src={LinkPng}
-              alt="link"
-              width="24"
-              style={{ marginTop: "5px" }}
-            />
-            <ResourceLink href={link}>{link}</ResourceLink>
-          </Space>
-          <Space style={{ marginTop: token.margin }}>
-            <Button
-              type="primary"
-              icon={<CopyOutlined />}
-              onClick={handleCopyLink}
-            >
-              {t("fbWqi7mJuMCxEw3SwCf_0")}
-            </Button>
-          </Space>
+          <LinkInfo fileInfo={fileInfo} />
           <Space
             align={isMobile ? "center" : "start"}
             style={{ marginTop: "56px", maxWidth: "660px" }}
