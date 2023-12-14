@@ -13,6 +13,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
+	"github.com/KeepShareOrg/keepshare/server/constant"
 	"github.com/spf13/viper"
 
 	"github.com/KeepShareOrg/keepshare/hosts"
@@ -98,7 +99,10 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 		select {
 		case unCompleteTask := <-a.unCompletedChan:
 			ctx := log.DataContext(context.Background(), log.DataContextOptions{
-				Fields: log.Fields{"src": "scan_share_record"},
+				Fields: log.Fields{
+					"src":           "scan_share_record",
+					constant.UserID: unCompleteTask.UserID,
+				},
 			})
 			log := log.WithContext(ctx)
 			host := hosts.Get(unCompleteTask.Host)

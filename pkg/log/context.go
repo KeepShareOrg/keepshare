@@ -52,8 +52,8 @@ func DataContext(ctx context.Context, opts ...DataContextOptions) context.Contex
 	})
 }
 
-// WithContextFields persist fields into context if the context contains dataContextHook.
-func WithContextFields(ctx context.Context, fields Fields) {
+// ContextWithFields persist fields into context if the context contains dataContextHook.
+func ContextWithFields(ctx context.Context, fields Fields) {
 	if len(fields) == 0 {
 		return
 	}
@@ -95,9 +95,12 @@ func (hook *dataContextHook) Fire(entry *logrus.Entry) error {
 	data.lock.RLock()
 	defer data.lock.RUnlock()
 	for k, v := range data.fields {
-		entry.Data[k] = v
+		if _, ok := entry.Data[k]; !ok {
+			entry.Data[k] = v // lowest priority
+		}
 	}
 
+	// highest priority
 	entry.Data["request_id"] = data.requestID
 	entry.Data["request_ns"] = time.Since(data.requestStart).Nanoseconds()
 

@@ -64,9 +64,20 @@ func (t *fileTask) toFile(master, worker, link string) *model.File {
 
 // CreateFilesFromLink create files from link.
 func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link string) (file *model.File, err error) {
+	log.ContextWithFields(ctx, log.Fields{
+		"master": master,
+		"worker": worker,
+		"link":   link,
+	})
+	defer func() {
+		if err != nil {
+			log.WithContext(ctx).Error("CreateFilesFromLink err:", err)
+		}
+	}()
+
 	token, err := api.getToken(ctx, worker, false)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get token err: %w", err)
 	}
 
 	var e RespErr
@@ -91,11 +102,7 @@ func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link st
 		return nil, fmt.Errorf("create file err: %w", err)
 	}
 
-	log.WithContext(ctx).WithFields(map[string]any{
-		"master": master,
-		"worker": worker,
-		"link":   link,
-	}).Debugf("create file response body: %s", body.Body())
+	log.WithContext(ctx).Debugf("create file response body: %s", body.Body())
 
 	if err = e.Error(); err != nil {
 		// TODO token expired

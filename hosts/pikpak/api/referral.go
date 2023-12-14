@@ -8,8 +8,8 @@ import (
 )
 
 // JoinReferral join https://mypikpak.com/referral/
-func (api *API) JoinReferral(ctx context.Context, userID string) error {
-	token, err := api.getToken(ctx, userID, true)
+func (api *API) JoinReferral(ctx context.Context, master string) error {
+	token, err := api.getToken(ctx, master, true)
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func (api *API) JoinReferral(ctx context.Context, userID string) error {
 		return fmt.Errorf("join referral err: %w", err)
 	}
 
-	log.WithContext(ctx).WithField("user_id", userID).Debugf("join referral response body: %s", body.Body())
+	log.WithContext(ctx).WithField("master", master).Debugf("join referral response body: %s", body.Body())
 
 	if err = e.Error(); err != nil {
 		// TODO token expired
@@ -45,8 +45,8 @@ func (api *API) JoinReferral(ctx context.Context, userID string) error {
 }
 
 // InviteSubAccount invite sub-account by email.
-func (api *API) InviteSubAccount(ctx context.Context, masterUserID string, workerEmail string) error {
-	token, err := api.getToken(ctx, masterUserID, true)
+func (api *API) InviteSubAccount(ctx context.Context, master string, workerEmail string) error {
+	token, err := api.getToken(ctx, master, true)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (api *API) InviteSubAccount(ctx context.Context, masterUserID string, worke
 		return fmt.Errorf("invite sub account err: %w", err)
 	}
 
-	log.WithContext(ctx).WithField("user_id", masterUserID).Debugf("invite sub account response body: %s", body.Body())
+	log.WithContext(ctx).WithField("master", master).Debugf("invite sub account response body: %s", body.Body())
 
 	if err = e.Error(); err != nil {
 		// TODO token expired
@@ -109,8 +109,8 @@ type GetCommissionsResponse struct {
 }
 
 // GetCommissions get commissions from server.
-func (api *API) GetCommissions(ctx context.Context, userID string) (*GetCommissionsResponse, error) {
-	token, err := api.getToken(ctx, userID, true)
+func (api *API) GetCommissions(ctx context.Context, master string) (*GetCommissionsResponse, error) {
+	token, err := api.getToken(ctx, master, true)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (api *API) GetCommissions(ctx context.Context, userID string) (*GetCommissi
 		return nil, fmt.Errorf("get commissions err: %w", err)
 	}
 
-	log.WithContext(ctx).WithField("user_id", userID).Debugf("get commissions response body: %s", body.Body())
+	log.WithContext(ctx).WithField("master", master).Debugf("get commissions response body: %s", body.Body())
 
 	if err = e.Error(); err != nil {
 		// TODO token expired
