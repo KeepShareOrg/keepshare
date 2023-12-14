@@ -7,13 +7,13 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	"math"
 	"strings"
 	"time"
 
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
+	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
@@ -260,7 +260,10 @@ func (api *API) triggerFilesFromDB() {
 }
 
 func (api *API) updateRunningFiles(worker string, files []*model.File) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx := log.DataContext(context.Background(), log.DataContextOptions{
+		Fields: log.Fields{"src": "scan_file"},
+	})
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	// update files status in batch, 100 per batch.

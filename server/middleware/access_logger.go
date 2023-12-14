@@ -41,7 +41,9 @@ func AccessLogger(pathPatterns ...*regexp.Regexp) gin.HandlerFunc {
 	server, _ := os.Hostname()
 
 	accessLogger = func(c *gin.Context) {
-		ctx := log.RequestIDContext(c.Request.Context())
+		ctx := log.DataContext(c.Request.Context(), log.DataContextOptions{
+			Fields: log.Fields{"src": "request"},
+		})
 		c.Request = c.Request.WithContext(ctx)
 
 		start := time.Now()

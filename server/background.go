@@ -97,7 +97,9 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 	for {
 		select {
 		case unCompleteTask := <-a.unCompletedChan:
-			ctx := log.RequestIDContext(context.Background())
+			ctx := log.DataContext(context.Background(), log.DataContextOptions{
+				Fields: log.Fields{"src": "scan_share_record"},
+			})
 			log := log.WithContext(ctx)
 			host := hosts.Get(unCompleteTask.Host)
 			if host == nil {

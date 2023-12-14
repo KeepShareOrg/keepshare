@@ -51,7 +51,7 @@ type (
 )
 
 func init() {
-	log.AddHook(&requestIDHook{})
+	log.AddHook(&dataContextHook{})
 	log.SetReportCaller(true)
 	log.SetOutput(os.Stdout)
 	log.SetFormatter(JSONLogFormatter)
@@ -74,7 +74,7 @@ func Log() *logrus.Logger {
 // New creates a new logger.
 func New() *logrus.Logger {
 	l := logrus.New()
-	l.AddHook(&requestIDHook{})
+	l.AddHook(&dataContextHook{})
 	return l
 }
 
