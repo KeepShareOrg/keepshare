@@ -86,7 +86,7 @@ func listSharedLinks(c *gin.Context) {
 		t.WithContext(ctx).Where(t.UserID.Eq(userID), t.OriginalLinkHash.In(hashes...))
 	}
 
-	log.WithField("shared_records", ret).Debugf("condition query result")
+	log.WithContext(ctx).WithField("shared_records", ret).Debugf("condition query result")
 
 	c.JSON(http.StatusOK, Map{
 		"total":     total,

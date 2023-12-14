@@ -157,7 +157,7 @@ func resetPassword(c *gin.Context) {
 		retryCountKey := fmt.Sprintf("retry_count_%v", req.VerificationToken)
 		if count, err := config.Redis().Incr(ctx, retryCountKey).Result(); err == nil {
 			if err := config.Redis().ExpireAt(ctx, retryCountKey, time.Now().Add(verificationCodeExpire)).Err(); err != nil {
-				log.Errorf("set retry count expired err: %v", err)
+				log.WithContext(ctx).Errorf("set retry count expired err: %v", err)
 			}
 
 			if count > verificationRetryCountLimit {

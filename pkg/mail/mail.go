@@ -74,12 +74,12 @@ func FindText(ctx context.Context, mailer Mailer, email string, textRegexp *rege
 		return "", false, fmt.Errorf("list mail err: %w", err)
 	}
 
-	log.Debugf("list headers for mail: %s, length: %d", email, len(headers))
+	log.WithContext(ctx).Debugf("list headers for mail: %s, length: %d", email, len(headers))
 
 	// The newest emails are at the end of the list.
 	for i := len(headers) - 1; i >= 0; i-- {
 		h := headers[i]
-		log.Debugf("mail header[%d]: %+v", i, h)
+		log.WithContext(ctx).Debugf("mail header[%d]: %+v", i, h)
 
 		if f.SendTime.Year() >= 2023 && h.Date.Before(f.SendTime) {
 			continue
@@ -106,14 +106,14 @@ func FindText(ctx context.Context, mailer Mailer, email string, textRegexp *rege
 			return "", false, fmt.Errorf("get mail body err: %w", err)
 		}
 
-		log.Debugf("mail text body[%d]: %s", i, body.Text)
+		log.WithContext(ctx).Debugf("mail text body[%d]: %s", i, body.Text)
 
 		if textRegexp == nil {
 			return body.Text, true, nil
 		}
 
 		text = textRegexp.FindString(body.Text)
-		log.Debugf("text regexp: `%s`, match result: `%s`", textRegexp.String(), text)
+		log.WithContext(ctx).Debugf("text regexp: `%s`, match result: `%s`", textRegexp.String(), text)
 		if text != "" {
 			// clear mail records after find code.
 			mailer.Clear(ctx, email)

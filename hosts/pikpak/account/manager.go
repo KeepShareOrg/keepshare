@@ -146,7 +146,7 @@ func (m *Manager) GetWorkerWithEnoughCapacity(ctx context.Context, master string
 	if a == nil {
 		a, err = m.CreateWorker(ctx, master, status)
 		if err != nil {
-			log.Debugf("create worker err: %v", err)
+			log.WithContext(ctx).Debugf("create worker err: %v", err)
 			// if create worker failed, try to use premium worker
 			a, err := m.getWorkerWithEnoughCapacity(ctx, master, size, IsPremium, excludeWorkers)
 			if err != nil {
@@ -157,7 +157,7 @@ func (m *Manager) GetWorkerWithEnoughCapacity(ctx context.Context, master string
 	}
 
 	if err := m.api.UpdateWorkerPremium(ctx, a); err != nil {
-		log.Errorf("update worker err: %v", err)
+		log.WithContext(ctx).Errorf("update worker err: %v", err)
 	}
 
 	return a, nil
@@ -320,7 +320,7 @@ func (m *Manager) CountWorkers(ctx context.Context, master string) (*CountWorker
 		Group("`premium`").
 		Find(&ret).Error
 	if err != nil && !gormutil.IsNotFoundError(err) {
-		log.WithError(err).Error("count workers err")
+		log.WithContext(ctx).WithError(err).Error("count workers err")
 		return nil, err
 	}
 
@@ -339,11 +339,11 @@ func (m *Manager) inviteSubAccount(ctx context.Context, task *asynq.Task) (err e
 	var req inviteSubAccountRequest
 	_ = json.Unmarshal(task.Payload(), &req)
 	if req.MasterUserID == "" || req.WorkerEmail == "" {
-		log.Debugf("task: %s, invalid msg: %s", task.Type(), task.Payload())
+		log.WithContext(ctx).Debugf("task: %s, invalid msg: %s", task.Type(), task.Payload())
 		return nil
 	}
 
-	l := log.WithFields(log.Fields{
+	l := log.WithContext(ctx).WithFields(log.Fields{
 		"master": req.MasterUserID,
 		"worker": req.WorkerUserID,
 		"email":  req.WorkerEmail,
@@ -405,9 +405,9 @@ func (m *Manager) getInviteURL(ctx context.Context, email string, sentTime time.
 		FromRegexp: inviteURLFromRegexp,
 	})
 	if err != nil {
-		log.WithField("email", email).WithError(err).Error("getInviteURL err")
+		log.WithContext(ctx).WithField("email", email).WithError(err).Error("getInviteURL err")
 	} else {
-		log.WithField("email", email).Debugf("getInviteURL found: %t, url: %s", found, url)
+		log.WithContext(ctx).WithField("email", email).Debugf("getInviteURL found: %t, url: %s", found, url)
 	}
 	return
 }

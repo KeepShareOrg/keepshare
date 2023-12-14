@@ -41,7 +41,7 @@ func sendVerificationLink(c *gin.Context) {
 	verifyString := fmt.Sprintf("%v-%v-%v-%v", user.Email, user.ID, expiresTime, salt)
 	hash := CalcSha265Hash(verifyString, salt.(string))
 	verifyLink := fmt.Sprintf("https://%v/api/verification?token=%v&email=%v&expires=%v", config.RootDomain(), hash, user.Email, expiresTime)
-	log.Debugf("verify link: %s", verifyLink)
+	log.WithContext(ctx).Debugf("verify link: %s", verifyLink)
 
 	emailClient, err := GetEmailClient()
 	if err != nil {

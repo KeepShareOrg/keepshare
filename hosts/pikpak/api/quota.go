@@ -40,15 +40,15 @@ func (api *API) GetStorageSize(ctx context.Context, worker string) (used, limit 
 		return 0, 0, fmt.Errorf("get storage err: %w", err)
 	}
 
-	log.WithField("worker", worker).Debugf("get storage resp body: %s", body.Body())
+	log.WithContext(ctx).WithField("worker", worker).Debugf("get storage resp body: %s", body.Body())
 
 	if err = e.Error(); err != nil {
-		log.WithField("worker", worker).Errorf("get storage err: %s", err)
+		log.WithContext(ctx).WithField("worker", worker).Errorf("get storage err: %s", err)
 		return 0, 0, fmt.Errorf("get storage err: %w", err)
 	}
 
 	if r.Quota.Limit == "" {
-		log.WithField("worker", worker).Errorf("get storage got unexpected body: %s", err)
+		log.WithContext(ctx).WithField("worker", worker).Errorf("get storage got unexpected body: %s", err)
 		return 0, 0, fmt.Errorf("get storage got unexpected body: %s", body.Body())
 	}
 
@@ -86,7 +86,7 @@ func (api *API) GetPremiumExpiration(ctx context.Context, worker string) (*time.
 		return nil, fmt.Errorf("get premium expiration err: %w", err)
 	}
 
-	log.WithField("worker", worker).Debugf("get premium expiration resp body: %s", body.Body())
+	log.WithContext(ctx).WithField("worker", worker).Debugf("get premium expiration resp body: %s", body.Body())
 
 	if err = e.Error(); err != nil {
 		return nil, fmt.Errorf("get premium expiration err: %w", err)
@@ -123,7 +123,7 @@ func (api *API) UpdateWorkerStorage(ctx context.Context, worker string) error {
 		UpdatedAt: time.Now(),
 	}
 	_, err = t.WithContext(ctx).Updates(w)
-	log.Debugf("worker info updated: %+v", w)
+	log.WithContext(ctx).Debugf("worker info updated: %+v", w)
 	return err
 }
 
@@ -133,7 +133,7 @@ func (api *API) UpdateWorkerPremium(ctx context.Context, worker *model.WorkerAcc
 	key := fmt.Sprintf("pikpak:updateWorkerPremium:%s", worker.UserID)
 	ok, _ := api.Redis.SetNX(ctx, key, "", 24*time.Hour).Result()
 	if !ok {
-		log.Debugf("ignore update worker")
+		log.WithContext(ctx).Debugf("ignore update worker")
 		return nil
 	}
 
@@ -150,7 +150,7 @@ func (api *API) UpdateWorkerPremium(ctx context.Context, worker *model.WorkerAcc
 
 	if worker.PremiumExpiration.Unix() == exp.Unix() && worker.UsedSize == used && worker.LimitSize == limit {
 		// nothing changed
-		log.Debugf("worker info not changed")
+		log.WithContext(ctx).Debugf("worker info not changed")
 		return nil
 	}
 
@@ -160,6 +160,6 @@ func (api *API) UpdateWorkerPremium(ctx context.Context, worker *model.WorkerAcc
 	worker.UpdatedAt = time.Now()
 
 	_, err = t.WithContext(ctx).Select(t.PremiumExpiration, t.UsedSize, t.LimitSize, t.UpdatedAt).Updates(worker)
-	log.Debugf("worker info updated: %+v", worker)
+	log.WithContext(ctx).Debugf("worker info updated: %+v", worker)
 	return err
 }

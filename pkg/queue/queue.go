@@ -72,11 +72,11 @@ func (q *Queue) Run() {
 			v, _ := q.cli.hds.Load(task.Type())
 			h, _ := v.(asynq.Handler)
 			if h == nil {
-				log.WithField("task_type", task.Type()).Error("no handler")
+				log.WithContext(ctx).WithField("task_type", task.Type()).Error("no handler")
 				return fmt.Errorf("no handler for task type: %s", task.Type())
 			}
 			if log.IsDebugEnabled() {
-				log.WithFields(map[string]any{"task_type": task.Type(), "task_payload": task.Payload()}).Debugf("receive task from queue")
+				log.WithContext(ctx).WithFields(map[string]any{"task_type": task.Type(), "task_payload": task.Payload()}).Debugf("receive task from queue")
 			}
 			return h.ProcessTask(ctx, task)
 		}

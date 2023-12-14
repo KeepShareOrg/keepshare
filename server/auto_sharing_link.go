@@ -67,7 +67,7 @@ func autoSharingLink(c *gin.Context) {
 		return
 	}
 
-	l := log.WithFields(Map{
+	l := log.WithContext(ctx).WithFields(Map{
 		constant.UserID: user.ID,
 		"link":          linkRaw,
 		"host":          hostName,
@@ -232,10 +232,10 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 
 	if err = query.SharedLink.Create(s); err != nil {
 		err = fmt.Errorf("create shared record err: %w", err)
-		log.WithField("shared_record", s).Error(err)
+		log.WithContext(ctx).WithField("shared_record", s).Error(err)
 		return nil, err
 	}
-	log.WithField("shared_record", s).Info("create shared record done")
+	log.WithContext(ctx).WithField("shared_record", s).Info("create shared record done")
 
 	return s, nil
 }
@@ -258,7 +258,7 @@ func getShareStatus(ctx context.Context, userID string, host hosts.Host, record 
 
 	sts, err := host.GetStatuses(ctx, userID, []string{link})
 	if err != nil {
-		log.WithFields(Map{
+		log.WithContext(ctx).WithFields(Map{
 			constant.SharedLink: link,
 			constant.Error:      err,
 			constant.UserID:     userID,

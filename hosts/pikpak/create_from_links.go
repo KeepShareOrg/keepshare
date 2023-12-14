@@ -92,7 +92,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 	}
 	if len(linksPending) > 0 {
 		// TODO
-		log.Debug("links not completed:", lo.Keys(linksPending))
+		log.WithContext(ctx).Debug("links not completed:", lo.Keys(linksPending))
 	}
 
 	for _, f := range linksCompleted {
@@ -134,7 +134,7 @@ func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount
 		}
 		if invalidUtil.Sub(time.Now()) > 0 {
 			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, invalidUtil); err != nil {
-				log.WithField("worker", worker).Errorf("update account invalid util err: %v", err)
+				log.WithContext(ctx).WithField("worker", worker).Errorf("update account invalid util err: %v", err)
 			}
 		}
 
@@ -166,7 +166,7 @@ tryWithNewFreeAccount:
 		}
 		if invalidUtil.Sub(time.Now()) > 0 {
 			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, invalidUtil); err != nil {
-				log.WithField("worker", worker).Errorf("update account invalid util err: %v", err)
+				log.WithContext(ctx).WithField("worker", worker).Errorf("update account invalid util err: %v", err)
 			}
 		}
 
@@ -194,7 +194,7 @@ tryWithPremiumAccount:
 		}
 		if invalidUtil.Sub(time.Now()) > 0 {
 			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, invalidUtil); err != nil {
-				log.WithField("worker", worker).Errorf("update account invalid util err: %v", err)
+				log.WithContext(ctx).WithField("worker", worker).Errorf("update account invalid util err: %v", err)
 			}
 		}
 

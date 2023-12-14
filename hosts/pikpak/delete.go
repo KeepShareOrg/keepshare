@@ -130,7 +130,7 @@ func (p *PikPak) processDeleteTask(task *model.DeleteQueue) {
 
 	file, err := p.api.GetFileByOriginalLinkHash(ctx, "", task.WorkerUserID, task.OriginalLinkHash)
 	if err != nil && !gormutil.IsNotFoundError(err) {
-		log.WithError(err).Error("get file by original link hash err")
+		log.WithContext(ctx).WithError(err).Error("get file by original link hash err")
 		p.addRetryTimesForDeleteTask(ctx, task)
 		return
 	}
@@ -153,9 +153,9 @@ func (p *PikPak) processDeleteTask(task *model.DeleteQueue) {
 
 	bs, _ := json.Marshal(map[string]string{"worker": task.WorkerUserID})
 	if info, err := p.Queue.Enqueue(taskTypeSyncWorkerInfo, bs, asynq.ProcessIn(30*time.Second)); err != nil {
-		log.Errorf("enqueue task type: %s, payload: %s, err: %v", taskTypeSyncWorkerInfo, bs, err)
+		log.WithContext(ctx).Errorf("enqueue task type: %s, payload: %s, err: %v", taskTypeSyncWorkerInfo, bs, err)
 	} else {
-		log.Debugf("enqueue task type: %s, payload: %s, response id: %s", taskTypeSyncWorkerInfo, bs, info.ID)
+		log.WithContext(ctx).Debugf("enqueue task type: %s, payload: %s, response id: %s", taskTypeSyncWorkerInfo, bs, info.ID)
 	}
 
 	return

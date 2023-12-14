@@ -53,7 +53,7 @@ func (m *Manager) checkMasterBuffer() {
 
 		count, err := t.WithContext(gormutil.IgnoreTraceContext(ctx)).Where(t.KeepshareUserID.Eq("")).Count()
 		if err != nil {
-			log.WithError(err).Error("count master buffer err")
+			log.WithContext(ctx).WithError(err).Error("count master buffer err")
 			return err
 		}
 
@@ -72,7 +72,7 @@ func (m *Manager) checkMasterBuffer() {
 				// register get a new account with random email.
 				user, err := m.api.SignUp(ctx, "", timeout)
 				if err != nil {
-					log.WithError(err).Error("sign up err")
+					log.WithContext(ctx).WithError(err).Error("sign up err")
 					we = err
 					return
 				}
@@ -88,7 +88,7 @@ func (m *Manager) checkMasterBuffer() {
 				}
 
 				if err = t.WithContext(ctx).Create(a); err != nil {
-					log.WithError(err).Error("create master account err")
+					log.WithContext(ctx).WithError(err).Error("create master account err")
 					we = err
 					return
 				}
@@ -122,7 +122,7 @@ func (m *Manager) checkWorkerBuffer() {
 			t.PremiumExpiration.Lt(time.Now()), // count free or expired workers only
 		).Count()
 		if err != nil {
-			log.WithError(err).Error("count worker buffer err")
+			log.WithContext(ctx).WithError(err).Error("count worker buffer err")
 			return err
 		}
 
@@ -141,7 +141,7 @@ func (m *Manager) checkWorkerBuffer() {
 				// register get a new account with random email.
 				user, err := m.api.SignUp(ctx, "", timeout)
 				if err != nil {
-					log.WithError(err).Error("sign up err")
+					log.WithContext(ctx).WithError(err).Error("sign up err")
 					we = err
 					return
 				}
@@ -160,7 +160,7 @@ func (m *Manager) checkWorkerBuffer() {
 				}
 
 				if err = t.WithContext(ctx).Create(a); err != nil {
-					log.WithError(err).Error("create worker account err")
+					log.WithContext(ctx).WithError(err).Error("create worker account err")
 					we = err
 					return
 				}

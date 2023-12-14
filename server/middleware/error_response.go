@@ -24,7 +24,7 @@ func ErrResp(c *gin.Context, key string, opts ...i18n.Option) map[string]any {
 
 	msg, err := i18n.Get(context.Background(), key, opts...)
 	if err != nil {
-		log.Errorf("get i18n message for key:%s, language:%s, err:%v", key, lang, err)
+		log.WithContext(c.Request.Context()).Errorf("get i18n message for key:%s, language:%s, err:%v", key, lang, err)
 	}
 
 	// for access log

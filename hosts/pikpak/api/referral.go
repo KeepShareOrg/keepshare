@@ -31,7 +31,7 @@ func (api *API) JoinReferral(ctx context.Context, userID string) error {
 		return fmt.Errorf("join referral err: %w", err)
 	}
 
-	log.WithField("user_id", userID).Debugf("join referral response body: %s", body.Body())
+	log.WithContext(ctx).WithField("user_id", userID).Debugf("join referral response body: %s", body.Body())
 
 	if err = e.Error(); err != nil {
 		// TODO token expired
@@ -66,7 +66,7 @@ func (api *API) InviteSubAccount(ctx context.Context, masterUserID string, worke
 		return fmt.Errorf("invite sub account err: %w", err)
 	}
 
-	log.WithField("user_id", masterUserID).Debugf("invite sub account response body: %s", body.Body())
+	log.WithContext(ctx).WithField("user_id", masterUserID).Debugf("invite sub account response body: %s", body.Body())
 
 	if err = e.Error(); err != nil {
 		// TODO token expired
@@ -92,7 +92,7 @@ func (api *API) VerifyInviteSubAccountToken(ctx context.Context, token string) e
 		return fmt.Errorf("verify invite sub account token err: %w", err)
 	}
 
-	log.Debugf("verify invite sub account token response body: %s", body.Body())
+	log.WithContext(ctx).Debugf("verify invite sub account token response body: %s", body.Body())
 
 	if err = e.Error(); err != nil {
 		return fmt.Errorf("verify invite sub account token err: %w", err)
@@ -129,7 +129,7 @@ func (api *API) GetCommissions(ctx context.Context, userID string) (*GetCommissi
 		return nil, fmt.Errorf("get commissions err: %w", err)
 	}
 
-	log.WithField("user_id", userID).Debugf("get commissions response body: %s", body.Body())
+	log.WithContext(ctx).WithField("user_id", userID).Debugf("get commissions response body: %s", body.Body())
 
 	if err = e.Error(); err != nil {
 		// TODO token expired

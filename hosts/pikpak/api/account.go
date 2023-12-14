@@ -33,7 +33,7 @@ func (api *API) SignUp(ctx context.Context, email string, timeout time.Duration)
 
 	start := time.Now()
 	defer func() {
-		l := log.WithFields(log.Fields{
+		l := log.WithContext(ctx).WithFields(log.Fields{
 			"email":      email,
 			"latency_ms": int(time.Since(start) / time.Millisecond),
 		})
@@ -123,7 +123,7 @@ func (api *API) signupCaptcha(ctx context.Context, email string, deviceID string
 		return "", fmt.Errorf("get captcha token err: %w", err)
 	}
 
-	log.Debugf("get captcha token resp body: %s", body.Body())
+	log.WithContext(ctx).Debugf("get captcha token resp body: %s", body.Body())
 
 	if err = r.Error(); err != nil {
 		return "", fmt.Errorf("get captcha token err: %w", err)
@@ -159,7 +159,7 @@ func (api *API) signupSendEmail(ctx context.Context, email, captcha, deviceID st
 		return "", fmt.Errorf("send signup email err: %w", err)
 	}
 
-	log.Debugf("send signup email resp body: %s", body.Body())
+	log.WithContext(ctx).Debugf("send signup email resp body: %s", body.Body())
 
 	if err = r.Error(); err != nil {
 		return "", fmt.Errorf("send signup email err: %w", err)
@@ -179,9 +179,9 @@ func (api *API) signupGetCode(ctx context.Context, email string, sentTime time.T
 		FromRegexp: signupEmailFromRegexp,
 	})
 	if err != nil {
-		log.WithField("email", email).WithError(err).Error("signupGetCode err")
+		log.WithContext(ctx).WithField("email", email).WithError(err).Error("signupGetCode err")
 	} else {
-		log.WithField("email", email).Debugf("signupGetCode found: %t, code: %s", found, code)
+		log.WithContext(ctx).WithField("email", email).Debugf("signupGetCode found: %t, code: %s", found, code)
 	}
 	return
 }
@@ -210,7 +210,7 @@ func (api *API) signupVerifyCode(ctx context.Context, code string, verificationI
 		return "", fmt.Errorf("verify signup token err: %w", err)
 	}
 
-	log.Debugf("verify signup token resp body: %s", body.Body())
+	log.WithContext(ctx).Debugf("verify signup token resp body: %s", body.Body())
 
 	if err = r.Error(); err != nil {
 		return "", fmt.Errorf("verify signup token err: %w", err)
@@ -265,7 +265,7 @@ func (api *API) signup(ctx context.Context, email, code, token, password, device
 		return nil, fmt.Errorf("signup err: %w", err)
 	}
 
-	log.Debugf("signup resp body: %s", body.Body())
+	log.WithContext(ctx).Debugf("signup resp body: %s", body.Body())
 
 	if err = r.Error(); err != nil {
 		return nil, fmt.Errorf("signup err: %w", err)

@@ -42,21 +42,21 @@ func (l *gormLogger) LogMode(level logger.LogLevel) logger.Interface {
 	return l
 }
 
-func (l *gormLogger) Info(_ context.Context, format string, v ...interface{}) {
+func (l *gormLogger) Info(ctx context.Context, format string, v ...interface{}) {
 	if l.level >= logger.Info {
-		l.log.Infof(format, v...)
+		l.log.WithContext(ctx).Infof(format, v...)
 	}
 }
 
-func (l *gormLogger) Warn(_ context.Context, format string, v ...interface{}) {
+func (l *gormLogger) Warn(ctx context.Context, format string, v ...interface{}) {
 	if l.level >= logger.Warn {
-		l.log.Warnf(format, v...)
+		l.log.WithContext(ctx).Warnf(format, v...)
 	}
 }
 
-func (l *gormLogger) Error(_ context.Context, format string, v ...interface{}) {
+func (l *gormLogger) Error(ctx context.Context, format string, v ...interface{}) {
 	if l.level >= logger.Error {
-		l.log.Errorf(format, v...)
+		l.log.WithContext(ctx).Errorf(format, v...)
 	}
 }
 
@@ -78,14 +78,14 @@ func (l *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	if err != nil && !IsNotFoundError(err) {
 		f["error"] = err.Error()
 		if l.level >= logger.Error {
-			l.log.WithFields(f).Error()
+			l.log.WithContext(ctx).WithFields(f).Error()
 		}
 		return
 	}
 
 	if elapsed > time.Millisecond*200 { // slow SQL
 		if l.level >= logger.Warn {
-			l.log.WithFields(f).Warn()
+			l.log.WithContext(ctx).WithFields(f).Warn()
 		}
 		return
 	}
@@ -94,9 +94,9 @@ func (l *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 		// print SELECT with debug level
 		// print others with info level
 		if len(sql) > 6 && strings.EqualFold(sql[:6], "SELECT") {
-			l.log.WithFields(f).Debug()
+			l.log.WithContext(ctx).WithFields(f).Debug()
 		} else {
-			l.log.WithFields(f).Info()
+			l.log.WithContext(ctx).WithFields(f).Info()
 		}
 	}
 }
