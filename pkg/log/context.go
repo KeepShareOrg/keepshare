@@ -63,7 +63,7 @@ func ContextWithFields(ctx context.Context, fields Fields) {
 		return
 	}
 
-	data.lock.Lock()
+	data.lock.RLock()
 	defer data.lock.RUnlock()
 	for k, v := range fields {
 		data.fields[k] = v
