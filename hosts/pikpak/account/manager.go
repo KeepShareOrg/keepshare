@@ -12,10 +12,8 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"strings"
 	"time"
 
-	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/hosts"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/api"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
@@ -26,7 +24,6 @@ import (
 	"github.com/hibiken/asynq"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gen"
-	"gorm.io/gorm"
 )
 
 const taskTypeInviteSubAccount = "invite_sub_account"
@@ -192,30 +189,19 @@ func (f Status) where(q *query.Query) gen.Condition {
 // getWorkerWithEnoughCapacity returns the worker with enough and max free size
 func (m *Manager) getWorkerWithEnoughCapacity(ctx context.Context, master string, size int64, status Status, excludeWorkers []string) (*model.WorkerAccount, error) {
 	t := &m.q.WorkerAccount
-	f := &m.q.File
-	// query the worker account that running task less 100
-	if len(excludeWorkers) == 0 {
-		excludeWorkers = []string{""}
+	where := []gen.Condition{
+		t.MasterUserID.Eq(master),
+		t.InvalidUntil.Lte(time.Now()),
+		t.LimitSize.GtCol(t.UsedSize.Add(size)),
 	}
-	ews := make([]string, len(excludeWorkers))
-	for i, v := range excludeWorkers {
-		ews[i] = fmt.Sprintf("'%s'", v)
+	if len(excludeWorkers) > 0 {
+		where = append(where, t.UserID.NotIn(excludeWorkers...))
 	}
-	ids := strings.Join(ews, ",")
-	var res []*model.WorkerAccount
-
-	w := fmt.Sprintf(`select * from %s pwa inner join(select pwa.* from %s as pwa left join %s as pf on pf.worker_user_id = pwa.user_id and pf.status = '%s' where pwa.master_user_id = '%s' and pwa.premium_expiration < now() and pwa.invalid_until <= now() and pwa.user_id not in (%s) group by pwa.user_id having count(*) < 100) as sub_pwa on pwa.user_id = sub_pwa.user_id and pwa.invalid_until <= now() and pwa.limit_size > pwa.used_size + %v limit 1`, t.TableName(), t.TableName(), f.TableName(), comm.StatusRunning, master, ids, size)
-	if status == IsPremium {
-		w = fmt.Sprintf(`select * from %s pwa inner join(select pwa.* from %s as pwa left join %s as pf on pf.worker_user_id = pwa.user_id and pf.status = '%s' where pwa.master_user_id = '%s' and pwa.premium_expiration >= now() and pwa.invalid_until <= now() and pwa.user_id not in (%s) group by pwa.user_id having count(*) < 100) as sub_pwa on pwa.user_id = sub_pwa.user_id and pwa.invalid_until <= now() and pwa.limit_size > pwa.used_size + %v limit 1`, t.TableName(), t.TableName(), f.TableName(), comm.StatusRunning, master, ids, size)
-	}
-	if err := config.MySQL().WithContext(ctx).Raw(w).Scan(&res).Error; err != nil {
-		return nil, err
-	}
-	if len(res) == 0 {
-		return nil, gorm.ErrRecordNotFound
+	if w := status.where(m.q); w != nil {
+		where = append(where, w)
 	}
 
-	return res[0], nil
+	return t.WithContext(ctx).Where(where...).Order(t.UsedSize.SubCol(t.LimitSize)).Limit(1).Take()
 }
 
 type inviteSubAccountRequest struct {
