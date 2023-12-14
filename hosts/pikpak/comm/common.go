@@ -31,5 +31,5 @@ const (
 	RunningFilesSelectLimit = 10000
 
 	// MaxPremiumWorkers is the maximum number of premium workers bound to a master.
-	MaxPremiumWorkers = 10
+	MaxPremiumWorkers = 20
 )
