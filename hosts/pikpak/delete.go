@@ -14,9 +14,9 @@ import (
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/hibiken/asynq"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"gorm.io/gorm/clause"
 )

@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 )
 
 // Mailer is a mail client to send and get mails.

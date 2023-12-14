@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/server"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 

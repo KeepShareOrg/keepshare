@@ -15,7 +15,7 @@ import (
 
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
-	log "github.com/sirupsen/logrus"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/spf13/viper"
 )
 

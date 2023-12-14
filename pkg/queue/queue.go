@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
-	log "github.com/sirupsen/logrus"
 )
 
 // Queue is Queue instance.
@@ -52,9 +52,9 @@ func New(opt redis.Options) *Queue {
 
 	conf := asynq.Config{
 		Concurrency: 4,
-		Logger:      log.StandardLogger(),
+		Logger:      log.Log(),
 	}
-	conf.LogLevel.Set(log.StandardLogger().Level.String())
+	conf.LogLevel.Set(log.Log().Level.String())
 	if conf.LogLevel < asynq.InfoLevel {
 		conf.LogLevel = asynq.InfoLevel // at least level info
 	}
@@ -75,7 +75,7 @@ func (q *Queue) Run() {
 				log.WithField("task_type", task.Type()).Error("no handler")
 				return fmt.Errorf("no handler for task type: %s", task.Type())
 			}
-			if log.IsLevelEnabled(log.DebugLevel) {
+			if log.IsDebugEnabled() {
 				log.WithFields(map[string]any{"task_type": task.Type(), "task_payload": task.Payload()}).Debugf("receive task from queue")
 			}
 			return h.ProcessTask(ctx, task)

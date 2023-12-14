@@ -7,8 +7,8 @@ package config
 import (
 	"fmt"
 
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/redis/go-redis/v9"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )

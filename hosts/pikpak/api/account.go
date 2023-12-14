@@ -10,9 +10,9 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/mail"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
-	log "github.com/sirupsen/logrus"
 )
 
 // UserInfo is the info of a user.

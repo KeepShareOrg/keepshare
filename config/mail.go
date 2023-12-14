@@ -7,9 +7,9 @@ package config
 import (
 	"fmt"
 
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/mail"
 	"github.com/KeepShareOrg/keepshare/pkg/mail/inbucket"
-	log "github.com/sirupsen/logrus"
 )
 
 var mailer mail.Mailer

@@ -20,6 +20,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/KeepShareOrg/keepshare/server/constant"
@@ -27,7 +28,6 @@ import (
 	"github.com/KeepShareOrg/keepshare/server/model"
 	"github.com/KeepShareOrg/keepshare/server/query"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gen"
 )
 

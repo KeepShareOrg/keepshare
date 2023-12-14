@@ -12,12 +12,12 @@ import (
 
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/hosts"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	q "github.com/KeepShareOrg/keepshare/pkg/queue"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	"github.com/KeepShareOrg/keepshare/server/model"
 	"github.com/KeepShareOrg/keepshare/server/query"
 	"github.com/hibiken/asynq"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 

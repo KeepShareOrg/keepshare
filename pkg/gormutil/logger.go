@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"gorm.io/gorm/logger"
 )
 
@@ -28,7 +28,7 @@ func GormLogger(level string) logger.Interface {
 	}
 	return &gormLogger{
 		level: l,
-		log:   log.StandardLogger(),
+		log:   log.Log(),
 	}
 }
 

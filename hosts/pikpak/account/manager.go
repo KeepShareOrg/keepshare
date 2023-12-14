@@ -20,9 +20,9 @@ import (
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/query"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/mail"
 	"github.com/hibiken/asynq"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gen"
 )
 

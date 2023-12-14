@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
 // ErrResp response the localized message according to the set key

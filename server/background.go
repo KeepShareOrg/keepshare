@@ -16,10 +16,10 @@ import (
 
 	"github.com/KeepShareOrg/keepshare/hosts"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"github.com/KeepShareOrg/keepshare/server/model"
 	"github.com/KeepShareOrg/keepshare/server/query"
-	log "github.com/sirupsen/logrus"
 )
 
 type AsyncBackgroundTask struct {

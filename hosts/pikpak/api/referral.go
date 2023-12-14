@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 )
 
 // JoinReferral join https://mypikpak.com/referral/

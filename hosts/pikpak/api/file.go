@@ -15,9 +15,9 @@ import (
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/samber/lo"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gen"
 )
 
@@ -414,7 +414,7 @@ func (api *API) DeleteFilesByIDs(ctx context.Context, worker string, fileIDs []s
 		return fmt.Errorf("delete files err: %w", err)
 	}
 
-	if log.IsLevelEnabled(log.DebugLevel) {
+	if log.IsDebugEnabled() {
 		log.WithFields(map[string]any{
 			"worker":   worker,
 			"file_ids": fileIDs,

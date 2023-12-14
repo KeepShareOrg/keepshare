@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
-	log "github.com/sirupsen/logrus"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 )
 
 // GetStorageSize returns the used and limit size of the worker.

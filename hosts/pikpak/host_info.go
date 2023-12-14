@@ -7,7 +7,7 @@ package pikpak
 import (
 	"context"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 )
 
 // HostInfo returns basic information of the host.

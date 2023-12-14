@@ -23,13 +23,13 @@ import (
 	"github.com/KeepShareOrg/keepshare/locale"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	q "github.com/KeepShareOrg/keepshare/pkg/queue"
 	mdw "github.com/KeepShareOrg/keepshare/server/middleware"
 	"github.com/KeepShareOrg/keepshare/server/query"
 	"github.com/KeepShareOrg/keepshare/static"
 	"github.com/gin-gonic/gin"
 	"github.com/hibiken/asynq"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
