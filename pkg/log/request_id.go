@@ -7,17 +7,27 @@ package log
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
+type requestIDValue struct {
+	id    string
+	start time.Time
+}
+
 // RequestIDContext set request id to context. The requestIDHook will read it.
-func RequestIDContext(ctx context.Context, id string) context.Context {
-	if id == "" {
-		id = strings.ReplaceAll(uuid.NewString(), "-", "")
+// If an empty id is passed in, a randomly one will be generated.
+func RequestIDContext(ctx context.Context, id ...string) context.Context {
+	var s string
+	if len(id) == 0 || id[0] == "" {
+		s = strings.ReplaceAll(uuid.NewString(), "-", "")
+	} else {
+		s = id[0]
 	}
-	return context.WithValue(ctx, requestIDHook{}, id)
+	return context.WithValue(ctx, requestIDHook{}, requestIDValue{s, time.Now()})
 }
 
 type requestIDHook struct{}
@@ -27,13 +37,17 @@ func (hook *requestIDHook) Fire(entry *logrus.Entry) error {
 	if entry.Context == nil {
 		return nil
 	}
+
+	v, ok := entry.Context.Value(requestIDHook{}).(requestIDValue)
+	if !ok {
+		return nil
+	}
+
 	if entry.Data == nil {
 		entry.Data = make(logrus.Fields)
 	}
-	id, ok := entry.Context.Value(requestIDHook{}).(string)
-	if ok && id != "" {
-		entry.Data["request_id"] = id
-	}
+	entry.Data["request_id"] = v.id
+	entry.Data["request_ns"] = time.Since(v.start).Nanoseconds()
 	return nil
 }
 

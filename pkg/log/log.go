@@ -71,6 +71,13 @@ func Log() *logrus.Logger {
 	return log
 }
 
+// New creates a new logger.
+func New() *logrus.Logger {
+	l := logrus.New()
+	l.AddHook(&requestIDHook{})
+	return l
+}
+
 // SetLevel sets the logger level.
 func SetLevel(l string) {
 	level, err := logrus.ParseLevel(l)

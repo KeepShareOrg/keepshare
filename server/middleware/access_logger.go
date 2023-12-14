@@ -32,7 +32,7 @@ func AccessLogger(pathPatterns ...*regexp.Regexp) gin.HandlerFunc {
 	if o := config.AccessLogOutput(); o == "" || o == config.LogOutput() {
 		logger = log.Log()
 	} else {
-		logger = logrus.New()
+		logger = log.New()
 		logger.SetLevel(logrus.InfoLevel)
 		logger.SetFormatter(log.JSONLogFormatter)
 		logger.SetOutput(log.Writer(o))
@@ -41,8 +41,11 @@ func AccessLogger(pathPatterns ...*regexp.Regexp) gin.HandlerFunc {
 	server, _ := os.Hostname()
 
 	accessLogger = func(c *gin.Context) {
+		ctx := log.RequestIDContext(c.Request.Context())
+		c.Request = c.Request.WithContext(ctx)
+
 		start := time.Now()
-		path := c.Request.URL.Path
+		path := c.Request.URL.RawPath
 		query := c.Request.URL.RawQuery
 
 		// Process request
@@ -77,7 +80,7 @@ func AccessLogger(pathPatterns ...*regexp.Regexp) gin.HandlerFunc {
 			}
 		}
 
-		logger.WithFields(data).Info(c.GetString(constant.Message))
+		logger.WithContext(ctx).WithFields(data).Info(c.GetString(constant.Message))
 	}
 
 	return accessLogger
