@@ -34,6 +34,7 @@ func CORS() gin.HandlerFunc {
 			"keep-alive",
 			"origin",
 			"user-agent",
+			"x-device-id",
 		},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,

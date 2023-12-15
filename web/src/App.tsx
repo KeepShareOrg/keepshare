@@ -7,7 +7,14 @@ import useStore from "@/store";
 import "@/locale";
 import { useEffect } from "react";
 import { CustomLightStyle, CustomDarkStyle } from "@/common/style/globalStyle";
-import { getRememberToken } from "./util";
+import { generateUUID, getRememberToken } from "./util";
+import { LocalStorageKeys } from "./constant";
+
+const setDeviceIDIfNotExist = () => {
+  if (!window.localStorage.getItem(LocalStorageKeys.DEVICE_ID)) {
+    window.localStorage.setItem(LocalStorageKeys.DEVICE_ID, generateUUID());
+  }
+};
 
 const App = () => {
   const [themeMode, setThemeMode, setKeepLogin, setIsMobile] = useStore(
@@ -35,6 +42,7 @@ const App = () => {
     resize();
     window.addEventListener("resize", resize);
 
+    setDeviceIDIfNotExist();
     return () => window.removeEventListener("resize", resize);
   }, []);
 

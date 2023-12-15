@@ -8,6 +8,7 @@ export const enum SupportLocales {
 export const enum LocalStorageKeys {
   TOKEN_INFO = "keep_share_credentials",
   REMEMBER_TOKEN = 'keep_share_remember_token',
+  DEVICE_ID = 'keep_share_device_id',
 }
 
 // shared links table column keys, consistent with the database table name
