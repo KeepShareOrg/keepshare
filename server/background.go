@@ -126,8 +126,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 				}
 				if gormutil.IsNotFoundError(err) {
 					log.Debugf("create share link not found")
-					update.CreatedAt = time.Now()
-					update.State = share.StatusError.String()
+					//update.CreatedAt = time.Now()
 				}
 				if _, err = query.SharedLink.
 					WithContext(ctx).
@@ -145,7 +144,7 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 					WithContext(ctx).
 					Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
 					Updates(model.SharedLink{
-						CreatedAt: time.Now(),
+						//CreatedAt: time.Now(),
 						UpdatedAt: time.Now(),
 						State:     share.StatusPending.String(),
 					}); err != nil {
@@ -170,30 +169,22 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 
 			if sh.State == share.StatusOK || sh.State == share.StatusCreated {
 				now := time.Now()
-				link := unCompleteTask.OriginalLink
-				s := &model.SharedLink{
-					AutoID:             unCompleteTask.AutoID,
-					UserID:             unCompleteTask.UserID,
+				update := &model.SharedLink{
 					State:              sh.State.String(),
-					Host:               unCompleteTask.Host,
-					CreatedBy:          sh.CreatedBy,
-					CreatedAt:          unCompleteTask.CreatedAt,
 					UpdatedAt:          now,
 					Size:               sh.Size,
 					Visitor:            sh.Visitor,
 					Stored:             sh.Stored,
 					Revenue:            sh.Revenue,
 					Title:              sh.Title,
-					OriginalLinkHash:   lk.Hash(link),
 					HostSharedLinkHash: lk.Hash(sh.HostSharedLink),
-					OriginalLink:       link,
 					HostSharedLink:     sh.HostSharedLink,
 				}
 
 				if _, err = query.SharedLink.
 					WithContext(ctx).
 					Where(query.SharedLink.AutoID.Eq(unCompleteTask.AutoID)).
-					Updates(s); err != nil {
+					Updates(update); err != nil {
 					log.Errorf("update share link state error: %v", err.Error())
 				}
 				continue
