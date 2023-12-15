@@ -135,6 +135,9 @@ func (m *Manager) checkWorkerBuffer() {
 		var we error
 		for i := 0; i < m.workerBufferConcurrency; i++ {
 			wg.Add(1)
+			if i > 0 {
+				time.Sleep(time.Second)
+			}
 			go func() {
 				defer wg.Done()
 
@@ -164,7 +167,6 @@ func (m *Manager) checkWorkerBuffer() {
 					we = err
 					return
 				}
-				time.Sleep(time.Second)
 			}()
 		}
 
