@@ -35,7 +35,7 @@ func Auth(c *gin.Context) {
 
 	if debugToken != "" && debugToken == tokenStr {
 		c.Set(constant.UserID, "debug")
-		c.Set(constant.ChannelID, "00000000")
+		c.Set(constant.Channel, "00000000")
 		c.Set(constant.Email, "debug@local")
 		c.Set(constant.Username, "debug")
 		return
@@ -53,7 +53,7 @@ func Auth(c *gin.Context) {
 		return
 	}
 	c.Set(constant.UserID, token.UserId)
-	c.Set(constant.ChannelID, token.ChannelId)
+	c.Set(constant.Channel, token.ChannelId)
 	c.Set(constant.Email, token.Email)
 	c.Set(constant.Username, token.Username)
 

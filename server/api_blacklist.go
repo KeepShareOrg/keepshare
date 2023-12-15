@@ -43,7 +43,7 @@ func getBlackList(c *gin.Context) {
 	ctx := c.Request.Context()
 	t := query.Blacklist
 	userID := c.GetString(constant.UserID)
-	channel := c.GetString(constant.ChannelID)
+	channel := c.GetString(constant.Channel)
 	page, _ := strconv.Atoi(c.Query("page_index"))
 	limit, _ := strconv.Atoi(c.Query("limit"))
 	if limit > blacklistSubmitLimit || limit <= 0 {

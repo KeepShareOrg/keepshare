@@ -9,11 +9,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"net/http"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/KeepShareOrg/keepshare/pkg/share"
 
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/hosts"
@@ -97,6 +98,8 @@ func listSharedLinks(c *gin.Context) {
 
 // querySharedLinkInfo query shared link current status and this shared link's info
 func querySharedLinkInfo(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	id := c.Query("id")
 	autoID, err := strconv.Atoi(id)
 	if err != nil {
@@ -107,16 +110,39 @@ func querySharedLinkInfo(c *gin.Context) {
 	conditions := []gen.Condition{
 		query.SharedLink.AutoID.Eq(int64(autoID)),
 	}
-	res, err := query.SharedLink.Where(conditions...).Take()
+	res, err := query.SharedLink.WithContext(ctx).Where(conditions...).Take()
 	if err != nil {
 		mdw.RespInternal(c, err.Error())
 		return
 	}
 
+	reqID, start := log.RequestIDFromContext(ctx)
+	fields := Map{
+		constant.IP:        c.ClientIP(),
+		constant.DeviceID:  c.GetHeader(constant.HeaderDeviceID),
+		constant.RequestID: reqID,
+		constant.UserID:    res.UserID,
+		constant.Link:      res.OriginalLink,
+		constant.Host:      res.Host,
+		keyState:           res.State,
+		//constant.Channel:   channel,
+	}
+	report := log.NewReport("get_status").Sets(fields)
+
 	if res.State == share.StatusOK.String() {
-		res.HostSharedLink = fmt.Sprintf("%v?act=enter_subdir", res.HostSharedLink)
+		hostLink := fmt.Sprintf("%v?act=enter_subdir", res.HostSharedLink)
+		report.Sets(Map{
+			keyRedirectType: "share",
+			keyHostLink:     hostLink,
+			keyTotalMS:      time.Since(start).Milliseconds(),
+		}).Done()
+		res.HostSharedLink = hostLink
 	}
 
+	// the last query
+	if c.Query("is_end") == "true" {
+		report.Set(keyTotalMS, time.Since(start).Milliseconds()).Done()
+	}
 	c.JSON(http.StatusOK, res)
 }
 

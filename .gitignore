@@ -12,6 +12,7 @@
 build/
 local/
 logs/
+report/
 
 go.sum
 daemon.pid

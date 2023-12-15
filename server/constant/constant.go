@@ -7,13 +7,20 @@ package constant
 // constant keys.
 var (
 	UserID      = "user_id"
-	ChannelID   = "channel_id"
+	DeviceID    = "device_id"
+	RequestID   = "request_id"
+	Channel     = "channel"
+	IP          = "ip"
 	Error       = "error"
 	Message     = "message"
 	SharedLink  = "shared_link"
 	ShareStatus = "status"
 	Email       = "email"
 	Username    = "username"
+	Link        = "link"
+	Host        = "host"
+
+	HeaderDeviceID = "X-Device-Id"
 )
 
 // about email verification

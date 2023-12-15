@@ -191,7 +191,7 @@ func refreshToken(c *gin.Context) {
 
 func getUserInfo(c *gin.Context) {
 	userID := c.GetString(constant.UserID)
-	channelID := c.GetString(constant.ChannelID)
+	channelID := c.GetString(constant.Channel)
 	email := c.GetString(constant.Email)
 	username := c.GetString(constant.Username)
 

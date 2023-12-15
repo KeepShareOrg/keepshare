@@ -34,6 +34,13 @@ import (
 
 var channelIDPattern = regexp.MustCompile(`[a-z0-9]{8}`)
 
+const (
+	keyHostLink     = "host_link"
+	keyRedirectType = "redirect_type"
+	keyState        = "state"
+	keyTotalMS      = "total_ms"
+)
+
 func autoSharingLink(c *gin.Context) {
 	channel, link, ok := getChannelAndLinkFromURL(c.Request.URL)
 	if !ok {
@@ -68,46 +75,67 @@ func autoSharingLink(c *gin.Context) {
 		return
 	}
 
-	log.ContextWithFields(ctx, log.Fields{
-		constant.UserID: user.ID,
-		"link":          linkRaw,
-		"host":          hostName,
-	})
+	requestID, _ := log.RequestIDFromContext(ctx)
+	fields := Map{
+		constant.IP:        c.ClientIP(),
+		constant.DeviceID:  c.GetHeader(constant.HeaderDeviceID),
+		constant.RequestID: requestID,
+		constant.UserID:    user.ID,
+		constant.Channel:   channel,
+		constant.Link:      linkRaw,
+		constant.Host:      hostName,
+		keyHostLink:        "error",
+		keyRedirectType:    "error",
+		keyState:           "error",
+	}
+
+	log.ContextWithFields(ctx, fields)
+	report := log.NewReport("visit_link").Sets(fields)
+	defer report.Done()
 
 	l := log.WithContext(ctx)
-	sh, err := createShareLinkIfNotExist(ctx, user.ID, host, link, share.AutoShare)
+	sh, lastState, err := createShareLinkIfNotExist(ctx, user.ID, host, link, share.AutoShare)
 	if err != nil {
 		mdw.RespInternal(c, err.Error())
 		return
 	}
 
+	report.Set(keyState, lastState)
 	l = l.WithFields(Map{constant.SharedLink: sh.HostSharedLink, constant.ShareStatus: sh.State})
 
 	switch share.State(sh.State) {
 	case share.StatusOK:
+		hostLink := fmt.Sprintf("%s?act=enter_subdir", sh.HostSharedLink)
+		report.Sets(Map{
+			keyRedirectType: "share",
+			keyHostLink:     hostLink,
+		})
 		l.Debug("got shared_link")
-		c.Redirect(http.StatusFound, fmt.Sprintf("%s?act=enter_subdir", sh.HostSharedLink))
+		c.Redirect(http.StatusFound, hostLink)
 
 	default: // include StatusSensitive
 		l.Debug("share status:", sh.State)
 
 		// push the uncompleted task to the background
-		set, err := config.Redis().SetNX(ctx, fmt.Sprintf("async_trigger_running:%s", sh.AutoID), "", 30*time.Second).Result()
+		set, err := config.Redis().SetNX(ctx, fmt.Sprintf("async_trigger_running:%d", sh.AutoID), "", 30*time.Second).Result()
 		if err == nil && set {
 			GetAsyncBackgroundTaskInstance().PushAsyncTask(sh)
 		}
 
-		requestID, _ := log.RequestIDFromContext(ctx)
-		statusPageAddress := fmt.Sprintf("https://%s/console/shared/status?id=%s&request_id=%s", config.RootDomain(), sh.AutoID, requestID)
-		c.Redirect(http.StatusFound, statusPageAddress)
+		statusPage := fmt.Sprintf("https://%s/console/shared/status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID)
+		report.Sets(Map{
+			keyRedirectType: "status",
+			keyHostLink:     statusPage,
+		})
+		c.Redirect(http.StatusFound, statusPage)
 	}
 }
 
 // createShareLinkIfNotExist if the shared link does not exist, create a new one and return it.
-func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.HostWithProperties, link string, createBy string) (*model.SharedLink, error) {
+func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.HostWithProperties, link string, createBy string) (sharedLink *model.SharedLink, lastStatus share.State, err error) {
 	linkRaw, linkHash, ok := validateLink(link)
 	if !ok || linkHash == "" {
-		return nil, errors.New("invalid link")
+		return nil, "", errors.New("invalid link")
 	}
 
 	where := []gen.Condition{
@@ -117,14 +145,15 @@ func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.H
 
 	sh, err := query.SharedLink.WithContext(ctx).Where(where...).Take()
 	if err != nil && !gormutil.IsNotFoundError(err) {
-		return nil, fmt.Errorf("query shared link error: %w", err)
+		return nil, "", fmt.Errorf("query shared link error: %w", err)
 	}
 
+	lastStatus = share.StatusNotFound
 	if sh != nil {
-		status := getShareStatus(ctx, userID, host, sh)
-		updateVisitTimeAndState(ctx, sh, status)
+		lastStatus = getShareStatus(ctx, userID, host, sh)
+		updateVisitTimeAndState(ctx, sh, lastStatus)
 
-		switch status {
+		switch lastStatus {
 		case share.StatusUnknown, share.StatusOK, share.StatusCreated, share.StatusPending:
 			break
 
@@ -132,21 +161,21 @@ func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.H
 			sh = nil // re-create a shared link
 
 		case share.StatusBlocked:
-			return nil, errors.New("link_blocked")
+			return nil, lastStatus, errors.New("link_blocked")
 
 		default:
-			return nil, fmt.Errorf("unexpected share status: %s", status)
+			return nil, lastStatus, fmt.Errorf("unexpected share status: %s", lastStatus)
 		}
 	}
 
 	if sh == nil {
 		sh, err = createShareByLink(ctx, userID, host, linkRaw, createBy)
 		if err != nil {
-			return nil, fmt.Errorf("create share error: %w", err)
+			return nil, lastStatus, fmt.Errorf("create share error: %w", err)
 		}
 	}
 
-	return sh, nil
+	return sh, lastStatus, nil
 }
 
 func getChannelAndLinkFromURL(u *url.URL) (channel, link string, ok bool) {

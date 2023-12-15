@@ -42,7 +42,11 @@ func AccessLogger(pathPatterns ...*regexp.Regexp) gin.HandlerFunc {
 
 	accessLogger = func(c *gin.Context) {
 		ctx := log.DataContext(c.Request.Context(), log.DataContextOptions{
-			Fields: log.Fields{"src": "request"},
+			RequestID: c.Query("request_id"),
+			Fields: log.Fields{
+				"src":             "request",
+				constant.DeviceID: c.Request.Header.Get(constant.HeaderDeviceID),
+			},
 		})
 		c.Request = c.Request.WithContext(ctx)
 
