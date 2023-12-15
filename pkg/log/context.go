@@ -6,10 +6,13 @@ package log
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/cespare/xxhash/v2"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -72,7 +75,23 @@ func ContextWithFields(ctx context.Context, fields Fields) {
 
 // NewRequestID returns a random request id.
 func NewRequestID() string {
-	return strings.ReplaceAll(uuid.NewString(), "-", "")
+	now := time.Now().UnixMilli()
+	rd := xxhash.Sum64String(uuid.NewString())
+	bs := []byte("xxxxxxxxxx")
+	copy(bs, []byte(strconv.FormatUint(rd, 32)))
+	return fmt.Sprintf("%s_%s", strconv.FormatInt(now, 32), bs)
+}
+
+// RequestIDFromContext returns the requestID in context.
+func RequestIDFromContext(ctx context.Context) (string, time.Time) {
+	data, ok := ctx.Value(dataContextHook{}).(*contextData)
+	if !ok || data == nil {
+		return "", time.Time{}
+	}
+	id := data.requestID
+	n, _, _ := strings.Cut(id, "_")
+	i, _ := strconv.ParseInt(n, 32, 64)
+	return id, time.UnixMilli(i)
 }
 
 type dataContextHook struct{}

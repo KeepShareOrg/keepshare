@@ -86,18 +86,19 @@ func autoSharingLink(c *gin.Context) {
 	switch share.State(sh.State) {
 	case share.StatusOK:
 		l.Debug("got shared_link")
-		c.Redirect(http.StatusFound, fmt.Sprintf("%v?act=enter_subdir", sh.HostSharedLink))
+		c.Redirect(http.StatusFound, fmt.Sprintf("%s?act=enter_subdir", sh.HostSharedLink))
 
 	default: // include StatusSensitive
 		l.Debug("share status:", sh.State)
 
 		// push the uncompleted task to the background
-		set, err := config.Redis().SetNX(ctx, fmt.Sprintf("async_trigger_running:%v", sh.AutoID), "", 30*time.Second).Result()
+		set, err := config.Redis().SetNX(ctx, fmt.Sprintf("async_trigger_running:%s", sh.AutoID), "", 30*time.Second).Result()
 		if err == nil && set {
 			GetAsyncBackgroundTaskInstance().PushAsyncTask(sh)
 		}
 
-		statusPageAddress := fmt.Sprintf("https://%s/console/shared/status?id=%v", config.RootDomain(), sh.AutoID)
+		requestID, _ := log.RequestIDFromContext(ctx)
+		statusPageAddress := fmt.Sprintf("https://%s/console/shared/status?id=%s&request_id=%s", config.RootDomain(), sh.AutoID, requestID)
 		c.Redirect(http.StatusFound, statusPageAddress)
 	}
 }
