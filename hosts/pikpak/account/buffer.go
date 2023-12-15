@@ -164,6 +164,7 @@ func (m *Manager) checkWorkerBuffer() {
 					we = err
 					return
 				}
+				time.Sleep(time.Second)
 			}()
 		}
 

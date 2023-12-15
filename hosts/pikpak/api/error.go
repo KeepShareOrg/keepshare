@@ -45,3 +45,12 @@ func IsAccountLimited(err error) bool {
 
 	return false
 }
+
+// IsInvalidAccountOrPasswordErr returns whether the error is caused by invalid account or password.
+func IsInvalidAccountOrPasswordErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "invalid_account_or_password")
+}

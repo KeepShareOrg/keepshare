@@ -7,6 +7,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"time"
 
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
@@ -38,7 +39,13 @@ func (api *API) getToken(ctx context.Context, userID string, isMaster bool) (tok
 		return r.AccessToken, nil
 	}
 
-	return api.createToken(ctx, userID, isMaster)
+	token, err = api.createToken(ctx, userID, isMaster)
+	if IsInvalidAccountOrPasswordErr(err) {
+		log.WithContext(ctx).Debugf("delete invalid account: %s", userID)
+		api.q.WorkerAccount.WithContext(ctx).Where(api.q.WorkerAccount.UserID.Eq(userID)).Delete()
+	}
+
+	return token, err
 }
 
 func (api *API) createToken(ctx context.Context, userID string, isMaster bool) (string, error) {
@@ -56,6 +63,8 @@ func (api *API) createToken(ctx context.Context, userID string, isMaster bool) (
 		}
 		email, password = account.Email, account.Password
 	}
+
+	log.WithContext(ctx).Debugf("create token for email: %s password: %s", email, password)
 
 	var e RespErr
 	var r struct {
