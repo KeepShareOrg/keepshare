@@ -27,11 +27,23 @@ const (
 	apiServer      = "https://api-drive.mypikpak.com"
 	referralServer = "https://api-referral.mypikpak.com"
 	clientID       = "YNxT9w7GMdWvEOKa"
-	deviceID       = "c858a46bfca5c5f61b1702ed6c303acb"
 	acceptLanguage = "en,en-US;q=0.9"
-	userAgent      = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
 
 	webClientID = "YUMx5nI8ZU8Ap8pm"
+)
+
+var (
+	deviceID  = "c858a46bfca5c5f61b1702ed6c303acb"
+	userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+
+	resCli = resty.New().
+		SetHeader("X-Device-Id", deviceID).
+		SetHeader("User-Agent", userAgent).
+		SetHeader("X-Client-Id", clientID).
+		SetHeader("Accept-Language", acceptLanguage).
+		SetHeader("Content-Type", "application/json").
+		SetTimeout(time.Second * 10).
+		SetRetryCount(1)
 )
 
 // API PikPak server api.
@@ -58,20 +70,29 @@ func New(q *query.Query, d *hosts.Dependencies) *API {
 		cache:        freecache.NewCache(50 * 1024 * 1024),
 	}
 
-	chSize := viper.GetInt("pikpak_trigger_channel_size")
+	chSize := viper.GetInt("pikpak.trigger_channel_size")
 	if chSize <= 0 {
 		chSize = 16 * 1024
 	}
 	api.externalTriggerChan = make(chan runningFiles, chSize)
 	api.internalTriggerChan = make(chan runningFiles, chSize)
 
-	consumers := viper.GetInt("pikpak_trigger_consumers")
+	consumers := viper.GetInt("pikpak.trigger_consumers")
 	if consumers <= 0 {
 		//consumers = 16
 		consumers = 64
 	}
 	for i := 0; i < consumers; i++ {
 		go api.handelTriggerChan()
+	}
+
+	if v := viper.GetString("pikpak.device_id"); v != "" {
+		deviceID = v
+		resCli = resCli.SetHeader("X-Device-Id", deviceID)
+	}
+	if v := viper.GetString("pikpak.user_agent"); v != "" {
+		userAgent = v
+		resCli = resCli.SetHeader("User-Agent", userAgent)
 	}
 
 	go api.triggerFilesFromDB()
@@ -91,15 +112,6 @@ type (
 		ErrorDescription string `json:"error_description"`
 	}
 )
-
-var resCli = resty.New().
-	SetHeader("X-Client-Id", clientID).
-	SetHeader("X-Device-Id", deviceID).
-	SetHeader("Accept-Language", acceptLanguage).
-	SetHeader("User-Agent", userAgent).
-	SetHeader("Content-Type", "application/json").
-	SetTimeout(time.Second * 10).
-	SetRetryCount(1)
 
 func apiURL(path string) string {
 	if strings.HasPrefix(path, "http") {
