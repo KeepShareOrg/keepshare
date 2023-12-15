@@ -87,10 +87,10 @@ export const createShareLink = (links: string[]) => {
 };
 
 // get shared link info by auto id
-export const getSharedLinkInfo = (id: string) => {
+export const getSharedLinkInfo = (id: string, requestId: string, isEnd: boolean) => {
   return axiosWrapper<SharedLinkInfo>({
     method: "GET",
-    url: `/api/shared_link?id=${id}`,
+    url: `/api/shared_link?id=${id}&request_id=${requestId}&is_end=${isEnd}`,
   });
 };
 

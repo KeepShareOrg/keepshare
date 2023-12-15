@@ -52,9 +52,13 @@ const SharedStatus = () => {
 
   const [params] = useSearchParams();
 
+  const [requestId, setRequestId] = useState("");
   const setThemeMode = useStore((state) => state.setThemeMode);
   // status page keep light mode
-  useEffect(() => setThemeMode("light"), []);
+  useEffect(() => {
+    setThemeMode("light");
+    setRequestId(params.get("request_id") || "");
+  }, []);
 
   const { original_link: link } = fileInfo;
 
@@ -81,54 +85,57 @@ const SharedStatus = () => {
       return;
     }
 
+    const isLoopEnd = loopTimes > MAX_LOOP_TIMES;
     // Get data from keepshare server, but the data may be incomplete (returned from PikPak)
-    getSharedLinkInfo(autoId).then(({ data: fileInfo, error }) => {
-      if (fileInfo) {
-        if (loopTimes <= MAX_LOOP_TIMES) {
-          const timer = setTimeout(() => {
-            setLoopTimes(loopTimes + 1);
-            timer && clearTimeout(timer);
-          }, 2000);
+    getSharedLinkInfo(autoId, requestId, isLoopEnd).then(
+      ({ data: fileInfo, error }) => {
+        if (fileInfo) {
+          if (loopTimes <= MAX_LOOP_TIMES) {
+            const timer = setTimeout(() => {
+              setLoopTimes(loopTimes + 1);
+              timer && clearTimeout(timer);
+            }, 2000);
+          }
+
+          const newStatus = fileInfo.state;
+          if (status === newStatus) {
+            return;
+          }
+
+          const hostSharedLink = fileInfo.host_shared_link;
+          if (newStatus === "OK" && hostSharedLink) {
+            location.href = hostSharedLink;
+          } else {
+            setStatus(newStatus);
+            setFileInfo(fileInfo);
+          }
+
+          if (loopTimes === MAX_LOOP_TIMES) {
+            setStatus("CREATED");
+          }
         }
 
-        const newStatus = fileInfo.state;
-        if (status === newStatus) {
-          return;
+        // Get data from whatsLink website
+        if (!error) {
+          getLinkInfoFromWhatsLink(fileInfo?.original_link || "")
+            .then(({ data, error }) => {
+              if (error) {
+                return;
+              }
+              setFileInfo(
+                Object.assign({}, fileInfo, {
+                  title: fileInfo?.title || data?.name,
+                  size: fileInfo?.size || data?.size,
+                  screenshot: data?.screenshots[0]?.screenshot,
+                }),
+              );
+            })
+            .catch(() => {});
         }
 
-        const hostSharedLink = fileInfo.host_shared_link;
-        if (newStatus === "OK" && hostSharedLink) {
-          location.href = hostSharedLink;
-        } else {
-          setStatus(newStatus);
-          setFileInfo(fileInfo);
-        }
-
-        if (loopTimes === MAX_LOOP_TIMES) {
-          setStatus("CREATED");
-        }
-      }
-
-      // Get data from whatsLink website
-      if (!error) {
-        getLinkInfoFromWhatsLink(fileInfo?.original_link || "")
-          .then(({ data, error }) => {
-            if (error) {
-              return;
-            }
-            setFileInfo(
-              Object.assign({}, fileInfo, {
-                title: fileInfo?.title || data?.name,
-                size: fileInfo?.size || data?.size,
-                screenshot: data?.screenshots[0]?.screenshot,
-              }),
-            );
-          })
-          .catch(() => {});
-      }
-
-      error && message.error(error.message);
-    });
+        error && message.error(error.message);
+      },
+    );
   }, [loopTimes]);
 
   useEffect(() => {
