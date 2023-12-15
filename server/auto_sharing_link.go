@@ -119,7 +119,7 @@ func autoSharingLink(c *gin.Context) {
 		// push the uncompleted task to the background
 		set, err := config.Redis().SetNX(ctx, fmt.Sprintf("async_trigger_running:%d", sh.AutoID), "", 30*time.Second).Result()
 		if err == nil && set {
-			GetAsyncBackgroundTaskInstance().PushAsyncTask(sh)
+			getAsyncBackgroundTaskInstance().pushAsyncTask(sh)
 		}
 
 		statusPage := fmt.Sprintf("https://%s/console/shared/status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID)

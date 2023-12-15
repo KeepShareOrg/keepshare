@@ -24,17 +24,17 @@ import (
 	"github.com/KeepShareOrg/keepshare/server/query"
 )
 
-type AsyncBackgroundTask struct {
+type asyncBackgroundTask struct {
 	concurrency     int
 	unCompletedChan chan *model.SharedLink
 }
 
-func (a *AsyncBackgroundTask) PushAsyncTask(task *model.SharedLink) {
+func (a *asyncBackgroundTask) pushAsyncTask(task *model.SharedLink) {
 	a.unCompletedChan <- task
 }
 
-func (a *AsyncBackgroundTask) GetTaskFromDB() {
-	getUncompletedToken := &GetUnCompletedToken{
+func (a *asyncBackgroundTask) getTaskFromDB() {
+	getUncompletedToken := &getUnCompletedToken{
 		UpdatedTime: time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
 		OrderID:     0,
 	}
@@ -49,9 +49,9 @@ func (a *AsyncBackgroundTask) GetTaskFromDB() {
 			continue
 		}
 
-		log.Infof("current uncomplete chan length: %v, from db length: %v", len(a.unCompletedChan), len(unCompleteTasks))
+		log.Infof("current uncompleted chan length: %v, from db length: %v", len(a.unCompletedChan), len(unCompleteTasks))
 		if len(a.unCompletedChan) < 10 && len(unCompleteTasks) < 10 {
-			getUncompletedToken = &GetUnCompletedToken{
+			getUncompletedToken = &getUnCompletedToken{
 				UpdatedTime: time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
 				OrderID:     0,
 			}
@@ -59,7 +59,7 @@ func (a *AsyncBackgroundTask) GetTaskFromDB() {
 		// this file in `pikpak_file` status is `PHASE_TYPE_COMPLETE`
 		if len(unCompleteTasks) > 0 {
 			for _, task := range unCompleteTasks {
-				a.PushAsyncTask(task)
+				a.pushAsyncTask(task)
 			}
 		} else {
 			time.Sleep(2 * time.Second)
@@ -67,11 +67,16 @@ func (a *AsyncBackgroundTask) GetTaskFromDB() {
 	}
 }
 
-func (a *AsyncBackgroundTask) BatchProcessCompleteTask() {
+func (a *asyncBackgroundTask) batchProcessCompleteTask() {
 	for {
 		var sharedLinks []*model.SharedLink
 		// this file in `pikpak_file` status is `PHASE_TYPE_COMPLETE`
-		r := fmt.Sprintf("select * from `keepshare_shared_link` where state = '%s' and original_link_hash in (select original_link_hash from `pikpak_file` where status = '%s')", share.StatusCreated.String(), comm.StatusOK)
+		r := fmt.Sprintf(
+			"select * from `keepshare_shared_link` where state = '%s' and original_link_hash in (select original_link_hash from `pikpak_file` where status = '%s' AND updated_at > '%s')",
+			share.StatusCreated.String(),
+			comm.StatusOK,
+			time.Now().Add(-24*time.Hour).Format(time.DateTime),
+		)
 		if err := config.MySQL().Raw(r).Scan(&sharedLinks).Error; err != nil {
 			log.Errorf("select shared link err: %v", err)
 		}
@@ -82,10 +87,10 @@ func (a *AsyncBackgroundTask) BatchProcessCompleteTask() {
 			redis := config.Redis()
 			for _, task := range sharedLinks {
 				key := fmt.Sprintf("%v", task.AutoID)
-				if redis.Get(ctx, key).Val() == "" {
+				set := redis.SetNX(ctx, key, "1", 10*time.Minute).Val()
+				if set {
 					log.Debugf("handle complete task: %#v", task)
-					a.PushAsyncTask(task)
-					redis.SetEx(ctx, key, "1", time.Minute*10)
+					a.pushAsyncTask(task)
 				}
 			}
 		}
@@ -94,7 +99,7 @@ func (a *AsyncBackgroundTask) BatchProcessCompleteTask() {
 	}
 }
 
-func (a *AsyncBackgroundTask) taskConsumer() {
+func (a *asyncBackgroundTask) taskConsumer() {
 	for {
 		select {
 		case unCompleteTask := <-a.unCompletedChan:
@@ -202,9 +207,9 @@ func (a *AsyncBackgroundTask) taskConsumer() {
 	}
 }
 
-func (a *AsyncBackgroundTask) Run() {
-	go a.GetTaskFromDB()
-	go a.BatchProcessCompleteTask()
+func (a *asyncBackgroundTask) run() {
+	go a.getTaskFromDB()
+	go a.batchProcessCompleteTask()
 
 	wg := sync.WaitGroup{}
 	for i := 0; i < a.concurrency; i++ {
@@ -217,38 +222,38 @@ func (a *AsyncBackgroundTask) Run() {
 	wg.Wait()
 }
 
-func NewAsyncBackgroundTask(concurrency int) *AsyncBackgroundTask {
+func newAsyncBackgroundTask(concurrency int) *asyncBackgroundTask {
 	chSize := viper.GetInt("background_task_channel_size")
 	if chSize <= 0 {
 		chSize = 16 * 1024
 	}
 
-	return &AsyncBackgroundTask{
+	return &asyncBackgroundTask{
 		concurrency:     concurrency,
 		unCompletedChan: make(chan *model.SharedLink, chSize),
 	}
 }
 
-var abt *AsyncBackgroundTask
+var abt *asyncBackgroundTask
 
-func GetAsyncBackgroundTaskInstance() *AsyncBackgroundTask {
+func getAsyncBackgroundTaskInstance() *asyncBackgroundTask {
 	if abt == nil {
 		concurrency := viper.GetInt("background_task_concurrency")
 		if concurrency <= 0 {
 			concurrency = 16
 		}
-		abt = NewAsyncBackgroundTask(concurrency)
+		abt = newAsyncBackgroundTask(concurrency)
 	}
 	return abt
 }
 
-type GetUnCompletedToken struct {
+type getUnCompletedToken struct {
 	UpdatedTime time.Time
 	OrderID     int64
 }
 
 // getUnCompletedSharedLinks get shared links that status in pending or created
-func getUnCompletedSharedLinks(limitSize int, token GetUnCompletedToken) ([]*model.SharedLink, *GetUnCompletedToken, error) {
+func getUnCompletedSharedLinks(limitSize int, token getUnCompletedToken) ([]*model.SharedLink, *getUnCompletedToken, error) {
 	s := query.SharedLink
 	state := s.State.ColumnName().String()
 	createdAt := s.CreatedAt.ColumnName().String()
@@ -279,9 +284,9 @@ func getUnCompletedSharedLinks(limitSize int, token GetUnCompletedToken) ([]*mod
 		return nil, nil, err
 	}
 
-	var nextToken *GetUnCompletedToken = nil
+	var nextToken *getUnCompletedToken = nil
 	if len(unCompleteTasks) > 0 {
-		nextToken = &GetUnCompletedToken{
+		nextToken = &getUnCompletedToken{
 			UpdatedTime: unCompleteTasks[len(unCompleteTasks)-1].UpdatedAt,
 			OrderID:     unCompleteTasks[len(unCompleteTasks)-1].AutoID,
 		}
