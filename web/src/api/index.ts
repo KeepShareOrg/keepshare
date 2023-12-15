@@ -4,6 +4,7 @@ import axios from "axios";
 import type { AxiosRequestConfig, AxiosInstance } from "axios";
 import { refreshToken } from "./account";
 import { RoutePaths } from "@/router";
+import { LocalStorageKeys } from "@/constant";
 
 // keepShare base api address
 export const BASE_API = import.meta.env.DEV ? "http://localhost:8080/" : window.location.origin;
@@ -12,6 +13,7 @@ export const fetcher = axios.create({
   baseURL: BASE_API,
   headers: {
     "Content-Type": "application/json",
+    "x-device-id": window.localStorage.getItem(LocalStorageKeys.DEVICE_ID),
   },
 });
 
