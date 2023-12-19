@@ -4,7 +4,9 @@
 
 package comm
 
-import "time"
+import (
+	"time"
+)
 
 // enum all statuses.
 const (
@@ -33,3 +35,11 @@ const (
 	// MaxPremiumWorkers is the maximum number of premium workers bound to a master.
 	MaxPremiumWorkers = 20
 )
+
+type PPEventType string
+
+const (
+	PikPakFileComplete PPEventType = "pikpak_file_complete"
+)
+
+type ListenerCallback func(userID, originalLinkHash string)

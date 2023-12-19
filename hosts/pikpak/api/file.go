@@ -36,6 +36,13 @@ type fileTask struct {
 	} `json:"params"`
 }
 
+var eventListeners = map[comm.PPEventType][]comm.ListenerCallback{}
+
+// AddEventListener add event listener
+func (api *API) AddEventListener(event comm.PPEventType, fn comm.ListenerCallback) {
+	eventListeners[event] = append(eventListeners[event], fn)
+}
+
 func (t *fileTask) toFile(master, worker, link string) *model.File {
 	if t == nil {
 		return nil
@@ -191,6 +198,14 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 		file.Size = int64(util.Atoi(task.FileSize))
 		file.Name = task.FileName
 		file.UpdatedAt = now
+
+		if file.Status == comm.StatusOK {
+			if callbackFns, ok := eventListeners[comm.PikPakFileComplete]; ok {
+				for _, callbackFn := range callbackFns {
+					callbackFn(file.WorkerUserID, file.OriginalLinkHash)
+				}
+			}
+		}
 
 		t.Select(t.FileID, t.Status, t.IsDir, t.Size, t.Name, t.UpdatedAt).Where(t.TaskID.Eq(task.ID)).Updates(file)
 	}
