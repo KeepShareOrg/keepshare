@@ -254,6 +254,65 @@ func (api *API) handelTriggerChan() {
 	}
 }
 
+func (api *API) recentTaskConsumer() {
+	for {
+		select {
+		case wfs := <-api.recentTasksChan:
+			api.updateRunningFiles(wfs.worker, wfs.files)
+		default:
+			time.Sleep(time.Second)
+		}
+	}
+}
+
+func (api *API) getRecentFilesFromDB() {
+	createdAfter := time.Now().Add(-time.Minute * 10)
+	for {
+		workerFiles, token := api.getRecentFiles(createdAfter)
+		if workerFiles == nil {
+			createdAfter = token
+			time.Sleep(time.Second)
+		}
+		if len(workerFiles) > 0 {
+			for worker, files := range workerFiles {
+				api.internalTriggerChan <- runningFiles{worker: worker, files: files}
+			}
+		}
+		if len(workerFiles) < 100 {
+			time.Sleep(2 * time.Second)
+		}
+	}
+}
+
+func (api *API) getRecentFiles(createdAfter time.Time) (map[string][]*model.File, time.Time) {
+	t := &api.q.File
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	files, err := t.WithContext(ctx).
+		Where(
+			t.Status.In(comm.StatusRunning, comm.StatusPending),
+			t.CreatedAt.Gt(createdAfter),
+		).
+		Order(t.CreatedAt).
+		Limit(comm.RunningFilesSelectLimit).
+		Find()
+	if err != nil {
+		return nil, time.Now().Add(-time.Minute * 10)
+	}
+
+	m := map[string][]*model.File{}
+	for _, f := range files {
+		m[f.WorkerUserID] = append(m[f.WorkerUserID], f)
+	}
+
+	token := time.Now().Add(-time.Minute * 10)
+	if len(files) > 0 {
+		token = files[len(files)-1].CreatedAt
+	}
+	return m, token
+}
+
 func (api *API) triggerFilesFromDB() {
 	getRunningFilesToken := &GetRunningFilesToken{
 		UpdatedTime: time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),

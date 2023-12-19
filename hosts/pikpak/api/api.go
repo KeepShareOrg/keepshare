@@ -53,6 +53,7 @@ type API struct {
 
 	*hosts.Dependencies
 
+	recentTasksChan     chan runningFiles // task created in the last 10 minutes.
 	externalTriggerChan chan runningFiles // trigger by user.
 	internalTriggerChan chan runningFiles // trigger by server, select from db.
 }
@@ -82,8 +83,11 @@ func New(q *query.Query, d *hosts.Dependencies) *API {
 		//consumers = 16
 		consumers = 64
 	}
+	api.recentTasksChan = make(chan runningFiles, consumers*2)
+
 	for i := 0; i < consumers; i++ {
 		go api.handelTriggerChan()
+		go api.recentTaskConsumer()
 	}
 
 	if v := viper.GetString("pikpak.device_id"); v != "" {
@@ -96,6 +100,7 @@ func New(q *query.Query, d *hosts.Dependencies) *API {
 	}
 
 	go api.triggerFilesFromDB()
+	go api.getRecentFilesFromDB()
 	go api.updatePremiumExpirationBackground()
 
 	return api
