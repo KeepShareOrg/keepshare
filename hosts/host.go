@@ -7,7 +7,6 @@ package hosts
 import (
 	"context"
 	"errors"
-	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
 	"io/fs"
 	"regexp"
 	"strings"
@@ -37,8 +36,16 @@ type Host interface {
 	HostInfo(ctx context.Context, userID string, options map[string]any) (resp map[string]any, err error)
 
 	// AddEventListener add an event listener to the host.
-	AddEventListener(event comm.PPEventType, callback comm.ListenerCallback)
+	AddEventListener(event PPEventType, callback ListenerCallback)
 }
+
+type PPEventType string
+
+const (
+	PikPakFileComplete PPEventType = "pikpak_file_complete"
+)
+
+type ListenerCallback func(userID, originalLinkHash string)
 
 // Properties of a host.
 type Properties struct {

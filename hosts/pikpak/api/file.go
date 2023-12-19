@@ -7,6 +7,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/hosts"
 	"math"
 	"strings"
 	"time"
@@ -36,10 +37,10 @@ type fileTask struct {
 	} `json:"params"`
 }
 
-var eventListeners = map[comm.PPEventType][]comm.ListenerCallback{}
+var eventListeners = map[hosts.PPEventType][]hosts.ListenerCallback{}
 
 // AddEventListener add event listener
-func (api *API) AddEventListener(event comm.PPEventType, fn comm.ListenerCallback) {
+func (api *API) AddEventListener(event hosts.PPEventType, fn hosts.ListenerCallback) {
 	eventListeners[event] = append(eventListeners[event], fn)
 }
 
@@ -200,7 +201,7 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 		file.UpdatedAt = now
 
 		if file.Status == comm.StatusOK {
-			if callbackFns, ok := eventListeners[comm.PikPakFileComplete]; ok {
+			if callbackFns, ok := eventListeners[hosts.PikPakFileComplete]; ok {
 				for _, callbackFn := range callbackFns {
 					callbackFn(file.WorkerUserID, file.OriginalLinkHash)
 				}
@@ -275,7 +276,7 @@ func (api *API) getRecentFilesFromDB() {
 		}
 		if len(workerFiles) > 0 {
 			for worker, files := range workerFiles {
-				api.internalTriggerChan <- runningFiles{worker: worker, files: files}
+				api.recentTasksChan <- runningFiles{worker: worker, files: files}
 			}
 		}
 		if len(workerFiles) < 100 {

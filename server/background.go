@@ -99,18 +99,18 @@ func (a *asyncBackgroundTask) batchProcessCompleteTask() {
 	}
 }
 
-func (a *asyncBackgroundTask) taskConsumer() {
+func (a *asyncBackgroundTask) TaskConsumer() {
 	for {
 		select {
 		case unCompleteTask := <-a.unCompletedChan:
-			a._taskConsumer(unCompleteTask)
+			a.taskConsumer(unCompleteTask)
 		default:
 			time.Sleep(time.Second)
 		}
 	}
 }
 
-func (a *asyncBackgroundTask) _taskConsumer(task *model.SharedLink) {
+func (a *asyncBackgroundTask) taskConsumer(task *model.SharedLink) {
 	ctx := log.DataContext(context.Background(), log.DataContextOptions{
 		Fields: log.Fields{
 			"src":           "scan_share_record",
@@ -215,14 +215,14 @@ func (a *asyncBackgroundTask) run() {
 	go a.getTaskFromDB()
 	go a.batchProcessCompleteTask()
 
-	hosts.Get("pikpak").Host.AddEventListener(comm.PikPakFileComplete, func(userID, originalLinkHash string) {
+	hosts.Get("pikpak").Host.AddEventListener(hosts.PikPakFileComplete, func(userID, originalLinkHash string) {
 		task, err := query.SharedLink.WithContext(context.Background()).Where(query.SharedLink.OriginalLinkHash.Eq(originalLinkHash)).Take()
 		if err != nil {
 			log.Errorf("get shared link err: %v", err)
 			return
 		}
 		log.Debugf("get shared link from listener callback: %#v", task)
-		a._taskConsumer(task)
+		a.taskConsumer(task)
 	})
 
 	wg := sync.WaitGroup{}
@@ -230,7 +230,7 @@ func (a *asyncBackgroundTask) run() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			a.taskConsumer()
+			a.TaskConsumer()
 		}()
 	}
 	wg.Wait()

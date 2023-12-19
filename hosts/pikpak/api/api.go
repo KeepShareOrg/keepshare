@@ -71,19 +71,13 @@ func New(q *query.Query, d *hosts.Dependencies) *API {
 		cache:        freecache.NewCache(50 * 1024 * 1024),
 	}
 
-	chSize := viper.GetInt("pikpak.trigger_channel_size")
-	if chSize <= 0 {
-		chSize = 16 * 1024
-	}
-	api.externalTriggerChan = make(chan runningFiles, chSize)
-	api.internalTriggerChan = make(chan runningFiles, chSize)
-
 	consumers := viper.GetInt("pikpak.trigger_consumers")
 	if consumers <= 0 {
-		//consumers = 16
 		consumers = 64
 	}
-	api.recentTasksChan = make(chan runningFiles, consumers*2)
+	api.externalTriggerChan = make(chan runningFiles, consumers)
+	api.internalTriggerChan = make(chan runningFiles, consumers)
+	api.recentTasksChan = make(chan runningFiles, consumers)
 
 	for i := 0; i < consumers; i++ {
 		go api.handelTriggerChan()
