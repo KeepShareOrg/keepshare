@@ -215,7 +215,7 @@ func (a *asyncBackgroundTask) run() {
 	go a.getTaskFromDB()
 	go a.batchProcessCompleteTask()
 
-	hosts.Get("pikpak").Host.AddEventListener(hosts.PikPakFileComplete, func(userID, originalLinkHash string) {
+	hosts.Get("pikpak").Host.AddEventListener(hosts.FileComplete, func(userID, originalLinkHash string) {
 		task, err := query.SharedLink.WithContext(context.Background()).Where(query.SharedLink.OriginalLinkHash.Eq(originalLinkHash)).Take()
 		if err != nil {
 			log.Errorf("get shared link err: %v", err)

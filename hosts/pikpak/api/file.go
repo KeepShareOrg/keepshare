@@ -37,10 +37,10 @@ type fileTask struct {
 	} `json:"params"`
 }
 
-var eventListeners = map[hosts.PPEventType][]hosts.ListenerCallback{}
+var eventListeners = map[hosts.EventType][]hosts.ListenerCallback{}
 
 // AddEventListener add event listener
-func (api *API) AddEventListener(event hosts.PPEventType, fn hosts.ListenerCallback) {
+func (api *API) AddEventListener(event hosts.EventType, fn hosts.ListenerCallback) {
 	eventListeners[event] = append(eventListeners[event], fn)
 }
 
@@ -201,7 +201,7 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 		file.UpdatedAt = now
 
 		if file.Status == comm.StatusOK {
-			if callbackFns, ok := eventListeners[hosts.PikPakFileComplete]; ok {
+			if callbackFns, ok := eventListeners[hosts.FileComplete]; ok {
 				for _, callbackFn := range callbackFns {
 					callbackFn(file.WorkerUserID, file.OriginalLinkHash)
 				}

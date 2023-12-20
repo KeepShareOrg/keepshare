@@ -36,13 +36,15 @@ type Host interface {
 	HostInfo(ctx context.Context, userID string, options map[string]any) (resp map[string]any, err error)
 
 	// AddEventListener add an event listener to the host.
-	AddEventListener(event PPEventType, callback ListenerCallback)
+	AddEventListener(event EventType, callback ListenerCallback)
 }
 
-type PPEventType string
+// EventType is the type of event.
+type EventType string
 
 const (
-	PikPakFileComplete PPEventType = "pikpak_file_complete"
+	// FileComplete is the event type of file complete.
+	FileComplete EventType = "file_complete"
 )
 
 type ListenerCallback func(userID, originalLinkHash string)
