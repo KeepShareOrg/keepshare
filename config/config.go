@@ -80,8 +80,12 @@ func Load() error {
 	}
 
 	log.SetLevel(LogLevel())
-	log.SetOutput(LogOutput())
 	log.SetFormatter(LogFormat(), LogPretty())
+	log.SetOutput(LogOutput(), &log.OutputOptions{
+		MaxSizeInMB: 1024,
+		MaxAgeInDay: 31,
+		MaxBackups:  10,
+	})
 
 	if err := initMysql(); err != nil {
 		return err

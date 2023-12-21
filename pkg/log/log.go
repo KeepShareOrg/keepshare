@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -87,8 +88,8 @@ func SetLevel(l string) {
 }
 
 // SetOutput sets the logger output.
-func SetOutput(o string) {
-	log.SetOutput(Writer(o))
+func SetOutput(filename string, options *OutputOptions) {
+	log.SetOutput(Output(filename, options))
 }
 
 // SetFormatter sets the standard logger formatter.
@@ -104,23 +105,72 @@ func SetFormatter(f string, pretty bool) {
 	}
 }
 
-// Writer get an io.Writer according to the output.
-func Writer(output string) io.Writer {
-	switch output {
+// Output get an io.Writer according to the filename and options.
+func Output(filename string, options *OutputOptions) io.Writer {
+	switch filename {
 	case "", "stdout", "/dev/stdout":
 		return os.Stdout
 	case "stderr", "/dev/stderr":
 		return os.Stderr
 	default:
-		return &lumberjack.Logger{
-			Filename:   output,
-			MaxSize:    1024, // 1G
-			MaxAge:     31,   // 31 days
-			MaxBackups: 10,
-			LocalTime:  true,
-			Compress:   false,
+		l := &lumberjack.Logger{
+			Filename:  filename,
+			LocalTime: true,
+			Compress:  false,
 		}
+		if options != nil {
+			if options.MaxSizeInMB > 0 {
+				l.MaxSize = options.MaxSizeInMB
+			}
+			if options.MaxAgeInDay > 0 {
+				l.MaxAge = options.MaxAgeInDay
+			}
+			if options.MaxBackups > 0 {
+				l.MaxBackups = options.MaxBackups
+			}
+			if options.Rotate != "" {
+				autoRotate(l, options.Rotate)
+			}
+		}
+		return l
 	}
+}
+
+func autoRotate(l *lumberjack.Logger, r string) {
+	var timeFormat string
+	switch strings.ToLower(r) {
+	case "h", "hour":
+		timeFormat = "2006010215"
+	case "d", "day":
+		timeFormat = "20060102"
+	default:
+		log.Error("invalid log rotate:", r)
+		return
+	}
+
+	go func() {
+		last := time.Now().Format(timeFormat)
+		for {
+			time.Sleep(time.Second)
+
+			now := time.Now().Format(timeFormat)
+			if now != last {
+				if err := l.Rotate(); err == nil {
+					last = now
+				} else {
+					log.Errorf("rotate file: %s, err: %v", l.Filename, err)
+				}
+			}
+		}
+	}()
+}
+
+// OutputOptions set the options to the log output files.
+type OutputOptions struct {
+	Rotate      string // options: d or day, h or hour
+	MaxSizeInMB int
+	MaxAgeInDay int
+	MaxBackups  int
 }
 
 // IsDebugEnabled checks if the log level is greater than the debug level.

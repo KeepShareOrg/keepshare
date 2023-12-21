@@ -35,7 +35,7 @@ func AccessLogger(pathPatterns ...*regexp.Regexp) gin.HandlerFunc {
 		logger = log.New()
 		logger.SetLevel(logrus.InfoLevel)
 		logger.SetFormatter(log.JSONLogFormatter)
-		logger.SetOutput(log.Writer(o))
+		logger.SetOutput(log.Output(o, &log.OutputOptions{Rotate: "day"}))
 	}
 
 	server, _ := os.Hostname()
