@@ -151,16 +151,15 @@ func autoRotate(l *lumberjack.Logger, r string) {
 	go func() {
 		last := time.Now().Format(timeFormat)
 		for {
-			time.Sleep(time.Second)
-
-			now := time.Now().Format(timeFormat)
-			if now != last {
+			next := time.Now().Add(time.Second).Format(timeFormat)
+			if next != last {
 				if err := l.Rotate(); err == nil {
-					last = now
+					last = next
 				} else {
 					log.Errorf("rotate file: %s, err: %v", l.Filename, err)
 				}
 			}
+			time.Sleep(time.Second)
 		}
 	}()
 }
