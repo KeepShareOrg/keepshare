@@ -107,6 +107,8 @@ func querySharedLinkInfo(c *gin.Context) {
 		return
 	}
 
+	report := log.NewReport("get_status")
+
 	conditions := []gen.Condition{
 		query.SharedLink.AutoID.Eq(int64(autoID)),
 	}
@@ -117,7 +119,7 @@ func querySharedLinkInfo(c *gin.Context) {
 	}
 
 	reqID, start := log.RequestIDFromContext(ctx)
-	fields := Map{
+	report.Sets(Map{
 		constant.IP:        c.ClientIP(),
 		constant.DeviceID:  c.GetHeader(constant.HeaderDeviceID),
 		constant.RequestID: reqID,
@@ -125,24 +127,22 @@ func querySharedLinkInfo(c *gin.Context) {
 		constant.Link:      res.OriginalLink,
 		constant.Host:      res.Host,
 		keyState:           res.State,
+		"is_end":           c.Query("is_end") == "true",
 		//constant.Channel:   channel,
-	}
-	report := log.NewReport("get_status").Sets(fields)
+	})
+	defer func() {
+		report.Set(keyTotalMS, time.Since(start).Milliseconds()).Done()
+	}()
 
 	if res.State == share.StatusOK.String() {
 		hostLink := fmt.Sprintf("%v?act=enter_subdir", res.HostSharedLink)
 		report.Sets(Map{
 			keyRedirectType: "share",
 			keyHostLink:     hostLink,
-			keyTotalMS:      time.Since(start).Milliseconds(),
 		}).Done()
 		res.HostSharedLink = hostLink
 	}
 
-	// the last query
-	if c.Query("is_end") == "true" {
-		report.Set(keyTotalMS, time.Since(start).Milliseconds()).Done()
-	}
 	c.JSON(http.StatusOK, res)
 }
 

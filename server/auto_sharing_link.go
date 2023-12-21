@@ -84,18 +84,20 @@ func autoSharingLink(c *gin.Context) {
 		constant.Channel:   channel,
 		constant.Link:      linkRaw,
 		constant.Host:      hostName,
-		keyHostLink:        "error",
-		keyRedirectType:    "error",
-		keyState:           "error",
 	}
 
 	log.ContextWithFields(ctx, fields)
-	report := log.NewReport("visit_link").Sets(fields)
+	report := log.NewReport("visit_link").Sets(fields).Sets(Map{
+		keyHostLink:     "error",
+		keyRedirectType: "error",
+		keyState:        "error",
+	})
 	defer report.Done()
 
 	l := log.WithContext(ctx)
 	sh, lastState, err := createShareLinkIfNotExist(ctx, user.ID, host, link, share.AutoShare)
 	if err != nil {
+		report.Set(constant.Error, err.Error())
 		mdw.RespInternal(c, err.Error())
 		return
 	}
