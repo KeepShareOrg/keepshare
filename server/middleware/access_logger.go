@@ -51,7 +51,7 @@ func AccessLogger(pathPatterns ...*regexp.Regexp) gin.HandlerFunc {
 		c.Request = c.Request.WithContext(ctx)
 
 		start := time.Now()
-		path := c.Request.URL.RawPath
+		path := c.Request.URL.EscapedPath()
 		query := c.Request.URL.RawQuery
 
 		// Process request
