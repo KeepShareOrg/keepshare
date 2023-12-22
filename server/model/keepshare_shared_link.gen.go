@@ -22,14 +22,15 @@ type SharedLink struct {
 	Size               int64     `gorm:"column:size;not null" json:"size"`
 	Visitor            int32     `gorm:"column:visitor;not null" json:"visitor"`
 	Stored             int32     `gorm:"column:stored;not null" json:"stored"`
+	LastVisitedAt      time.Time `gorm:"column:last_visited_at;not null;default:2000-01-01 00:00:00" json:"last_visited_at"`
+	LastStoredAt       time.Time `gorm:"column:last_stored_at;not null;default:2000-01-01 00:00:00" json:"last_stored_at"`
 	Revenue            int64     `gorm:"column:revenue;not null" json:"revenue"`
 	Title              string    `gorm:"column:title;not null" json:"title"`
 	OriginalLinkHash   string    `gorm:"column:original_link_hash;not null" json:"original_link_hash"`
 	HostSharedLinkHash string    `gorm:"column:host_shared_link_hash;not null" json:"host_shared_link_hash"`
 	OriginalLink       string    `gorm:"column:original_link;not null" json:"original_link"`
 	HostSharedLink     string    `gorm:"column:host_shared_link;not null" json:"host_shared_link"`
-	LastVisitedAt      time.Time `gorm:"column:last_visited_at;not null;default:2000-01-01 00:00:00" json:"last_visited_at"`
-	LastStoredAt       time.Time `gorm:"column:last_stored_at;not null;default:2000-01-01 00:00:00" json:"last_stored_at"`
+	Error              string    `gorm:"column:error" json:"error"`
 }
 
 // TableName SharedLink's table name

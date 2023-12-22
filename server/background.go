@@ -26,11 +26,11 @@ import (
 
 type asyncBackgroundTask struct {
 	concurrency     int
-	unCompletedChan chan *model.SharedLink
+	unCompletedChan chan int64
 }
 
-func (a *asyncBackgroundTask) pushAsyncTask(task *model.SharedLink) {
-	a.unCompletedChan <- task
+func (a *asyncBackgroundTask) pushAsyncTask(linkID int64) {
+	a.unCompletedChan <- linkID
 }
 
 func (a *asyncBackgroundTask) getTaskFromDB() {
@@ -59,7 +59,7 @@ func (a *asyncBackgroundTask) getTaskFromDB() {
 		// this file in `pikpak_file` status is `PHASE_TYPE_COMPLETE`
 		if len(unCompleteTasks) > 0 {
 			for _, task := range unCompleteTasks {
-				a.pushAsyncTask(task)
+				a.pushAsyncTask(task.AutoID)
 			}
 		} else {
 			time.Sleep(2 * time.Second)
@@ -90,7 +90,7 @@ func (a *asyncBackgroundTask) batchProcessCompleteTask() {
 				set := redis.SetNX(ctx, key, "1", 10*time.Minute).Val()
 				if set {
 					log.Debugf("handle complete task: %#v", task)
-					a.pushAsyncTask(task)
+					a.pushAsyncTask(task.AutoID)
 				}
 			}
 		}
@@ -99,18 +99,28 @@ func (a *asyncBackgroundTask) batchProcessCompleteTask() {
 	}
 }
 
-func (a *asyncBackgroundTask) TaskConsumer() {
+func (a *asyncBackgroundTask) startConsumer() {
 	for {
 		select {
-		case unCompleteTask := <-a.unCompletedChan:
-			a.taskConsumer(unCompleteTask)
+		case id := <-a.unCompletedChan:
+			a.taskConsumer(id)
 		default:
 			time.Sleep(time.Second)
 		}
 	}
 }
 
-func (a *asyncBackgroundTask) taskConsumer(task *model.SharedLink) {
+func (a *asyncBackgroundTask) taskConsumer(linkID int64) {
+	// get latest record
+	task, err := query.SharedLink.WithContext(context.Background()).Where(query.SharedLink.AutoID.Eq(linkID)).Take()
+	if err != nil {
+		return
+	}
+	// return if the task is completed.
+	if task.State == share.StatusOK.String() {
+		return
+	}
+
 	ctx := log.DataContext(context.Background(), log.DataContextOptions{
 		Fields: log.Fields{
 			"src":           "scan_share_record",
@@ -118,6 +128,7 @@ func (a *asyncBackgroundTask) taskConsumer(task *model.SharedLink) {
 		},
 	})
 	lg := log.WithContext(ctx)
+
 	host := hosts.Get(task.Host)
 	if host == nil {
 		lg.Errorf("host not found: %s", task.Host)
@@ -136,6 +147,7 @@ func (a *asyncBackgroundTask) taskConsumer(task *model.SharedLink) {
 		update := model.SharedLink{
 			UpdatedAt: time.Now(),
 			State:     share.StatusError.String(),
+			Error:     err.Error(),
 		}
 		if gormutil.IsNotFoundError(err) {
 			lg.Debugf("create share link not found")
@@ -215,22 +227,24 @@ func (a *asyncBackgroundTask) run() {
 	go a.getTaskFromDB()
 	go a.batchProcessCompleteTask()
 
-	hosts.Get("pikpak").Host.AddEventListener(hosts.FileComplete, func(userID, originalLinkHash string) {
-		task, err := query.SharedLink.WithContext(context.Background()).Where(query.SharedLink.OriginalLinkHash.Eq(originalLinkHash)).Take()
-		if err != nil {
-			log.Errorf("get shared link err: %v", err)
-			return
-		}
-		log.Debugf("get shared link from listener callback: %#v", task)
-		a.taskConsumer(task)
-	})
+	for _, h := range hosts.GetAll() {
+		h.AddEventListener(hosts.FileComplete, func(userID, originalLinkHash string) {
+			link, err := query.SharedLink.WithContext(context.Background()).Where(query.SharedLink.OriginalLinkHash.Eq(originalLinkHash)).Take()
+			if err != nil {
+				log.Errorf("get shared link err: %v", err)
+				return
+			}
+			log.Debugf("get shared link from listener callback: %#v", link)
+			a.taskConsumer(link.AutoID)
+		})
+	}
 
 	wg := sync.WaitGroup{}
 	for i := 0; i < a.concurrency; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			a.TaskConsumer()
+			a.startConsumer()
 		}()
 	}
 	wg.Wait()
@@ -244,7 +258,7 @@ func newAsyncBackgroundTask(concurrency int) *asyncBackgroundTask {
 
 	return &asyncBackgroundTask{
 		concurrency:     concurrency,
-		unCompletedChan: make(chan *model.SharedLink, chSize),
+		unCompletedChan: make(chan int64, chSize),
 	}
 }
 

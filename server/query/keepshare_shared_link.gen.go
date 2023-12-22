@@ -37,14 +37,15 @@ func newSharedLink(db *gorm.DB, opts ...gen.DOOption) sharedLink {
 	_sharedLink.Size = field.NewInt64(tableName, "size")
 	_sharedLink.Visitor = field.NewInt32(tableName, "visitor")
 	_sharedLink.Stored = field.NewInt32(tableName, "stored")
+	_sharedLink.LastVisitedAt = field.NewTime(tableName, "last_visited_at")
+	_sharedLink.LastStoredAt = field.NewTime(tableName, "last_stored_at")
 	_sharedLink.Revenue = field.NewInt64(tableName, "revenue")
 	_sharedLink.Title = field.NewString(tableName, "title")
 	_sharedLink.OriginalLinkHash = field.NewString(tableName, "original_link_hash")
 	_sharedLink.HostSharedLinkHash = field.NewString(tableName, "host_shared_link_hash")
 	_sharedLink.OriginalLink = field.NewString(tableName, "original_link")
 	_sharedLink.HostSharedLink = field.NewString(tableName, "host_shared_link")
-	_sharedLink.LastVisitedAt = field.NewTime(tableName, "last_visited_at")
-	_sharedLink.LastStoredAt = field.NewTime(tableName, "last_stored_at")
+	_sharedLink.Error = field.NewString(tableName, "error")
 
 	_sharedLink.fillFieldMap()
 
@@ -65,14 +66,15 @@ type sharedLink struct {
 	Size               field.Int64
 	Visitor            field.Int32
 	Stored             field.Int32
+	LastVisitedAt      field.Time
+	LastStoredAt       field.Time
 	Revenue            field.Int64
 	Title              field.String
 	OriginalLinkHash   field.String
 	HostSharedLinkHash field.String
 	OriginalLink       field.String
 	HostSharedLink     field.String
-	LastVisitedAt      field.Time
-	LastStoredAt       field.Time
+	Error              field.String
 
 	fieldMap map[string]field.Expr
 }
@@ -99,14 +101,15 @@ func (s *sharedLink) updateTableName(table string) *sharedLink {
 	s.Size = field.NewInt64(table, "size")
 	s.Visitor = field.NewInt32(table, "visitor")
 	s.Stored = field.NewInt32(table, "stored")
+	s.LastVisitedAt = field.NewTime(table, "last_visited_at")
+	s.LastStoredAt = field.NewTime(table, "last_stored_at")
 	s.Revenue = field.NewInt64(table, "revenue")
 	s.Title = field.NewString(table, "title")
 	s.OriginalLinkHash = field.NewString(table, "original_link_hash")
 	s.HostSharedLinkHash = field.NewString(table, "host_shared_link_hash")
 	s.OriginalLink = field.NewString(table, "original_link")
 	s.HostSharedLink = field.NewString(table, "host_shared_link")
-	s.LastVisitedAt = field.NewTime(table, "last_visited_at")
-	s.LastStoredAt = field.NewTime(table, "last_stored_at")
+	s.Error = field.NewString(table, "error")
 
 	s.fillFieldMap()
 
@@ -123,7 +126,7 @@ func (s *sharedLink) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (s *sharedLink) fillFieldMap() {
-	s.fieldMap = make(map[string]field.Expr, 18)
+	s.fieldMap = make(map[string]field.Expr, 19)
 	s.fieldMap["auto_id"] = s.AutoID
 	s.fieldMap["user_id"] = s.UserID
 	s.fieldMap["state"] = s.State
@@ -134,14 +137,15 @@ func (s *sharedLink) fillFieldMap() {
 	s.fieldMap["size"] = s.Size
 	s.fieldMap["visitor"] = s.Visitor
 	s.fieldMap["stored"] = s.Stored
+	s.fieldMap["last_visited_at"] = s.LastVisitedAt
+	s.fieldMap["last_stored_at"] = s.LastStoredAt
 	s.fieldMap["revenue"] = s.Revenue
 	s.fieldMap["title"] = s.Title
 	s.fieldMap["original_link_hash"] = s.OriginalLinkHash
 	s.fieldMap["host_shared_link_hash"] = s.HostSharedLinkHash
 	s.fieldMap["original_link"] = s.OriginalLink
 	s.fieldMap["host_shared_link"] = s.HostSharedLink
-	s.fieldMap["last_visited_at"] = s.LastVisitedAt
-	s.fieldMap["last_stored_at"] = s.LastStoredAt
+	s.fieldMap["error"] = s.Error
 }
 
 func (s sharedLink) clone(db *gorm.DB) sharedLink {

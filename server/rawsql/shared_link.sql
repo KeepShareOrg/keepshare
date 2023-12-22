@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS `keepshare_shared_link`
     `host_shared_link_hash` char(40)     NOT NULL,
     `original_link`         text         NOT NULL,
     `host_shared_link`      text         NOT NULL,
+    `error`                 text,
     PRIMARY KEY (`auto_id`),
     KEY `user_id.created_at` (`user_id`, `created_at`),
     KEY `host_shared_link_hash.user_id` (`host_shared_link_hash`, `user_id`),
