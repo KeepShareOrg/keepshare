@@ -243,7 +243,10 @@ func (m *Manager) checkPremiumWorkerBuffer() {
 			// mark the redeem code as used
 			t.RedeemCode.WithContext(ctx).
 				Where(t.RedeemCode.AutoID.Eq(notUsedRedeemCode.AutoID)).
-				Update(t.RedeemCode.Status, comm.RedeemCodeStatusUsed)
+				Updates(&model.RedeemCode{
+					UsedUserID: notUsedNormalAccount.UserID,
+					Status:     comm.RedeemCodeStatusUsed,
+				})
 
 			// update the account premium expiration info
 			m.api.UpdateWorkerPremium(ctx, notUsedNormalAccount)
