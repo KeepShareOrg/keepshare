@@ -50,28 +50,26 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		return nil, fmt.Errorf("query files err: %w", err)
 	}
 
-	// completed include ok and failed state.
-	linksCompleted := map[string]*model.File{}
-	linksPending := map[string]*model.File{}
+	linksStatusOK := map[string]*model.File{}
+	linksStatusPending := map[string]*model.File{}
 	for _, f := range files {
 		l := hashToLink[f.OriginalLinkHash]
 		switch f.Status {
 		case comm.StatusOK:
-			linksCompleted[l] = f
+			linksStatusOK[l] = f
 		case comm.StatusError:
 			// delete error files
 			p.q.File.WithContext(ctx).Delete(f)
-			linksCompleted[l] = f
 		default:
 			// TODO delete timeout files
-			linksPending[l] = f
+			linksStatusPending[l] = f
 			p.api.TriggerRunningFile(f)
 		}
 	}
 
 	// only create files for new links.
 	for _, link := range originalLinks {
-		if linksCompleted[link] != nil || linksPending[link] != nil {
+		if linksStatusOK[link] != nil || linksStatusPending[link] != nil {
 			continue
 		}
 
@@ -80,11 +78,11 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 			return nil, fmt.Errorf("creat from link error: %v", err)
 		}
 
-		linksPending[link] = file
+		linksStatusPending[link] = file
 	}
-	sharedLinks = map[string]*share.Share{}
 
-	for _, f := range linksPending {
+	sharedLinks = map[string]*share.Share{}
+	for _, f := range linksStatusPending {
 		originalLink := hashToLink[f.OriginalLinkHash]
 		sharedLinks[originalLink] = &share.Share{
 			State:          share.StatusCreated,
@@ -96,12 +94,11 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 			Size:           f.Size,
 		}
 	}
-	if len(linksPending) > 0 {
-		// TODO
-		log.WithContext(ctx).Debug("links not completed:", lo.Keys(linksPending))
+	if len(linksStatusPending) > 0 && log.IsDebugEnabled() {
+		log.WithContext(ctx).Debug("links not completed:", lo.Keys(linksStatusPending))
 	}
 
-	for _, f := range linksCompleted {
+	for _, f := range linksStatusOK {
 		sharedLink, err := p.api.CreateShare(ctx, f.MasterUserID, f.WorkerUserID, f.FileID)
 		if err != nil {
 			return nil, err
