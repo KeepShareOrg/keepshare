@@ -37,6 +37,7 @@ func newSharedLink(db *gorm.DB, opts ...gen.DOOption) sharedLink {
 	_sharedLink.Size = field.NewInt64(tableName, "size")
 	_sharedLink.Visitor = field.NewInt32(tableName, "visitor")
 	_sharedLink.Stored = field.NewInt32(tableName, "stored")
+	_sharedLink.FirstVisitedAt = field.NewTime(tableName, "first_visited_at")
 	_sharedLink.LastVisitedAt = field.NewTime(tableName, "last_visited_at")
 	_sharedLink.LastStoredAt = field.NewTime(tableName, "last_stored_at")
 	_sharedLink.Revenue = field.NewInt64(tableName, "revenue")
@@ -66,6 +67,7 @@ type sharedLink struct {
 	Size               field.Int64
 	Visitor            field.Int32
 	Stored             field.Int32
+	FirstVisitedAt     field.Time
 	LastVisitedAt      field.Time
 	LastStoredAt       field.Time
 	Revenue            field.Int64
@@ -101,6 +103,7 @@ func (s *sharedLink) updateTableName(table string) *sharedLink {
 	s.Size = field.NewInt64(table, "size")
 	s.Visitor = field.NewInt32(table, "visitor")
 	s.Stored = field.NewInt32(table, "stored")
+	s.FirstVisitedAt = field.NewTime(table, "first_visited_at")
 	s.LastVisitedAt = field.NewTime(table, "last_visited_at")
 	s.LastStoredAt = field.NewTime(table, "last_stored_at")
 	s.Revenue = field.NewInt64(table, "revenue")
@@ -126,7 +129,7 @@ func (s *sharedLink) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (s *sharedLink) fillFieldMap() {
-	s.fieldMap = make(map[string]field.Expr, 19)
+	s.fieldMap = make(map[string]field.Expr, 20)
 	s.fieldMap["auto_id"] = s.AutoID
 	s.fieldMap["user_id"] = s.UserID
 	s.fieldMap["state"] = s.State
@@ -137,6 +140,7 @@ func (s *sharedLink) fillFieldMap() {
 	s.fieldMap["size"] = s.Size
 	s.fieldMap["visitor"] = s.Visitor
 	s.fieldMap["stored"] = s.Stored
+	s.fieldMap["first_visited_at"] = s.FirstVisitedAt
 	s.fieldMap["last_visited_at"] = s.LastVisitedAt
 	s.fieldMap["last_stored_at"] = s.LastStoredAt
 	s.fieldMap["revenue"] = s.Revenue

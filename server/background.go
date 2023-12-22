@@ -13,15 +13,20 @@ import (
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
+	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	"github.com/spf13/viper"
 
 	"github.com/KeepShareOrg/keepshare/hosts"
-	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"github.com/KeepShareOrg/keepshare/server/model"
 	"github.com/KeepShareOrg/keepshare/server/query"
+)
+
+const (
+	taskTimeout  = 50 * time.Hour
+	timeoutError = "TIMEOUT"
 )
 
 type asyncBackgroundTask struct {
@@ -56,7 +61,6 @@ func (a *asyncBackgroundTask) getTaskFromDB() {
 				OrderID:     0,
 			}
 		}
-		// this file in `pikpak_file` status is `PHASE_TYPE_COMPLETE`
 		if len(unCompleteTasks) > 0 {
 			for _, task := range unCompleteTasks {
 				a.pushAsyncTask(task.AutoID)
@@ -116,8 +120,8 @@ func (a *asyncBackgroundTask) taskConsumer(linkID int64) {
 	if err != nil {
 		return
 	}
-	// return if the task is completed or blocked.
-	if task.State == share.StatusOK.String() || task.State == share.StatusBlocked.String() {
+	// do nothing if the task's state is not pending or created.
+	if task.State != share.StatusPending.String() && task.State != share.StatusCreated.String() {
 		return
 	}
 
@@ -128,6 +132,22 @@ func (a *asyncBackgroundTask) taskConsumer(linkID int64) {
 		},
 	})
 	lg := log.WithContext(ctx)
+
+	// if task age greater than N hours, set it's state to timeout error.
+	if time.Now().Sub(task.CreatedAt) > taskTimeout {
+		_, err := query.SharedLink.
+			WithContext(ctx).
+			Where(query.SharedLink.AutoID.Eq(task.AutoID)).
+			Updates(model.SharedLink{
+				UpdatedAt: time.Now(),
+				State:     share.StatusError.String(),
+				Error:     timeoutError,
+			})
+		if err != nil {
+			lg.Warnf("update share link error: %v", err.Error())
+		}
+		return
+	}
 
 	host := hosts.Get(task.Host)
 	if host == nil {
@@ -163,30 +183,12 @@ func (a *asyncBackgroundTask) taskConsumer(linkID int64) {
 	}
 
 	sh := sharedLinks[task.OriginalLink]
-
-	// if task age greater than 48 hours and not ok for now, set it's state to timeout error.
-	if time.Now().Sub(sh.CreatedAt).Hours() > 48 && (sh == nil || (sh != nil && sh.State != share.StatusOK)) {
-		_, err := query.SharedLink.
-			WithContext(ctx).
-			Where(query.SharedLink.AutoID.Eq(task.AutoID)).
-			Updates(model.SharedLink{
-				UpdatedAt: time.Now(),
-				State:     share.StatusError.String(),
-				Error:     "TIMEOUT",
-			})
-		if err != nil {
-			lg.Warnf("update share link error: %v", err.Error())
-		}
-		return
-	}
-
 	if sh == nil {
 		lg.Errorf("link id %d not found: %s", task.AutoID, task.OriginalLink)
 		_, err = query.SharedLink.
 			WithContext(ctx).
 			Where(query.SharedLink.AutoID.Eq(task.AutoID)).
 			Updates(model.SharedLink{
-				//CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 				State:     share.StatusPending.String(),
 			})
@@ -196,40 +198,30 @@ func (a *asyncBackgroundTask) taskConsumer(linkID int64) {
 		return
 	}
 
-	if sh.State == share.StatusOK || sh.State == share.StatusCreated {
-		now := time.Now()
-		update := &model.SharedLink{
-			State:              sh.State.String(),
-			UpdatedAt:          now,
-			Size:               sh.Size,
-			Visitor:            sh.Visitor,
-			Stored:             sh.Stored,
-			Revenue:            sh.Revenue,
-			Title:              sh.Title,
-			HostSharedLinkHash: lk.Hash(sh.HostSharedLink),
-			HostSharedLink:     sh.HostSharedLink,
-		}
-
-		if _, err = query.SharedLink.
-			WithContext(ctx).
-			Where(query.SharedLink.AutoID.Eq(task.AutoID)).
-			Updates(update); err != nil {
-			lg.Errorf("update share link state error: %v", err.Error())
-		}
-		return
+	update := &model.SharedLink{
+		State:              sh.State.String(),
+		UpdatedAt:          time.Now(),
+		Size:               sh.Size,
+		Visitor:            sh.Visitor,
+		Stored:             sh.Stored,
+		Revenue:            sh.Revenue,
+		Title:              sh.Title,
+		HostSharedLinkHash: lk.Hash(sh.HostSharedLink),
+		HostSharedLink:     sh.HostSharedLink,
 	}
-
 	if _, err = query.SharedLink.
 		WithContext(ctx).
 		Where(query.SharedLink.AutoID.Eq(task.AutoID)).
-		Update(query.SharedLink.UpdatedAt, time.Now()); err != nil {
-		lg.Errorf("update share link updated_at error: %v", err.Error())
+		Updates(update); err != nil {
+		lg.Errorf("update share link state error: %v", err.Error())
 	}
+	return
 }
 
 func (a *asyncBackgroundTask) run() {
 	go a.getTaskFromDB()
 	go a.batchProcessCompleteTask()
+	go checkTaskTimeout()
 
 	for _, h := range hosts.GetAll() {
 		h.AddEventListener(hosts.FileComplete, func(userID, originalLinkHash string) {
@@ -324,4 +316,28 @@ func getUnCompletedSharedLinks(limitSize int, token getUnCompletedToken) ([]*mod
 		}
 	}
 	return unCompleteTasks, nextToken, nil
+}
+
+func checkTaskTimeout() {
+	t := query.SharedLink
+	for {
+		time.Sleep(3 * time.Second)
+		ret, err := t.Where(
+			t.State.In(
+				share.StatusUnknown.String(),
+				share.StatusPending.String(),
+				share.StatusCreated.String(),
+			),
+			t.CreatedAt.Lt(time.Now().Add(-1*taskTimeout)),
+		).Updates(&model.SharedLink{
+			UpdatedAt: time.Now(),
+			State:     share.StatusError.String(),
+			Error:     timeoutError,
+		})
+		if err != nil {
+			log.Errorf("check task timeout err: %v", err)
+		} else if ret.RowsAffected > 0 {
+			log.Infof("set task timeout, rows: %d", ret.RowsAffected)
+		}
+	}
 }

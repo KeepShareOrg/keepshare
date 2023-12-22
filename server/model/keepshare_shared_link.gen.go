@@ -22,6 +22,7 @@ type SharedLink struct {
 	Size               int64     `gorm:"column:size;not null" json:"size"`
 	Visitor            int32     `gorm:"column:visitor;not null" json:"visitor"`
 	Stored             int32     `gorm:"column:stored;not null" json:"stored"`
+	FirstVisitedAt     time.Time `gorm:"column:first_visited_at;not null;default:CURRENT_TIMESTAMP" json:"first_visited_at"`
 	LastVisitedAt      time.Time `gorm:"column:last_visited_at;not null;default:2000-01-01 00:00:00" json:"last_visited_at"`
 	LastStoredAt       time.Time `gorm:"column:last_stored_at;not null;default:2000-01-01 00:00:00" json:"last_stored_at"`
 	Revenue            int64     `gorm:"column:revenue;not null" json:"revenue"`

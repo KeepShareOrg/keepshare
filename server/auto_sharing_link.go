@@ -265,10 +265,26 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 		s.LastVisitedAt = now
 	}
 
-	if err = query.SharedLink.
-		WithContext(ctx).
-		Clauses(clause.OnConflict{UpdateAll: true}).
-		Create(s); err != nil {
+	t := query.SharedLink
+	err = t.WithContext(ctx).
+		Clauses(clause.OnConflict{DoUpdates: clause.AssignmentColumns([]string{
+			// UNIQUE KEY `original_link_hash.user_id.host` (`original_link_hash`, `user_id`, `host`)
+			// Do not update these fields:
+			// user_id, host, original_link_hash, original_link, first_visited_at, last_visited_at, last_stored_at
+			t.State.ColumnName().String(),
+			t.CreatedBy.ColumnName().String(),
+			t.CreatedAt.ColumnName().String(),
+			t.UpdatedAt.ColumnName().String(),
+			t.Size.ColumnName().String(),
+			t.Visitor.ColumnName().String(),
+			t.Stored.ColumnName().String(),
+			t.Revenue.ColumnName().String(),
+			t.Title.ColumnName().String(),
+			t.HostSharedLinkHash.ColumnName().String(),
+			t.HostSharedLink.ColumnName().String(),
+		})}).
+		Create(s)
+	if err != nil {
 		err = fmt.Errorf("create shared record err: %w", err)
 		log.WithContext(ctx).WithField("shared_record", s).Error(err)
 		return nil, err
