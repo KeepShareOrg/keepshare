@@ -7,11 +7,11 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/KeepShareOrg/keepshare/hosts"
 	"math"
 	"strings"
 	"time"
 
+	"github.com/KeepShareOrg/keepshare/hosts"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
@@ -20,6 +20,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/samber/lo"
 	"gorm.io/gen"
+	"gorm.io/gorm/clause"
 )
 
 type fileTask struct {
@@ -125,7 +126,7 @@ func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link st
 
 	// store file record.
 	// file_id may be empty.
-	if err = api.q.File.WithContext(ctx).Create(file); err != nil {
+	if err = api.q.File.WithContext(ctx).Clauses(clause.OnConflict{UpdateAll: true}).Create(file); err != nil {
 		return nil, err
 	}
 
