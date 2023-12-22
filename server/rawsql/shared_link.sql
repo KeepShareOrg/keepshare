@@ -23,7 +23,9 @@ CREATE TABLE IF NOT EXISTS `keepshare_shared_link`
     PRIMARY KEY (`auto_id`),
     UNIQUE KEY `original_link_hash.user_id.host` (`original_link_hash`, `user_id`, `host`),
     KEY `user_id.created_at` (`user_id`, `created_at`),
-    KEY `host_shared_link_hash.user_id` (`host_shared_link_hash`, `user_id`)
+    KEY `host_shared_link_hash.user_id` (`host_shared_link_hash`, `user_id`),
+    KEY `state.created_at` (`state`, `created_at`),
+    KEY `state.updated_at` (`state`, `updated_at`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_bin;
