@@ -42,6 +42,10 @@ type Manager struct {
 	workerBufferSize        int
 	workerBufferConcurrency int
 	workerBufferInterval    time.Duration
+
+	premiumBufferSize        int
+	premiumBufferConcurrency int
+	premiumBufferInterval    time.Duration
 }
 
 // NewManager returns a manager instance.
@@ -59,6 +63,10 @@ func NewManager(q *query.Query, api *api.API, d *hosts.Dependencies) *Manager {
 		workerBufferSize:        10,
 		workerBufferConcurrency: 2,
 		workerBufferInterval:    1 * time.Second,
+
+		premiumBufferSize:        10,
+		premiumBufferConcurrency: 1,
+		premiumBufferInterval:    time.Minute,
 	}
 
 	m.initConfig()
@@ -67,6 +75,7 @@ func NewManager(q *query.Query, api *api.API, d *hosts.Dependencies) *Manager {
 
 	go m.checkMasterBuffer()
 	go m.checkWorkerBuffer()
+	go m.checkPremiumWorkerBuffer()
 
 	return m
 }

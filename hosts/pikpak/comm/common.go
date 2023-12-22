@@ -35,3 +35,12 @@ const (
 	// MaxPremiumWorkers is the maximum number of premium workers bound to a master.
 	MaxPremiumWorkers = 20
 )
+
+const (
+	// RedeemCodeStatusNotUsed is the status of a redeem code which is not used.
+	RedeemCodeStatusNotUsed = "NOT_USED"
+	// RedeemCodeStatusUsed is the status of a redeem code which is used.
+	RedeemCodeStatusUsed = "USED"
+	// RedeemCodeInvalid is the status of a redeem code which is invalid.
+	RedeemCodeInvalid = "INVALID"
+)
