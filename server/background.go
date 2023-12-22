@@ -116,8 +116,8 @@ func (a *asyncBackgroundTask) taskConsumer(linkID int64) {
 	if err != nil {
 		return
 	}
-	// return if the task is completed.
-	if task.State == share.StatusOK.String() {
+	// return if the task is completed or blocked.
+	if task.State == share.StatusOK.String() || task.State == share.StatusBlocked.String() {
 		return
 	}
 
@@ -163,31 +163,35 @@ func (a *asyncBackgroundTask) taskConsumer(linkID int64) {
 	}
 
 	sh := sharedLinks[task.OriginalLink]
+
+	// if task age greater than 48 hours and not ok for now, set it's state to timeout error.
+	if time.Now().Sub(sh.CreatedAt).Hours() > 48 && (sh == nil || (sh != nil && sh.State != share.StatusOK)) {
+		_, err := query.SharedLink.
+			WithContext(ctx).
+			Where(query.SharedLink.AutoID.Eq(task.AutoID)).
+			Updates(model.SharedLink{
+				UpdatedAt: time.Now(),
+				State:     share.StatusError.String(),
+				Error:     "TIMEOUT",
+			})
+		if err != nil {
+			lg.Warnf("update share link error: %v", err.Error())
+		}
+		return
+	}
+
 	if sh == nil {
-		lg.Errorf("link not found: %s", task.OriginalLink)
-		if _, err = query.SharedLink.
+		lg.Errorf("link id %d not found: %s", task.AutoID, task.OriginalLink)
+		_, err = query.SharedLink.
 			WithContext(ctx).
 			Where(query.SharedLink.AutoID.Eq(task.AutoID)).
 			Updates(model.SharedLink{
 				//CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 				State:     share.StatusPending.String(),
-			}); err != nil {
-			lg.Errorf("update share link updated_at error: %v", err.Error())
-		}
-		return
-	}
-
-	// if task processing duration grate than 48 hour, it's failed
-	if sh.State == share.StatusCreated && time.Now().Sub(sh.CreatedAt).Hours() > 48 {
-		if _, err := query.SharedLink.
-			WithContext(ctx).
-			Where(query.SharedLink.AutoID.Eq(task.AutoID)).
-			Updates(model.SharedLink{
-				UpdatedAt: time.Now(),
-				State:     share.StatusError.String(),
-			}); err != nil {
-			lg.Errorf("update share link error: %v", err.Error())
+			})
+		if err != nil {
+			lg.Warnf("update share link updated_at error: %v", err.Error())
 		}
 		return
 	}

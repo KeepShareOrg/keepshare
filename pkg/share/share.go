@@ -15,8 +15,8 @@ type State string
 
 // Enum all Statuses.
 const (
-	StatusPending   State = "PENDING" // batch add "link to share" will create a pending task first
 	StatusUnknown   State = "UNKNOWN"
+	StatusPending   State = "PENDING" // batch add "link to share" will create a pending task first
 	StatusCreated   State = "CREATED"
 	StatusOK        State = "OK"
 	StatusDeleted   State = "DELETED"
