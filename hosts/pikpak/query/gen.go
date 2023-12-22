@@ -20,6 +20,7 @@ var (
 	DeleteQueue   *deleteQueue
 	File          *file
 	MasterAccount *masterAccount
+	RedeemCode    *redeemCode
 	SharedLink    *sharedLink
 	Token         *token
 	WorkerAccount *workerAccount
@@ -30,6 +31,7 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	DeleteQueue = &Q.DeleteQueue
 	File = &Q.File
 	MasterAccount = &Q.MasterAccount
+	RedeemCode = &Q.RedeemCode
 	SharedLink = &Q.SharedLink
 	Token = &Q.Token
 	WorkerAccount = &Q.WorkerAccount
@@ -41,6 +43,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		DeleteQueue:   newDeleteQueue(db, opts...),
 		File:          newFile(db, opts...),
 		MasterAccount: newMasterAccount(db, opts...),
+		RedeemCode:    newRedeemCode(db, opts...),
 		SharedLink:    newSharedLink(db, opts...),
 		Token:         newToken(db, opts...),
 		WorkerAccount: newWorkerAccount(db, opts...),
@@ -53,6 +56,7 @@ type Query struct {
 	DeleteQueue   deleteQueue
 	File          file
 	MasterAccount masterAccount
+	RedeemCode    redeemCode
 	SharedLink    sharedLink
 	Token         token
 	WorkerAccount workerAccount
@@ -66,6 +70,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		DeleteQueue:   q.DeleteQueue.clone(db),
 		File:          q.File.clone(db),
 		MasterAccount: q.MasterAccount.clone(db),
+		RedeemCode:    q.RedeemCode.clone(db),
 		SharedLink:    q.SharedLink.clone(db),
 		Token:         q.Token.clone(db),
 		WorkerAccount: q.WorkerAccount.clone(db),
@@ -86,6 +91,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		DeleteQueue:   q.DeleteQueue.replaceDB(db),
 		File:          q.File.replaceDB(db),
 		MasterAccount: q.MasterAccount.replaceDB(db),
+		RedeemCode:    q.RedeemCode.replaceDB(db),
 		SharedLink:    q.SharedLink.replaceDB(db),
 		Token:         q.Token.replaceDB(db),
 		WorkerAccount: q.WorkerAccount.replaceDB(db),
@@ -96,6 +102,7 @@ type queryCtx struct {
 	DeleteQueue   IDeleteQueueDo
 	File          IFileDo
 	MasterAccount IMasterAccountDo
+	RedeemCode    IRedeemCodeDo
 	SharedLink    ISharedLinkDo
 	Token         ITokenDo
 	WorkerAccount IWorkerAccountDo
@@ -106,6 +113,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		DeleteQueue:   q.DeleteQueue.WithContext(ctx),
 		File:          q.File.WithContext(ctx),
 		MasterAccount: q.MasterAccount.WithContext(ctx),
+		RedeemCode:    q.RedeemCode.WithContext(ctx),
 		SharedLink:    q.SharedLink.WithContext(ctx),
 		Token:         q.Token.WithContext(ctx),
 		WorkerAccount: q.WorkerAccount.WithContext(ctx),

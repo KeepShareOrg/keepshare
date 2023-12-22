@@ -11,7 +11,7 @@ interface ComponentInterface {
 const Loading = ({ children }: ComponentInterface) => {
   const { t } = useTranslation();
 
-  const [countDown, setCountDown] = useState(10);
+  const [countDown, setCountDown] = useState(9);
 
   useEffect(() => {
     if (countDown === 0) return;
@@ -38,8 +38,8 @@ const Loading = ({ children }: ComponentInterface) => {
       <Space direction="horizontal" style={{ marginTop: "20px" }}>
         <Space>
           <img src={LoadingAPng} alt="loading" width={100} />
-          <Text style={{ display: "inline-block", maxWidth: "200px" }}>
-            {t("tHxXtk0qRYf6Kh4qNcuHh")}({countDown})
+          <Text style={{ display: "inline-block", maxWidth: "240px" }}>
+            {t("tHxXtk0qRYf6Kh4qNcuHh")} ({countDown})
           </Text>
         </Space>
       </Space>

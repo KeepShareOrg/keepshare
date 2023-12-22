@@ -54,3 +54,12 @@ func IsInvalidAccountOrPasswordErr(err error) bool {
 
 	return strings.Contains(err.Error(), "invalid_account_or_password")
 }
+
+// IsInvalidRedeemCodeErr returns whether the error is caused by invalid redeem code.
+func IsInvalidRedeemCodeErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "invalid_activation_code")
+}
