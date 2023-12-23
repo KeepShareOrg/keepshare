@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS `pikpak_file`
     `created_at`         datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`         datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `original_link_hash` char(40)     NOT NULL,
+    `error`              text,
     PRIMARY KEY (`auto_id`),
     UNIQUE KEY (`master_user_id`, `original_link_hash`),
     UNIQUE KEY (`worker_user_id`, `original_link_hash`),

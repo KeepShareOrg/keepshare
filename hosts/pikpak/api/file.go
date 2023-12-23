@@ -201,7 +201,11 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 		file.Name = task.FileName
 		file.UpdatedAt = now
 
-		if file.Status == comm.StatusOK {
+		if file.Status == comm.StatusError {
+			file.Error = task.Message
+		}
+
+		if file.Status == comm.StatusOK || file.Status == comm.StatusError {
 			if callbackFns, ok := eventListeners[hosts.FileComplete]; ok {
 				for _, callbackFn := range callbackFns {
 					callbackFn(file.WorkerUserID, file.OriginalLinkHash)

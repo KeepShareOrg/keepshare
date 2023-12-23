@@ -260,6 +260,7 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 		HostSharedLinkHash: lk.Hash(sh.HostSharedLink),
 		OriginalLink:       link,
 		HostSharedLink:     sh.HostSharedLink,
+		Error:              sh.Error,
 	}
 	if createBy == share.AutoShare {
 		s.LastVisitedAt = now

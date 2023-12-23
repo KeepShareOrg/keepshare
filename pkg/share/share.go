@@ -51,6 +51,8 @@ type Share struct {
 	Size int64
 	// Statistics is the statistical data of this shared link
 	Statistics
+	// Error is the error message.
+	Error string
 }
 
 // Statistics is the statistical data of this shared link.
