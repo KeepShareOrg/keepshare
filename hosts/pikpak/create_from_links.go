@@ -7,6 +7,7 @@ package pikpak
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/account"
@@ -52,6 +53,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 
 	linksStatusOK := map[string]*model.File{}
 	linksStatusPending := map[string]*model.File{}
+	linksStatusError := map[string]*model.File{}
 	for _, f := range files {
 		l := hashToLink[f.OriginalLinkHash]
 		switch f.Status {
@@ -60,6 +62,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		case comm.StatusError:
 			// delete error files
 			p.q.File.WithContext(ctx).Delete(f)
+			linksStatusError[l] = f
 		default:
 			// TODO delete timeout files
 			linksStatusPending[l] = f
@@ -69,7 +72,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 
 	// only create files for new links.
 	for _, link := range originalLinks {
-		if linksStatusOK[link] != nil || linksStatusPending[link] != nil {
+		if linksStatusOK[link] != nil || linksStatusPending[link] != nil || linksStatusError[link] != nil {
 			continue
 		}
 
@@ -115,7 +118,35 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		}
 	}
 
+	for _, f := range linksStatusError {
+		originalLink := hashToLink[f.OriginalLinkHash]
+		sh := &share.Share{
+			State:          share.StatusError,
+			Title:          f.Name,
+			HostSharedLink: "",
+			OriginalLink:   originalLink,
+			CreatedBy:      createBy,
+			CreatedAt:      f.CreatedAt,
+			Size:           f.Size,
+			Error:          f.Error,
+		}
+		if isSensitiveLink(f.Error) {
+			sh.State = share.StatusSensitive
+		}
+		sharedLinks[originalLink] = sh
+	}
+
 	return sharedLinks, nil
+}
+
+func isSensitiveLink(err string) bool {
+	keywords := []string{"copyright", "harmful", "sensitive", "no longer available"}
+	for _, v := range keywords {
+		if strings.Contains(err, v) {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount, link string) (*model.File, error) {

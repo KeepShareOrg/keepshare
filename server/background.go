@@ -208,6 +208,7 @@ func (a *asyncBackgroundTask) taskConsumer(linkID int64) {
 		Title:              sh.Title,
 		HostSharedLinkHash: lk.Hash(sh.HostSharedLink),
 		HostSharedLink:     sh.HostSharedLink,
+		Error:              sh.Error,
 	}
 	if _, err = query.SharedLink.
 		WithContext(ctx).
@@ -215,7 +216,6 @@ func (a *asyncBackgroundTask) taskConsumer(linkID int64) {
 		Updates(update); err != nil {
 		lg.Errorf("update share link state error: %v", err.Error())
 	}
-	return
 }
 
 func (a *asyncBackgroundTask) run() {
