@@ -20,6 +20,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/samber/lo"
 	"gorm.io/gen"
+	"gorm.io/gen/field"
 	"gorm.io/gorm/clause"
 )
 
@@ -193,16 +194,30 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 			continue // do not update running task.
 		}
 
+		var cols []field.Expr
 		file := taskIDToFile[task.ID]
+
 		file.FileID = task.FileID
+		cols = append(cols, t.FileID)
+
 		file.Status = task.Status
+		cols = append(cols, t.Status)
+
 		file.IsDir = task.StatusSize > 1
+		cols = append(cols, t.IsDir)
+
 		file.Size = int64(util.Atoi(task.FileSize))
+		cols = append(cols, t.Size)
+
 		file.Name = task.FileName
+		cols = append(cols, t.Name)
+
 		file.UpdatedAt = now
+		cols = append(cols, t.UpdatedAt)
 
 		if file.Status == comm.StatusError {
 			file.Error = task.Message
+			cols = append(cols, t.Error)
 		}
 
 		if file.Status == comm.StatusOK || file.Status == comm.StatusError {
@@ -213,7 +228,7 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 			}
 		}
 
-		t.Select(t.FileID, t.Status, t.IsDir, t.Size, t.Name, t.UpdatedAt).Where(t.TaskID.Eq(task.ID)).Updates(file)
+		t.Select(cols...).Where(t.TaskID.Eq(task.ID)).Updates(file)
 	}
 
 	// if query task is null, remvoe form pikpak_file table.
