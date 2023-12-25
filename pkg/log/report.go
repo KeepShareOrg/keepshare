@@ -5,38 +5,13 @@ import (
 	glog "log"
 	"sync"
 	"time"
-
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var reportLogger *glog.Logger
 
 func init() {
-	l := &lumberjack.Logger{
-		Filename:   "./report/data.json",
-		MaxBackups: 15,
-		LocalTime:  true,
-		Compress:   false,
-	}
-
-	go func() {
-		// rotate every day
-		cur := time.Now().Format(time.DateOnly)
-		for {
-			time.Sleep(time.Second)
-
-			now := time.Now().Format(time.DateOnly)
-			if now != cur {
-				if err := l.Rotate(); err == nil {
-					cur = now
-				} else {
-					log.Errorf("rotate report file err: %v", err)
-				}
-			}
-		}
-	}()
-
-	reportLogger = glog.New(l, "", 0)
+	w := Output("./report/data.json", &OutputOptions{Rotate: "day", MaxBackups: 15})
+	reportLogger = glog.New(w, "", 0)
 }
 
 // Report is used for data reporting.
