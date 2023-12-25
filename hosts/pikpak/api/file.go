@@ -57,7 +57,7 @@ func (t *fileTask) toFile(master, worker, link string) *model.File {
 	}
 
 	now := time.Now()
-	return &model.File{
+	f := &model.File{
 		MasterUserID:     master,
 		WorkerUserID:     worker,
 		FileID:           t.FileID,
@@ -70,6 +70,11 @@ func (t *fileTask) toFile(master, worker, link string) *model.File {
 		UpdatedAt:        now,
 		OriginalLinkHash: lk.Hash(link),
 	}
+	if t.Status == comm.StatusError {
+		f.Error = t.Message
+	}
+
+	return f
 }
 
 // CreateFilesFromLink create files from link.
