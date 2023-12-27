@@ -75,7 +75,7 @@ func NewManager(q *query.Query, api *api.API, d *hosts.Dependencies) *Manager {
 
 	go m.checkMasterBuffer()
 	go m.checkWorkerBuffer()
-	go m.checkPremiumWorkerBuffer()
+	//go m.checkPremiumWorkerBuffer()
 
 	return m
 }
