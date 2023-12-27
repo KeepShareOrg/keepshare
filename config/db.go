@@ -9,21 +9,22 @@ import (
 
 	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/redis/go-redis/v9"
+	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 var (
-	mysqlDB  *gorm.DB
+	gormDB   *gorm.DB
 	redisCli *redis.Client
 )
 
 // MySQL returns the mysql client instance.
 func MySQL() *gorm.DB {
-	if mysqlDB == nil {
+	if gormDB == nil {
 		log.Fatal("mysql has not been initialized")
 	}
-	return mysqlDB
+	return gormDB
 }
 
 // Redis returns the redis client instance.
@@ -40,7 +41,30 @@ func initMysql() error {
 	if err != nil {
 		return fmt.Errorf("open mysql err: %w", err)
 	}
-	mysqlDB = db
+	gormDB = db
+
+	sqlDB, err := gormDB.DB()
+	if err != nil {
+		return fmt.Errorf("init sql db err: %w", err)
+	}
+
+	if n := viper.GetInt("db_mysql_max_open_conns"); n > 0 {
+		sqlDB.SetMaxOpenConns(n)
+		log.Debugf("mysql set max_open_conns: %d", n)
+	}
+	if n := viper.GetInt("db_mysql_max_idle_conns"); n > 0 {
+		sqlDB.SetMaxIdleConns(n)
+		log.Debugf("mysql set max_idle_conns: %d", n)
+	}
+	if d := viper.GetDuration("db_mysql_max_idle_time"); d > 0 {
+		sqlDB.SetConnMaxIdleTime(d)
+		log.Debugf("mysql set max_idle_time: %s", d)
+	}
+	if d := viper.GetDuration("db_mysql_max_life_time"); d > 0 {
+		sqlDB.SetConnMaxLifetime(d)
+		log.Debugf("mysql set max_life_time: %s", d)
+	}
+
 	return nil
 }
 
