@@ -36,6 +36,10 @@ func (api *API) Redeem(ctx context.Context, userID, redeemCode string) error {
 
 	log.WithContext(ctx).Debugf("redeem resp body: %s", body.Body())
 
+	if e.ErrorKey != "" && e.ErrorDescription != "" {
+		return fmt.Errorf("redeem err: %s|%s", e.ErrorKey, e.ErrorDescription)
+	}
+
 	if r.Error != "" {
 		return fmt.Errorf("redeem err: %s", r.Error)
 	}

@@ -63,3 +63,12 @@ func IsInvalidRedeemCodeErr(err error) bool {
 
 	return strings.Contains(err.Error(), "invalid_activation_code")
 }
+
+// IsMemberCodeNotSupportRegionErr returns whether the error is caused by member code not support region.
+func IsMemberCodeNotSupportRegionErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "member_code_not_support_region")
+}

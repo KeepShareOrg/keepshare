@@ -17,9 +17,9 @@ type User struct {
 	Email         string    `gorm:"column:email;not null" json:"email"`
 	PasswordHash  string    `gorm:"column:password_hash;not null" json:"password_hash"`
 	Channel       string    `gorm:"column:channel;not null" json:"channel"`
-	EmailVerified int32     `gorm:"column:email_verified;not null" json:"email_verified"`
 	CreatedAt     time.Time `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt     time.Time `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
+	EmailVerified int32     `gorm:"column:email_verified;not null" json:"email_verified"`
 }
 
 // TableName User's table name

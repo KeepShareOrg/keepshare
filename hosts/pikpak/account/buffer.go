@@ -7,7 +7,6 @@ package account
 import (
 	"context"
 	"fmt"
-	"github.com/KeepShareOrg/keepshare/hosts/pikpak/api"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
 	"math/rand"
 	"strings"
@@ -198,12 +197,13 @@ func (m *Manager) checkPremiumWorkerBuffer() {
 		notUsedPremiumCount, err := t.WorkerAccount.WithContext(ctx).
 			Where(
 				t.WorkerAccount.MasterUserID.Eq(""),
-				t.WorkerAccount.PremiumExpiration.Lt(time.Now()), // count free or expired workers only
+				t.WorkerAccount.PremiumExpiration.Gt(time.Now()), // count free or expired workers only
 			).Count()
 		if err != nil {
 			return fmt.Errorf("count premium worker buffer err: %v", err)
 		}
 
+		log.Debugf("not used premium worker count: %v %v", notUsedPremiumCount, m.premiumBufferSize)
 		if notUsedPremiumCount < int64(m.premiumBufferSize) {
 			// select a not used normal worker account
 			notUsedNormalAccount, err := t.WorkerAccount.WithContext(ctx).
@@ -218,10 +218,10 @@ func (m *Manager) checkPremiumWorkerBuffer() {
 			// select a not used redeem code
 			notUsedRedeemCode, err := t.RedeemCode.WithContext(ctx).
 				Where(t.RedeemCode.Status.Eq(comm.RedeemCodeStatusNotUsed)).
-				Order().
+				Order(t.RedeemCode.UpdatedAt).
 				Take()
 
-			l.Debugf("not used normal account, code: %v, %v", notUsedNormalAccount, notUsedRedeemCode)
+			l.Debugf("not used normal account: %v, code:%v", notUsedNormalAccount, notUsedRedeemCode)
 			if err != nil {
 				return fmt.Errorf("found not use redeem code err: %v", err)
 			}
@@ -229,14 +229,14 @@ func (m *Manager) checkPremiumWorkerBuffer() {
 			// redeem
 			err = m.api.Redeem(ctx, notUsedNormalAccount.UserID, notUsedRedeemCode.Code)
 			if err != nil {
-				if api.IsInvalidRedeemCodeErr(err) {
-					// mark the redeem code as invalid
-					t.RedeemCode.WithContext(ctx).
-						Where(t.RedeemCode.AutoID.Eq(notUsedRedeemCode.AutoID)).
-						Update(t.RedeemCode.Status, comm.RedeemCodeInvalid)
+				// mark the redeem code as invalid
+				t.RedeemCode.WithContext(ctx).
+					Where(t.RedeemCode.AutoID.Eq(notUsedRedeemCode.AutoID)).
+					Updates(&model.RedeemCode{
+						Status: comm.RedeemCodeInvalid,
+						Error:  err.Error(),
+					})
 
-					return nil
-				}
 				return fmt.Errorf("redeem err: %v", err)
 			}
 
@@ -248,6 +248,7 @@ func (m *Manager) checkPremiumWorkerBuffer() {
 					Status:     comm.RedeemCodeStatusUsed,
 				})
 
+			time.Sleep(time.Second * 10)
 			// update the account premium expiration info
 			m.api.UpdateWorkerPremium(ctx, notUsedNormalAccount)
 		}

@@ -17,6 +17,7 @@ import (
 
 var (
 	Q          = new(Query)
+	BlackList  *blackList
 	Blacklist  *blacklist
 	SharedLink *sharedLink
 	User       *user
@@ -24,6 +25,7 @@ var (
 
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
+	BlackList = &Q.BlackList
 	Blacklist = &Q.Blacklist
 	SharedLink = &Q.SharedLink
 	User = &Q.User
@@ -32,6 +34,7 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
 		db:         db,
+		BlackList:  newBlackList(db, opts...),
 		Blacklist:  newBlacklist(db, opts...),
 		SharedLink: newSharedLink(db, opts...),
 		User:       newUser(db, opts...),
@@ -41,6 +44,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 type Query struct {
 	db *gorm.DB
 
+	BlackList  blackList
 	Blacklist  blacklist
 	SharedLink sharedLink
 	User       user
@@ -51,6 +55,7 @@ func (q *Query) Available() bool { return q.db != nil }
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
 		db:         db,
+		BlackList:  q.BlackList.clone(db),
 		Blacklist:  q.Blacklist.clone(db),
 		SharedLink: q.SharedLink.clone(db),
 		User:       q.User.clone(db),
@@ -68,6 +73,7 @@ func (q *Query) WriteDB() *Query {
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
 		db:         db,
+		BlackList:  q.BlackList.replaceDB(db),
 		Blacklist:  q.Blacklist.replaceDB(db),
 		SharedLink: q.SharedLink.replaceDB(db),
 		User:       q.User.replaceDB(db),
@@ -75,6 +81,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 }
 
 type queryCtx struct {
+	BlackList  IBlackListDo
 	Blacklist  IBlacklistDo
 	SharedLink ISharedLinkDo
 	User       IUserDo
@@ -82,6 +89,7 @@ type queryCtx struct {
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
+		BlackList:  q.BlackList.WithContext(ctx),
 		Blacklist:  q.Blacklist.WithContext(ctx),
 		SharedLink: q.SharedLink.WithContext(ctx),
 		User:       q.User.WithContext(ctx),

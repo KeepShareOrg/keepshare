@@ -33,6 +33,7 @@ func newRedeemCode(db *gorm.DB, opts ...gen.DOOption) redeemCode {
 	_redeemCode.UsedUserID = field.NewString(tableName, "used_user_id")
 	_redeemCode.CreatedAt = field.NewTime(tableName, "created_at")
 	_redeemCode.UpdatedAt = field.NewTime(tableName, "updated_at")
+	_redeemCode.Error = field.NewString(tableName, "error")
 
 	_redeemCode.fillFieldMap()
 
@@ -49,6 +50,7 @@ type redeemCode struct {
 	UsedUserID field.String
 	CreatedAt  field.Time
 	UpdatedAt  field.Time
+	Error      field.String
 
 	fieldMap map[string]field.Expr
 }
@@ -71,6 +73,7 @@ func (r *redeemCode) updateTableName(table string) *redeemCode {
 	r.UsedUserID = field.NewString(table, "used_user_id")
 	r.CreatedAt = field.NewTime(table, "created_at")
 	r.UpdatedAt = field.NewTime(table, "updated_at")
+	r.Error = field.NewString(table, "error")
 
 	r.fillFieldMap()
 
@@ -87,13 +90,14 @@ func (r *redeemCode) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (r *redeemCode) fillFieldMap() {
-	r.fieldMap = make(map[string]field.Expr, 6)
+	r.fieldMap = make(map[string]field.Expr, 7)
 	r.fieldMap["auto_id"] = r.AutoID
 	r.fieldMap["code"] = r.Code
 	r.fieldMap["status"] = r.Status
 	r.fieldMap["used_user_id"] = r.UsedUserID
 	r.fieldMap["created_at"] = r.CreatedAt
 	r.fieldMap["updated_at"] = r.UpdatedAt
+	r.fieldMap["error"] = r.Error
 }
 
 func (r redeemCode) clone(db *gorm.DB) redeemCode {
