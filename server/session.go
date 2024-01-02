@@ -84,7 +84,6 @@ func signIn(c *gin.Context) {
 	type request struct {
 		Email        string `json:"email"`
 		PasswordHash string `json:"password_hash"`
-		CaptchaToken string `json:"captcha_token"`
 	}
 	req := new(request)
 	if err := c.BindJSON(&req); err != nil {
@@ -94,16 +93,6 @@ func signIn(c *gin.Context) {
 
 	if req.Email == "" || req.PasswordHash == "" {
 		c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "invalid_params", i18n.WithDataMap("error", "email and password_hash are required")))
-		return
-	}
-
-	if req.CaptchaToken == "" {
-		c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "invalid_params", i18n.WithDataMap("error", "captcha_token is required")))
-		return
-	}
-
-	if !VerifyRecaptchaToken(req.CaptchaToken) {
-		c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "invalid_params", i18n.WithDataMap("error", "invalid recaptcha token")))
 		return
 	}
 

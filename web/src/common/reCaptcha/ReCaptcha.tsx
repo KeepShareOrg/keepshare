@@ -1,6 +1,6 @@
 import { CAPTCHA_SITE_KEY } from "@/config";
 import useStore from "@/store";
-import { Spin } from "antd";
+import { Spin, theme } from "antd";
 import { createRef, useState } from "react";
 import GoogleReCaptcha from "react-google-recaptcha";
 
@@ -9,14 +9,25 @@ interface ComponentInterface {
 }
 
 const ReCaptcha = ({ handleToken }: ComponentInterface) => {
+  const { token } = theme.useToken();
   const [isLoading, setLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const reCaptchaRef = createRef<GoogleReCaptcha>();
   const themeMode = useStore((state) => state.themeMode);
 
   const handleCaptchaChange = (token: string | null) =>
     token && handleToken(token);
 
-  const asyncScriptOnLoad = () => setLoading(false);
+  const asyncScriptOnLoad = () => {
+    setLoading(false);
+    setIsError(reCaptchaRef.current?.getWidgetId() === null);
+  };
+
+  if (isError) {
+    return (
+      <span style={{ color: token.colorError }}>Request reCAPTCHA failed</span>
+    );
+  }
 
   return (
     <>

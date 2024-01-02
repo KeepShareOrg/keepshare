@@ -49,7 +49,7 @@ const validateFormFailed = ({
 
 const Login = () => {
   const [form] = Form.useForm<FieldType>();
-  const [shouldVerify] = useState(true);
+  const [shouldVerify] = useState(false);
 
   const { token } = theme.useToken();
   const { t } = useTranslation();
@@ -93,7 +93,7 @@ const Login = () => {
 
       if (error !== null) {
         message.error(error?.message || "error");
-        form.resetFields(['captchaToken']);
+        form.resetFields(["captchaToken"]);
         return;
       }
 
