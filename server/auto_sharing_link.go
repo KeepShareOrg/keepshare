@@ -108,7 +108,7 @@ func autoSharingLink(c *gin.Context) {
 	switch share.State(sh.State) {
 	case share.StatusOK:
 		// TODO: We can add parameters to the PikPak sharing page to automatically play, but we need to add that only the current host is PikPak.
-		hostLink := fmt.Sprintf("%s?act=auto_play", sh.HostSharedLink)
+		hostLink := fmt.Sprintf("%s?act=play", sh.HostSharedLink)
 		report.Sets(Map{
 			keyRedirectType: "share",
 			keyHostLink:     hostLink,
