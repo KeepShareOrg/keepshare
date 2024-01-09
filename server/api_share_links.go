@@ -135,7 +135,8 @@ func querySharedLinkInfo(c *gin.Context) {
 	}()
 
 	if res.State == share.StatusOK.String() {
-		hostLink := fmt.Sprintf("%v?act=enter_subdir", res.HostSharedLink)
+		// TODO: We can add parameters to the PikPak sharing page to automatically play, but we need to add that only the current host is PikPak.
+		hostLink := fmt.Sprintf("%v?act=auto_play", res.HostSharedLink)
 		report.Sets(Map{
 			keyRedirectType: "share",
 			keyHostLink:     hostLink,
