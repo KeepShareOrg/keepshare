@@ -60,6 +60,8 @@ Please log in to the console to learn more features and usage, it's very simple.
 - mysql 8.0+
 - redis 5.0+
 - golang 1.19+
+- nodeJS 18+
+- pnpm 8+
 
 ### Run with Docker
 
@@ -75,7 +77,6 @@ docker run \
 ### Compilation from Source
 
 ``` bash
-# build front pages and server.
 make build-fe
 make build
 
