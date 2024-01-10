@@ -147,7 +147,7 @@ const SharedStatus = () => {
       <Link href="/">
         <LogoPng src={LogoIcon} />
       </Link>
-      {loopTimes < 5 ? (
+      {loopTimes < 5 && params.get("st") !== "1" ? (
         <Loading>
           <ContentWrapper style={{ minHeight: "auto" }}>
             <LinkInfo

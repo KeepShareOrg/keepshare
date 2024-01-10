@@ -126,6 +126,11 @@ func autoSharingLink(c *gin.Context) {
 		}
 
 		statusPage := fmt.Sprintf("https://%s/console/shared/status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID)
+		// skip the status page loading if not yet create host task
+		if lastState == share.StatusCreated {
+			// st: slow task, tasks that have been created for a while but have not yet been completed
+			statusPage = fmt.Sprintf("%v&st=%d", statusPage, 1)
+		}
 		report.Sets(Map{
 			keyRedirectType: "status",
 			keyHostLink:     statusPage,
