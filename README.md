@@ -55,14 +55,6 @@ Please log in to the console to learn more features and usage, it's very simple.
 
 ## Getting started with your private server (Self-Host)
 
-### Prerequisites
-
-- mysql 8.0+
-- redis 5.0+
-- golang 1.19+
-- nodeJS 18+
-- pnpm 8+
-
 ### Run with Docker
 
 ```
@@ -74,7 +66,17 @@ docker run \
   keepshare/keepshare@latest
 ```
 
-### Compilation from Source
+### Compile from Source (for development)
+
+#### Prerequisites
+
+- mysql 8.0+
+- redis 5.0+
+- golang 1.19+
+- nodeJS 18+
+- pnpm 8+
+
+#### Build and Run
 
 ``` bash
 make build-fe
@@ -91,10 +93,9 @@ mysql -uroot -padmin -h127.0.0.1 -P3306 -e 'CREATE DATABASE keepshare'
 
 # start server
 ./keepshare start
-
 ```
 
-### Configuration
+#### Configuration
 
 Run `./keepshare config` to view details.
 
