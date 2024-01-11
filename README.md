@@ -10,11 +10,12 @@
 - [Introduction](#introduction)
 - [Getting started with our public server](#getting-started-with-our-public-server)
 - [Getting started with your private server (Self-Host)](#getting-started-with-your-private-server-self-host)
-    - [Prerequisites](#prerequisites)
-    - [Run with Docker](#run-with-docker)
-    - [Compilation from Source](#compilation-from-source)
-    - [Configuration](#configuration)
-    - [Usage](#usage)
+  - [Run with Docker](#run-with-docker)
+  - [Compile from Source (for development)](#compile-from-source-for-development)
+      - [Prerequisites](#prerequisites)
+      - [Build and Run](#build-and-run)
+      - [Configuration](#configuration)
+  - [Usage](#usage)
 - [Documentation](#documentation)
 - [Supported file hosting providers](#supported-file-hosting-providers)
 - [Roadmap](#roadmap)
@@ -55,6 +56,8 @@ Please log in to the console to learn more features and usage, it's very simple.
 
 ## Getting started with your private server (Self-Host)
 
+You can choose one of [Run with Docker](#run-with-docker) or [Compile from Source](#compile-from-source-for-development) to build a self-host service.
+
 ### Run with Docker
 
 ```
@@ -73,7 +76,7 @@ docker run \
 - mysql 8.0+
 - redis 5.0+
 - golang 1.19+
-- nodeJS 18+
+- nodejs 18+
 - pnpm 8+
 
 #### Build and Run
@@ -110,6 +113,7 @@ TODO - [keepshare.org/docs](https://keepshare.org/docs) [WIP]
 ## Supported file hosting providers
 
 - [PikPak](https://mypikpak.com/)
+- TODO: [RapidGator](https://rapidgator.net/)
 - TODO: [Mega](https://mega.io/)
 
 We hope to support as many file hosting providers as possible, pull requests are welcome!
