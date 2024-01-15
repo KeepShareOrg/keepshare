@@ -206,6 +206,14 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 		cols = append(cols, t.FileID)
 
 		file.Status = task.Status
+		if task.Progress > 95 && task.Progress < 100 {
+			task.Progress = 100
+			percent, err := api.QuerySubTasksCompleteSizePercent(ctx, workerUserID, task.ID)
+			if err == nil && percent > 0.95 {
+				log.Infof("should be create share link, because percent is over 95%.", percent)
+				task.Status = comm.StatusOK
+			}
+		}
 		cols = append(cols, t.Status)
 
 		file.IsDir = task.StatusSize > 1
@@ -236,7 +244,7 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 		t.Select(cols...).Where(t.TaskID.Eq(task.ID)).Updates(file)
 	}
 
-	// if query task is null, remvoe form pikpak_file table.
+	// if query task is null, remove from pikpak_file table.
 	if len(files) > len(r.Tasks) {
 		shouldRemoveTaskIds := make([]string, 0)
 		for _, f := range files[len(r.Tasks):] {
@@ -252,6 +260,54 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 	}
 
 	return nil
+}
+
+// QuerySubTasksCompleteSizePercent query sub-tasks complete size percent.
+func (api *API) QuerySubTasksCompleteSizePercent(ctx context.Context, worker, taskID string) (float64, error) {
+	token, err := api.getToken(ctx, worker, false)
+	if err != nil {
+		return 0, fmt.Errorf("get token err: %w", err)
+	}
+
+	var e RespErr
+	var r struct {
+		Statuses []struct {
+			FileSize string `json:"file_size"`
+			Phase    string `json:"phase"`
+		} `json:"statuses"`
+	}
+
+	body, err := resCli.R().
+		SetContext(ctx).
+		SetAuthToken(token).
+		SetError(&e).
+		SetResult(&r).
+		SetQueryParams(map[string]string{
+			"limit": "100",
+		}).
+		Get(apiURL(fmt.Sprintf("/drive/v1/task/%s/statuses", taskID)))
+
+	if err != nil {
+		return 0, fmt.Errorf("query sub-task status err: %w", err)
+	}
+
+	log.WithContext(ctx).Debugf("query sub-task status resp body: %s", body.Body())
+
+	if err = e.Error(); err != nil {
+		return 0, err
+	}
+
+	totalSize, completeSize := 0, 0
+	for _, status := range r.Statuses {
+		totalSize += util.Atoi(status.FileSize)
+		if status.Phase == comm.StatusOK {
+			completeSize += util.Atoi(status.FileSize)
+		}
+	}
+
+	percent := float64(completeSize) / float64(totalSize)
+
+	return percent, nil
 }
 
 func isTaskNotFound(tasks []*fileTask, id string) bool {
