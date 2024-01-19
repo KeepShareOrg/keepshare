@@ -16,6 +16,14 @@ const (
 	StatusPending = "PHASE_TYPE_PENDING"
 )
 
+// enum PikPak link status.
+const (
+	LinkStatusOK      = "OK"
+	LinkStatusUnknown = "UNKNOWN"
+	LinkStatusLimited = "LIMITED"
+	LinkStatusError   = "ERROR"
+)
+
 // IsFinalStatus returns whether this status is a final state which can not be updated anymore.
 func IsFinalStatus(s string) bool {
 	return s == StatusOK || s == StatusError

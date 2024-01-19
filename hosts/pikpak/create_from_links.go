@@ -6,7 +6,9 @@ package pikpak
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/config"
 	"strings"
 	"time"
 
@@ -153,6 +155,15 @@ func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount
 	var excludeWorkers []string
 	var tryPremium int
 
+	//if the link status is ok, it means the link will complete soon
+	status := p.api.QueryLinkStatus(ctx, link)
+	if status != comm.LinkStatusOK {
+		infos, err := GetLinkAccessInfos(ctx, lk.Hash(link))
+		if err == nil && len(infos) < 2 {
+			return nil, fmt.Errorf("link %s, slow_task_link err", link)
+		}
+	}
+
 	log.ContextWithFields(ctx, log.Fields{"tryFree": 1})
 	// firstly, try with an existed free worker and free size more than 1GB
 	worker, err := p.m.GetWorkerWithEnoughCapacity(ctx, master.UserID, util.GB, account.NotPremium, excludeWorkers)
@@ -244,4 +255,20 @@ tryWithPremiumAccount:
 		return nil, err
 	}
 	return file, nil
+}
+
+// GetLinkAccessInfos get link access log list
+func GetLinkAccessInfos(ctx context.Context, originalLinkHash string) ([]string, error) {
+	accessLog, err := config.Redis().Get(ctx, originalLinkHash).Result()
+	if err != nil {
+		accessLog = "[]"
+	}
+
+	var accessInfos []string
+	err = json.Unmarshal([]byte(accessLog), &accessInfos)
+	if err != nil {
+		return nil, err
+	}
+
+	return accessInfos, err
 }

@@ -5,16 +5,20 @@
 package server
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/KeepShareOrg/keepshare/config"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"math/rand"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // VerifyRecaptchaToken verify google recaptcha token
@@ -91,4 +95,62 @@ func GenerateVerificationCode(length int) string {
 	}
 
 	return code
+}
+
+// GetRequestIP get request ip
+func GetRequestIP(r *http.Request) string {
+	ip := r.Header.Get("X-Real-IP")
+	if ip == "" {
+		ip = r.Header.Get("X-Forwarded-For")
+	}
+	if ip == "" {
+		ip = r.RemoteAddr
+	}
+	return ip
+}
+
+// RecordLinkAccessLog record link access log
+func RecordLinkAccessLog(ctx context.Context, originalLinkHash, ip string) ([]string, error) {
+	accessLog, err := config.Redis().Get(ctx, originalLinkHash).Result()
+	if err != nil {
+		accessLog = "[]"
+	}
+
+	var accessInfos []string
+	_ = json.Unmarshal([]byte(accessLog), &accessInfos)
+
+	log.WithContext(ctx).Debugf("access log: %#v", accessInfos)
+
+	newAccessInfos := []string{
+		fmt.Sprintf("%s-%d", ip, time.Now().Unix()),
+	}
+
+	RecordAccessIPNums := 10
+	for _, v := range accessInfos {
+		ipAndAccessTimestamp := strings.Split(v, "-")
+		if len(ipAndAccessTimestamp) == 2 {
+			accessTimestamp, err := strconv.Atoi(ipAndAccessTimestamp[1])
+			if err != nil {
+				continue
+			}
+
+			if time.Now().Sub(time.Unix(int64(accessTimestamp), 0)).Hours() < 24 && len(newAccessInfos) < RecordAccessIPNums {
+				ipExist := false
+				for _, v := range newAccessInfos {
+					if strings.HasPrefix(v, ipAndAccessTimestamp[0]) {
+						ipExist = true
+					}
+				}
+				if !ipExist {
+					newAccessInfos = append(newAccessInfos, v)
+				}
+			}
+		}
+	}
+
+	if newAccessLog, err := json.Marshal(newAccessInfos); err == nil {
+		_ = config.Redis().Set(ctx, originalLinkHash, string(newAccessLog), 24*time.Hour).Err()
+	}
+
+	return newAccessInfos, nil
 }
