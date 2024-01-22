@@ -102,7 +102,7 @@ const SharedStatus = () => {
             return;
           }
 
-          const hostSharedLink = fileInfo.host_shared_link;
+          const hostSharedLink = newFileInfo.host_shared_link;
           if (newStatus === "OK" && hostSharedLink) {
             location.href = hostSharedLink;
           } else {
