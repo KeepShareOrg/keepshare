@@ -88,8 +88,8 @@ const SharedStatus = () => {
     const isLoopEnd = loopTimes > MAX_LOOP_TIMES;
     // Get data from keepshare server, but the data may be incomplete (returned from PikPak)
     getSharedLinkInfo(autoId, requestId, isLoopEnd).then(
-      ({ data: fileInfo, error }) => {
-        if (fileInfo) {
+      ({ data: newFileInfo, error }) => {
+        if (newFileInfo) {
           if (loopTimes <= MAX_LOOP_TIMES) {
             const timer = setTimeout(() => {
               setLoopTimes(loopTimes + 1);
@@ -97,7 +97,7 @@ const SharedStatus = () => {
             }, 2000);
           }
 
-          const newStatus = fileInfo.state;
+          const newStatus = newFileInfo.state;
           if (status === newStatus) {
             return;
           }
@@ -107,7 +107,7 @@ const SharedStatus = () => {
             location.href = hostSharedLink;
           } else {
             setStatus(newStatus);
-            setFileInfo(fileInfo);
+            setFileInfo(Object.assign({}, fileInfo, newFileInfo));
           }
 
           if (loopTimes === MAX_LOOP_TIMES) {
@@ -117,17 +117,18 @@ const SharedStatus = () => {
 
         // Get data from whatsLink website
         if (!error) {
-          getLinkInfoFromWhatsLink(fileInfo?.original_link || "")
+          getLinkInfoFromWhatsLink(newFileInfo?.original_link || "")
             .then(({ data, error }) => {
               try {
                 if (error) {
                   return;
                 }
                 setFileInfo(
-                  Object.assign({}, fileInfo, {
+                  Object.assign({}, newFileInfo, {
                     title: fileInfo?.title || data?.name,
                     size: fileInfo?.size || data?.size,
                     screenshot: data?.screenshots?.[0]?.screenshot,
+                    fileType: data?.file_type || "unknown",
                   }),
                 );
               } catch (e) {
@@ -147,8 +148,6 @@ const SharedStatus = () => {
   useEffect(() => {
     i18n.changeLanguage(getSupportLanguage());
   }, []);
-
-  useEffect(() => console.log(fileInfo), [fileInfo]);
 
   return (
     <Background>

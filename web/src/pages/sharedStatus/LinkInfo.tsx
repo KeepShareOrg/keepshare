@@ -1,4 +1,7 @@
-import { type SharedLinkInfo } from "@/api/link";
+import type {
+  GetLinkInfoFromWhatsLinkResponse,
+  SharedLinkInfo,
+} from "@/api/link";
 import { copyToClipboard, formatBytes } from "@/util";
 import { Button, Space, message, theme, Typography } from "antd";
 import { useEffect, useState } from "react";
@@ -10,12 +13,37 @@ import {
   SharedInfoBox,
 } from "./style";
 import { CopyOutlined } from "@ant-design/icons";
-import ShareIcon from "@/assets/images/prepare-status-banner.png";
+import UnknownIcon from "@/assets/images/file-unknown.png";
 import LinkPng from "@/assets/images/icon-link.png";
+import { match } from "ts-pattern";
 
 const { Text } = Typography;
 
-export type LinkFileInfo = Partial<SharedLinkInfo> & { screenshot?: string };
+const getShareIcon = async (
+  fileType: GetLinkInfoFromWhatsLinkResponse["file_type"],
+): Promise<string> => {
+  try {
+    const result = await match(fileType)
+      .with("unknown", () => import("@/assets/images/file-unknown.png"))
+      .with("folder", () => import("@/assets/images/file-folder.png"))
+      .with("video", () => import("@/assets/images/file-video.png"))
+      .with("text", () => import("@/assets/images/file-text.png"))
+      .with("image", () => import("@/assets/images/file-image.png"))
+      .with("audio", () => import("@/assets/images/file-audio.png"))
+      .with("document", () => import("@/assets/images/file-document.png"))
+      .with("archive", () => import("@/assets/images/file-archive.png"))
+      .with("font", () => import("@/assets/images/file-font.png"))
+      .exhaustive();
+    return result.default || UnknownIcon;
+  } catch {
+    return UnknownIcon;
+  }
+};
+
+export type LinkFileInfo = Partial<SharedLinkInfo> & {
+  screenshot?: string;
+  fileType?: GetLinkInfoFromWhatsLinkResponse["file_type"];
+};
 export type LinkInfoBlock = "banner" | "filename" | "link";
 
 interface LinkInfoInterface {
@@ -30,6 +58,11 @@ const LinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
   const size = formatBytes((storage as number) || 0);
   const { token } = theme.useToken();
   const link = fileInfo.original_link;
+
+  const [shareIcon, setShareIcon] = useState(UnknownIcon);
+  useEffect(() => {
+    getShareIcon(fileInfo.fileType!).then(setShareIcon);
+  }, [fileInfo]);
 
   const handleCopyLink = () => {
     try {
@@ -78,7 +111,7 @@ const LinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
             align="center"
             style={{ marginTop: "auto" }}
           >
-            <img src={ShareIcon} style={{ width: "94px" }} alt="shareIcon" />
+            <img src={shareIcon} style={{ width: "94px" }} alt="shareIcon" />
             {storage ? (
               <Text
                 style={{
@@ -109,7 +142,7 @@ const LinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
         <>
           <Space
             align="start"
-            style={{ marginTop: token.marginLG, maxWidth: "660px" }}
+            style={{ marginTop: token.marginLG, maxWidth: "680px" }}
           >
             <img
               src={LinkPng}

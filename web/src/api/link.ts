@@ -169,7 +169,8 @@ export const removeFromBlacklist = (links: string[], isDeleteFile = false) => {
 */
 export interface GetLinkInfoFromWhatsLinkResponse {
   type: string; // The content type for the link
-  file_type: string; // The type of the content corresponding to the link, Possible values: unknown, folder, video, text, image, audio, archive, font, document
+  // The type of the content corresponding to the link, Possible values: unknown, folder, video, text, image, audio, archive, font, document
+  file_type: "unknown" | "folder" | "video" | "text" | "image" | "audio" | "archive" | "font" | "document";
   name: string; // The name of the content corresponding to the link
   size: number; // The total size of the content corresponding to the link
   count: number; // The number of included files corresponding to the link
