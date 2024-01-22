@@ -4,7 +4,9 @@
 
 package api
 
-import "strings"
+import (
+	"strings"
+)
 
 // IsSpaceNotEnoughErr returns whether the error is caused by space not enough.
 func IsSpaceNotEnoughErr(err error) bool {
@@ -71,13 +73,4 @@ func IsMemberCodeNotSupportRegionErr(err error) bool {
 	}
 
 	return strings.Contains(err.Error(), "member_code_not_support_region")
-}
-
-// IsSlowTaskLinkError returns whether the error is caused by slow task link.
-func IsSlowTaskLinkError(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	return strings.Contains(err.Error(), "slow_task_link")
 }

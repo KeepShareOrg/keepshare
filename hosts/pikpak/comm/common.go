@@ -42,6 +42,9 @@ const (
 
 	// MaxPremiumWorkers is the maximum number of premium workers bound to a master.
 	MaxPremiumWorkers = 20
+
+	// SlowTaskTriggerConditionTimes is the maximum number of times to trigger a slow task.
+	SlowTaskTriggerConditionTimes = 2
 )
 
 const (

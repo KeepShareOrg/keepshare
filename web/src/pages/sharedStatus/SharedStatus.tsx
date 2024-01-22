@@ -119,18 +119,24 @@ const SharedStatus = () => {
         if (!error) {
           getLinkInfoFromWhatsLink(fileInfo?.original_link || "")
             .then(({ data, error }) => {
-              if (error) {
-                return;
+              try {
+                if (error) {
+                  return;
+                }
+                setFileInfo(
+                  Object.assign({}, fileInfo, {
+                    title: fileInfo?.title || data?.name,
+                    size: fileInfo?.size || data?.size,
+                    screenshot: data?.screenshots?.[0]?.screenshot,
+                  }),
+                );
+              } catch (e) {
+                console.error("get link info error: ", e);
               }
-              setFileInfo(
-                Object.assign({}, fileInfo, {
-                  title: fileInfo?.title || data?.name,
-                  size: fileInfo?.size || data?.size,
-                  screenshot: data?.screenshots[0]?.screenshot,
-                }),
-              );
             })
-            .catch(() => {});
+            .catch((err) => {
+              console.warn("get link info from whatslink error: ", err);
+            });
         }
 
         error && message.error(error.message);
@@ -141,6 +147,8 @@ const SharedStatus = () => {
   useEffect(() => {
     i18n.changeLanguage(getSupportLanguage());
   }, []);
+
+  useEffect(() => console.log(fileInfo), [fileInfo]);
 
   return (
     <Background>

@@ -72,10 +72,29 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		}
 	}
 
+	sharedLinks = map[string]*share.Share{}
 	// only create files for new links.
 	for _, link := range originalLinks {
 		if linksStatusOK[link] != nil || linksStatusPending[link] != nil || linksStatusError[link] != nil {
 			continue
+		}
+
+		//if the link status is ok, it means the link will complete soon
+		if createBy == share.AutoShare {
+			status := p.api.QueryLinkStatus(ctx, link)
+			if status != comm.LinkStatusOK {
+				infos, err := GetLinkAccessInfos(ctx, lk.Hash(link))
+				if err == nil && len(infos) < comm.SlowTaskTriggerConditionTimes {
+					sh := &share.Share{
+						State:        share.StatusCreated,
+						OriginalLink: link,
+						CreatedBy:    createBy,
+						CreatedAt:    time.Now(),
+					}
+					sharedLinks[link] = sh
+					return sharedLinks, nil
+				}
+			}
 		}
 
 		file, err := p.createFromLink(ctx, master, link)
@@ -86,7 +105,6 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		linksStatusPending[link] = file
 	}
 
-	sharedLinks = map[string]*share.Share{}
 	for _, f := range linksStatusPending {
 		originalLink := hashToLink[f.OriginalLinkHash]
 		sharedLinks[originalLink] = &share.Share{
@@ -154,15 +172,6 @@ func isSensitiveLink(err string) bool {
 func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount, link string) (*model.File, error) {
 	var excludeWorkers []string
 	var tryPremium int
-
-	//if the link status is ok, it means the link will complete soon
-	status := p.api.QueryLinkStatus(ctx, link)
-	if status != comm.LinkStatusOK {
-		infos, err := GetLinkAccessInfos(ctx, lk.Hash(link))
-		if err == nil && len(infos) < 2 {
-			return nil, fmt.Errorf("link %s, slow_task_link err", link)
-		}
-	}
 
 	log.ContextWithFields(ctx, log.Fields{"tryFree": 1})
 	// firstly, try with an existed free worker and free size more than 1GB

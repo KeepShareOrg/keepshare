@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/KeepShareOrg/keepshare/hosts/pikpak/api"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -97,19 +96,12 @@ func autoSharingLink(c *gin.Context) {
 
 	l := log.WithContext(ctx)
 	sh, lastState, err := createShareLinkIfNotExist(ctx, user.ID, host, link, share.AutoShare)
-	if err != nil && !api.IsSlowTaskLinkError(err) {
+	if err != nil {
 		report.Set(constant.Error, err.Error())
 		mdw.RespInternal(c, err.Error())
 		return
 	}
 
-	//if api.IsSlowTaskLinkError(err) {
-	//	RecordLinkAccessLog(ctx, lk.Hash(link), GetRequestIP(c.Request))
-	//	lastState = share.StatusNotFound
-	//	sh = &model.SharedLink{
-	//		State: string(share.StatusCreated),
-	//	}
-	//}
 	report.Set(keyState, lastState)
 	l = l.WithFields(Map{constant.SharedLink: sh.HostSharedLink, constant.ShareStatus: sh.State})
 
@@ -126,7 +118,7 @@ func autoSharingLink(c *gin.Context) {
 
 	default: // include StatusSensitive
 		l.Debug("share status:", sh.State)
-		//RecordLinkAccessLog(ctx, sh.OriginalLinkHash, GetRequestIP(c.Request))
+		RecordLinkAccessLog(ctx, sh.OriginalLinkHash, GetRequestIP(c.Request))
 
 		// push the uncompleted task to the background
 		set, err := config.Redis().SetNX(ctx, fmt.Sprintf("async_trigger_running:%d", sh.AutoID), "", 30*time.Second).Result()

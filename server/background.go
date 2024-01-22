@@ -162,6 +162,9 @@ func (a *asyncBackgroundTask) taskConsumer(linkID int64) {
 		[]string{task.OriginalLink},
 		task.CreatedBy,
 	)
+
+	// TODO: handle the slow task error
+
 	if err != nil {
 		lg.Errorf("create share link error: %v", err.Error())
 		update := model.SharedLink{
