@@ -85,6 +85,7 @@ export const formatBytes = (bytes: number, decimals: number = 2): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 };
 
+(window as any).dayJs = dayJs;
 // shim sharedLinks table data
 export const shimSharedLinksTableData = (
   data: SharedLinkInfo,
@@ -92,8 +93,8 @@ export const shimSharedLinksTableData = (
   return {
     ...data,
     key: String(data.auto_id),
-    created_at: dayJs(data.created_at).format("YYYY-MM-DD hh:mm"),
-    updated_at: dayJs(data.updated_at).format("YYYY-MM-DD hh:mm"),
+    created_at: dayJs(data.created_at.endsWith('Z') ? data.created_at.slice(0, -1) : data.created_at).format("YYYY-MM-DD hh:mm"),
+    updated_at: dayJs(data.updated_at.endsWith('Z') ? data.updated_at.slice(0, -1) : data.updated_at).format("YYYY-MM-DD hh:mm"),
     size: typeof data.size === "number" ? formatBytes(data.size) : data.size,
   };
 };
