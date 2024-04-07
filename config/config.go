@@ -24,6 +24,7 @@ var (
 	LogFormat       = func() string { return viper.GetString("log_format") }
 	LogOutput       = func() string { return viper.GetString("log_output") }
 	LogPretty       = func() bool { return viper.GetBool("log_pretty") }
+	LogBackups      = func() int { return viper.GetInt("log_backups") }
 	AccessLogOutput = func() string { return viper.GetString("log_access_output") }
 
 	GoogleRecaptchaSecret = func() string { return viper.GetString("google_recaptcha_secret") }
@@ -45,6 +46,7 @@ var configs = map[string]properties{
 	"log_format":        {"json", "Options: json, text"},
 	"log_output":        {"", "The log output, default to stdout"},
 	"log_pretty":        {false, "Print indented json logs if this value is true and log_format is json"},
+	"log_backups":       {10, "The maximum number of old log files to retain"},
 	"log_access_output": {"", "The access log output, default same to log_output"},
 
 	"google_recaptcha_secret": {"", "The google reCAPTCHA secret key"},
@@ -84,7 +86,7 @@ func Load() error {
 	log.SetOutput(LogOutput(), &log.OutputOptions{
 		MaxSizeInMB: 1024,
 		MaxAgeInDay: 31,
-		MaxBackups:  10,
+		MaxBackups:  LogBackups(),
 	})
 
 	if err := initMysql(); err != nil {
