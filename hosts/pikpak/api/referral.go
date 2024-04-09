@@ -92,7 +92,7 @@ func (api *API) VerifyInviteSubAccountToken(ctx context.Context, token string) e
 		return fmt.Errorf("verify invite sub account token err: %w", err)
 	}
 
-	log.WithContext(ctx).Debugf("verify invite sub account token response body: %s", body.Body())
+	log.WithContext(ctx).Debugf("verify invite sub account token response body: %s, token: %v", body.Body(), token)
 
 	if err = e.Error(); err != nil {
 		return fmt.Errorf("verify invite sub account token err: %w", err)

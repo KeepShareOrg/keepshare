@@ -51,7 +51,7 @@ func New(opt redis.Options) *Queue {
 	}
 
 	conf := asynq.Config{
-		Concurrency: 4,
+		Concurrency: 10,
 		Logger:      log.Log(),
 	}
 	conf.LogLevel.Set(log.Log().Level.String())
@@ -94,6 +94,16 @@ func (q *Queue) Client() *Client {
 
 // Enqueue enqueues the given task and payload to a queue.
 func (q *Client) Enqueue(taskType string, payload []byte, opts ...asynq.Option) (*asynq.TaskInfo, error) {
+	foundMaxRetryOpt := false
+	for _, o := range opts {
+		if o.Type() == asynq.MaxRetryOpt {
+			foundMaxRetryOpt = true
+			break
+		}
+	}
+	if !foundMaxRetryOpt {
+		opts = append(opts, asynq.MaxRetry(3))
+	}
 	t := asynq.NewTask(taskType, payload, opts...)
 	return q.cli.Enqueue(t)
 }

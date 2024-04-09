@@ -230,7 +230,7 @@ func (m *Manager) CreateWorker(ctx context.Context, master string, status Status
 		WorkerUserID: worker.UserID,
 		WorkerEmail:  worker.Email,
 	})
-	_, _ = m.Queue.Enqueue(taskTypeInviteSubAccount, payload, asynq.MaxRetry(3))
+	_, _ = m.Queue.Enqueue(taskTypeInviteSubAccount, payload, asynq.MaxRetry(3), asynq.Deadline(time.Now().Add(time.Second*30)))
 
 	return worker, nil
 }
