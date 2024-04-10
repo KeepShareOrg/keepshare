@@ -305,8 +305,11 @@ func (api *API) QuerySubTasksCompleteSizePercent(ctx context.Context, worker, ta
 		}
 	}
 
-	percent := float64(completeSize) / float64(totalSize)
+	if totalSize == 0 {
+		return 0, nil
+	}
 
+	percent := float64(completeSize) / float64(totalSize)
 	return percent, nil
 }
 

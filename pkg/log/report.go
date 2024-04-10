@@ -10,7 +10,7 @@ import (
 var reportLogger *glog.Logger
 
 func init() {
-	w := Output("./report/data.json", &OutputOptions{Rotate: "day", MaxBackups: 15})
+	w := Output("./report/data.json", &OutputOptions{Rotate: "day", MaxBackups: 30})
 	reportLogger = glog.New(w, "", 0)
 }
 

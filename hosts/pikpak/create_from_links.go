@@ -8,9 +8,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/KeepShareOrg/keepshare/config"
 	"strings"
 	"time"
+
+	"github.com/KeepShareOrg/keepshare/config"
 
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/account"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/api"
@@ -81,8 +82,20 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 
 		//if the link status is ok, it means the link will complete soon
 		if createBy == share.AutoShare {
-			status := p.api.QueryLinkStatus(ctx, link)
-			if status != comm.LinkStatusOK {
+			status, progress := p.api.QueryLinkStatus(ctx, link)
+			if status == comm.LinkStatusLimited {
+				sh := &share.Share{
+					State:        share.StatusSensitive,
+					OriginalLink: link,
+					CreatedBy:    createBy,
+					CreatedAt:    time.Now(),
+					Error:        "status:" + comm.LinkStatusLimited,
+				}
+				sharedLinks[link] = sh
+				continue
+			}
+
+			if status != comm.LinkStatusOK && progress < 95 {
 				infos, err := GetLinkAccessInfos(ctx, lk.Hash(link))
 				if err == nil && len(infos) < comm.SlowTaskTriggerConditionTimes {
 					sh := &share.Share{
@@ -92,7 +105,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 						CreatedAt:    time.Now(),
 					}
 					sharedLinks[link] = sh
-					return sharedLinks, nil
+					continue
 				}
 			}
 		}

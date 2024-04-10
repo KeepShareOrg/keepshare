@@ -108,31 +108,33 @@ func querySharedLinkInfo(c *gin.Context) {
 	}
 
 	report := log.NewReport("get_status")
+	reqID, start := log.RequestIDFromContext(ctx)
+	report.Sets(Map{
+		constant.IP:        c.ClientIP(),
+		constant.DeviceID:  c.GetHeader(constant.HeaderDeviceID),
+		constant.RequestID: reqID,
+		"is_end":           c.Query("is_end") == "true",
+	})
+	defer func() {
+		report.Set(keyTotalMS, time.Since(start).Milliseconds()).Done()
+	}()
 
 	conditions := []gen.Condition{
 		query.SharedLink.AutoID.Eq(int64(autoID)),
 	}
 	res, err := query.SharedLink.WithContext(ctx).Where(conditions...).Take()
 	if err != nil {
+		report.Set(constant.Error, err)
 		mdw.RespInternal(c, err.Error())
 		return
 	}
 
-	reqID, start := log.RequestIDFromContext(ctx)
 	report.Sets(Map{
-		constant.IP:        c.ClientIP(),
-		constant.DeviceID:  c.GetHeader(constant.HeaderDeviceID),
-		constant.RequestID: reqID,
-		constant.UserID:    res.UserID,
-		constant.Link:      res.OriginalLink,
-		constant.Host:      res.Host,
-		keyState:           res.State,
-		"is_end":           c.Query("is_end") == "true",
-		//constant.Channel:   channel,
+		constant.UserID: res.UserID,
+		constant.Link:   res.OriginalLink,
+		constant.Host:   res.Host,
+		keyState:        res.State,
 	})
-	defer func() {
-		report.Set(keyTotalMS, time.Since(start).Milliseconds()).Done()
-	}()
 
 	if res.State == share.StatusOK.String() {
 		// TODO: We can add parameters to the PikPak sharing page to automatically play, but we need to add that only the current host is PikPak.
@@ -140,7 +142,7 @@ func querySharedLinkInfo(c *gin.Context) {
 		report.Sets(Map{
 			keyRedirectType: "share",
 			keyHostLink:     hostLink,
-		}).Done()
+		})
 		res.HostSharedLink = hostLink
 	}
 
