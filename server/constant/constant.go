@@ -36,3 +36,10 @@ const (
 	VerificationActionChangeEmail    VerificationAction = "change_email"
 	VerificationActionChangePassword VerificationAction = "change_password"
 )
+
+// async queue name
+const (
+	AsyncQueueInviteSubAccount = "invite_sub_account"
+	AsyncQueueSyncWorkerInfo   = "sync_worker_info"
+	AsyncQueueStatisticTask    = "statistic"
+)

@@ -40,7 +40,7 @@ func getStatisticsLater(recordID int64) {
 	ok, _ := config.Redis().SetNX(ctx, key, "", statisticTaskDelay).Result()
 	if ok {
 		payload, _ := json.Marshal(getStatisticsMessage{RecordID: recordID})
-		if t, err := queue.Enqueue(statisticTask, payload, asynq.ProcessIn(statisticTaskDelay)); err != nil {
+		if t, err := queue.Enqueue(statisticTask, payload, asynq.ProcessIn(statisticTaskDelay), asynq.Queue(constant.AsyncQueueStatisticTask)); err != nil {
 			log.WithContext(ctx).WithField(constant.Error, err).Errorf("enqueue statistics task for record %d err: %v", recordID, err)
 		} else {
 			log.WithContext(ctx).Debugf("enqueue statistics task for record %d done, task id: %s", recordID, t.ID)

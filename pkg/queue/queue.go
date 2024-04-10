@@ -29,7 +29,7 @@ type Client struct {
 }
 
 // New returns a Queue instance.
-func New(opt redis.Options) *Queue {
+func New(opt redis.Options, queues map[string]int) *Queue {
 	q := &Queue{opt: opt}
 
 	o := &asynq.RedisClientOpt{
@@ -53,6 +53,7 @@ func New(opt redis.Options) *Queue {
 	conf := asynq.Config{
 		Concurrency: 10,
 		Logger:      log.Log(),
+		Queues:      queues,
 	}
 	conf.LogLevel.Set(log.Log().Level.String())
 	if conf.LogLevel < asynq.InfoLevel {

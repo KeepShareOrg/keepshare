@@ -7,6 +7,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/server/constant"
 	"io/fs"
 	"net/http"
 	"net/http/httputil"
@@ -53,7 +54,11 @@ func Start() error {
 	// init queue with redis, select another db = db + 1.
 	redisOpt := *(config.Redis().Options())
 	redisOpt.DB = (redisOpt.DB + 1) % 16
-	queueIns := q.New(redisOpt)
+	queueIns := q.New(redisOpt, map[string]int{
+		constant.AsyncQueueInviteSubAccount: 6,
+		constant.AsyncQueueSyncWorkerInfo:   3,
+		constant.AsyncQueueStatisticTask:    1,
+	})
 	queue = queueIns.Client()
 	queue.RegisterHandler(statisticTask, asynq.HandlerFunc(handleGetStatistics))
 
@@ -63,7 +68,6 @@ func Start() error {
 	}
 	log.Info("loaded languages:", i18n.Languages())
 
-	// start all hosts
 	hosts.Start(&hosts.Dependencies{
 		Mysql:  config.MySQL(),
 		Redis:  config.Redis(),

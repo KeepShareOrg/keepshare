@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/server/constant"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -230,7 +231,12 @@ func (m *Manager) CreateWorker(ctx context.Context, master string, status Status
 		WorkerUserID: worker.UserID,
 		WorkerEmail:  worker.Email,
 	})
-	_, _ = m.Queue.Enqueue(taskTypeInviteSubAccount, payload, asynq.MaxRetry(3), asynq.Deadline(time.Now().Add(time.Second*30)))
+	_, _ = m.Queue.Enqueue(
+		taskTypeInviteSubAccount,
+		payload,
+		asynq.Queue(constant.AsyncQueueInviteSubAccount),
+		asynq.MaxRetry(3),
+	)
 
 	return worker, nil
 }
@@ -369,6 +375,9 @@ func (m *Manager) inviteSubAccount(ctx context.Context, task *asynq.Task) (err e
 	sendTime := time.Now()
 	err = m.api.InviteSubAccount(ctx, req.MasterUserID, req.WorkerEmail)
 	if err != nil {
+		if api.IsHasJoinedReferralErr(err) {
+			return nil
+		}
 		return fmt.Errorf("send invite request err: %w", err)
 	}
 

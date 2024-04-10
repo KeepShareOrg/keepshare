@@ -74,3 +74,12 @@ func IsMemberCodeNotSupportRegionErr(err error) bool {
 
 	return strings.Contains(err.Error(), "member_code_not_support_region")
 }
+
+// IsHasJoinedReferralErr return whether the error is user has joined the referral program
+func IsHasJoinedReferralErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "has_joined_referral")
+}

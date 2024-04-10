@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/server/constant"
 	"strings"
 	"time"
 
@@ -152,7 +153,7 @@ func (p *PikPak) processDeleteTask(task *model.DeleteQueue) {
 	_, _ = p.q.DeleteQueue.WithContext(ctx).Delete(task)
 
 	bs, _ := json.Marshal(map[string]string{"worker": task.WorkerUserID})
-	if info, err := p.Queue.Enqueue(taskTypeSyncWorkerInfo, bs, asynq.ProcessIn(30*time.Second)); err != nil {
+	if info, err := p.Queue.Enqueue(taskTypeSyncWorkerInfo, bs, asynq.ProcessIn(30*time.Second), asynq.Queue(constant.AsyncQueueSyncWorkerInfo)); err != nil {
 		log.WithContext(ctx).Errorf("enqueue task type: %s, payload: %s, err: %v", taskTypeSyncWorkerInfo, bs, err)
 	} else {
 		log.WithContext(ctx).Debugf("enqueue task type: %s, payload: %s, response id: %s", taskTypeSyncWorkerInfo, bs, info.ID)
