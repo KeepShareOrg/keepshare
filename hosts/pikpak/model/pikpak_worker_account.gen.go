@@ -22,6 +22,7 @@ type WorkerAccount struct {
 	CreatedAt         time.Time `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt         time.Time `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 	InvalidUntil      time.Time `gorm:"column:invalid_until;not null;default:2000-01-01 00:00:00" json:"invalid_until"`
+	UpdatedUUID       string    `gorm:"column:updated_uuid;not null" json:"updated_uuid"`
 }
 
 // TableName WorkerAccount's table name

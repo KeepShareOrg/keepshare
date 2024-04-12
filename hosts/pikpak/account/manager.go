@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/KeepShareOrg/keepshare/server/constant"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -226,17 +227,23 @@ func (m *Manager) CreateWorker(ctx context.Context, master string, status Status
 		return nil, err
 	}
 
+	cLog := log.WithContext(ctx).WithField("worker", worker)
 	payload, _ := json.Marshal(&inviteSubAccountRequest{
 		MasterUserID: worker.MasterUserID,
 		WorkerUserID: worker.UserID,
 		WorkerEmail:  worker.Email,
 	})
-	_, _ = m.Queue.Enqueue(
+
+	if _, err = m.Queue.Enqueue(
 		taskTypeInviteSubAccount,
 		payload,
 		asynq.Queue(constant.AsyncQueueInviteSubAccount),
 		asynq.MaxRetry(3),
-	)
+	); err != nil {
+		cLog.Errorf("inviteSubAccount task enqueue error: %v", err)
+	} else {
+		cLog.Infof("enqueue inviteSubAccount task, worker user id: %v", worker.UserID)
+	}
 
 	return worker, nil
 }
@@ -268,14 +275,15 @@ func (m *Manager) createWorker(ctx context.Context, master string, status Status
 	}
 
 	now := time.Now().Round(time.Second)
+	updatedUUID := fmt.Sprintf("%v", rand.Intn(1e10))
 	ret, err := t.WithContext(ctx).
 		Where(where...).
-		Select(t.MasterUserID, t.UpdatedAt).
 		Order(t.CreatedAt).
 		Limit(1).
 		Updates(&model.WorkerAccount{
 			MasterUserID: master,
 			UpdatedAt:    now,
+			UpdatedUUID:  updatedUUID,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("bind new worker err: %w", err)
@@ -288,7 +296,7 @@ func (m *Manager) createWorker(ctx context.Context, master string, status Status
 		return nil, errors.New("no enough worker account")
 	}
 
-	return t.WithContext(ctx).Where(t.MasterUserID.Eq(master), t.UpdatedAt.Eq(now)).Take()
+	return t.WithContext(ctx).Where(t.MasterUserID.Eq(master), t.UpdatedAt.Eq(now), t.UpdatedUUID.Eq(updatedUUID)).Take()
 }
 
 // UpdateAccountInvalidUtil update worker invalid until

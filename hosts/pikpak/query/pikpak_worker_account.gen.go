@@ -37,6 +37,7 @@ func newWorkerAccount(db *gorm.DB, opts ...gen.DOOption) workerAccount {
 	_workerAccount.CreatedAt = field.NewTime(tableName, "created_at")
 	_workerAccount.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_workerAccount.InvalidUntil = field.NewTime(tableName, "invalid_until")
+	_workerAccount.UpdatedUUID = field.NewString(tableName, "updated_uuid")
 
 	_workerAccount.fillFieldMap()
 
@@ -57,6 +58,7 @@ type workerAccount struct {
 	CreatedAt         field.Time
 	UpdatedAt         field.Time
 	InvalidUntil      field.Time
+	UpdatedUUID       field.String
 
 	fieldMap map[string]field.Expr
 }
@@ -83,6 +85,7 @@ func (w *workerAccount) updateTableName(table string) *workerAccount {
 	w.CreatedAt = field.NewTime(table, "created_at")
 	w.UpdatedAt = field.NewTime(table, "updated_at")
 	w.InvalidUntil = field.NewTime(table, "invalid_until")
+	w.UpdatedUUID = field.NewString(table, "updated_uuid")
 
 	w.fillFieldMap()
 
@@ -99,7 +102,7 @@ func (w *workerAccount) GetFieldByName(fieldName string) (field.OrderExpr, bool)
 }
 
 func (w *workerAccount) fillFieldMap() {
-	w.fieldMap = make(map[string]field.Expr, 10)
+	w.fieldMap = make(map[string]field.Expr, 11)
 	w.fieldMap["user_id"] = w.UserID
 	w.fieldMap["master_user_id"] = w.MasterUserID
 	w.fieldMap["email"] = w.Email
@@ -110,6 +113,7 @@ func (w *workerAccount) fillFieldMap() {
 	w.fieldMap["created_at"] = w.CreatedAt
 	w.fieldMap["updated_at"] = w.UpdatedAt
 	w.fieldMap["invalid_until"] = w.InvalidUntil
+	w.fieldMap["updated_uuid"] = w.UpdatedUUID
 }
 
 func (w workerAccount) clone(db *gorm.DB) workerAccount {

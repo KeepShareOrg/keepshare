@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS `pikpak_worker_account`
     `created_at`         datetime    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`         datetime    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `invalid_until`      datetime    NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `updated_uuid`       varchar(20) NOT NULL DEFAULT '',
     PRIMARY KEY (`user_id`),
     KEY `master_user_id` (`master_user_id`),
     KEY `premium_expiration` (premium_expiration)
