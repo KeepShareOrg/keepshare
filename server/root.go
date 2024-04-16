@@ -56,7 +56,9 @@ func Start() error {
 	redisOpt.DB = (redisOpt.DB + 1) % 16
 	queueIns := q.New(redisOpt, map[string]int{
 		constant.AsyncQueueInviteSubAccount: 6,
+		constant.AsyncQueueResetPassword:    6,
 		constant.AsyncQueueSyncWorkerInfo:   3,
+		constant.AsyncQueueRefreshToken:     3,
 		constant.AsyncQueueStatisticTask:    1,
 	})
 	queue = queueIns.Client()
@@ -142,6 +144,9 @@ func apiRouter(router *gin.Engine) {
 	g.DELETE("/blacklist", mdw.Auth, removeFromBlackList)
 
 	g.GET("/host/info", mdw.Auth, getHostInfo)
+
+	g.PATCH("/host/password", mdw.Auth, changeHostPassword)
+	g.GET("/host/password/task", mdw.Auth, getChangePasswordTaskInfo)
 }
 
 func consoleRouter(router *gin.Engine) {

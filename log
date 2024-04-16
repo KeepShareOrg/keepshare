@@ -1,0 +1,1712 @@
+{
+  "configs": {
+    "access_token_expiration": "2h",
+    "confirm_email_html_template": "<div style=\"padding: 16px; margin: 0 auto; width: fit-content;\"> <div style=\"display: flex; align-items: center; gap: 2px;\"> <img alt=\"KeepShare logo\" width=\"40\" src=\"data:image/png;base64,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\" /> <span style=\"font-size: 15px; font-weight: 700;\">KeepShare</span></div> <h2 style=\"margin: 30px 0;\">Verify your email address</h2> <p style=\"margin: 0 0 21px 0;\">To protect the security of your KeepShare account, please verify that this is your email address.</p> <a style=\"display: inline-block; width: 180px; height: 30px; text-align: center; line-height: 30px; text-decoration: none; color: #fff; border-radius: 4px; background: #5B67EA;\" href=\"%s\">Verify Email Address</a> <p style=\"opacity: 0.5; margin: 36px 0 0 0;\">This link will expire in 3 days. If you did not make this request, please disregard this email.</p></div>",
+    "confirm_email_text_template": "Verify your email address. To protect the security of your KeepShare account, please verify that this is your email address. Verify email address: %s. This link will expire in 3 days. If you did not make this request, please disregard this email.",
+    "console_proxy_url": "",
+    "db_mysql": "root:admin@(127.0.0.1:3306)/keepshare?charset=utf8mb4&parseTime=True&loc=Local",
+    "db_redis": "redis://localhost:6379?db=10&dial_timeout=2s&read_timeout=2s&max_retries=2",
+    "email": {
+      "email": "keepshare.org@gmail.com",
+      "password": "ynafgcrapsjjkbbb",
+      "port": 587,
+      "server": "smtp.gmail.com",
+      "username": "KeepShare"
+    },
+    "google_recaptcha_secret": "6Lf4kkQoAAAAAD8rTAklNtncSsSmiE_B9HlAk2PB",
+    "host_default": "pikpak",
+    "listen_http": ":8080",
+    "listen_https": "",
+    "log_access_output": "",
+    "log_backups": 10,
+    "log_format": "json",
+    "log_level": "debug",
+    "log_output": "",
+    "log_pretty": true,
+    "mail_server": "https://mail.keepshare.org",
+    "pikpak": {
+      "master_buffer_interval": "10s",
+      "master_buffer_size": 2,
+      "worker_buffer_interval": "1s",
+      "worker_buffer_size": 5
+    },
+    "refresh_token_expiration": "168h",
+    "reset_password_verify_email_html_template": "<h1>your html version verification code: %s</h1>",
+    "reset_password_verify_email_text_template": "your text version verification code: %s",
+    "root_domain": "localhost",
+    "token_secret_key": "secret_key",
+    "verification_code_length": 6,
+    "verification_retry_count_limit": 10,
+    "verify_code_expires": "10m",
+    "verify_email_link_expires": "72h",
+    "verify_email_link_salt": "B0&-2v-gHhCT[R!Pnr>v5^j*whE=jc48"
+  },
+  "file": "server/root.go:46",
+  "func": "server.Start",
+  "level": "debug",
+  "msg": "viper all settings",
+  "time": "2024-04-17T14:50:57.647+08:00"
+}
+{
+  "file": "server/root.go:71",
+  "func": "server.Start",
+  "level": "info",
+  "msg": "loaded languages:[en]",
+  "time": "2024-04-17T14:50:57.649+08:00"
+}
+{
+  "file": "log/log.go:162",
+  "func": "log.(*Logger).Info",
+  "level": "info",
+  "msg": "Starting processing",
+  "time": "2024-04-17T14:50:57.654+08:00"
+}
+{
+  "file": "log/log.go:162",
+  "func": "log.(*Logger).Info",
+  "level": "info",
+  "msg": "Send signal TSTP to stop processing new tasks",
+  "time": "2024-04-17T14:50:57.654+08:00"
+}
+{
+  "file": "log/log.go:162",
+  "func": "log.(*Logger).Info",
+  "level": "info",
+  "msg": "Send signal TERM or INT to terminate the process",
+  "time": "2024-04-17T14:50:57.654+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 4.756,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "select * from `keepshare_shared_link` where state = 'CREATED' and original_link_hash in (select original_link_hash from `pikpak_file` where status = 'PHASE_TYPE_COMPLETE' AND updated_at > '2024-04-16 14:50:57')",
+  "time": "2024-04-17T14:50:57.659+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 6.021,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:50:57' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:50:57.660+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:50:57.660+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 7.191,
+  "level": "debug",
+  "msg": "",
+  "rows": 1,
+  "sql": "SELECT `user_id` FROM `pikpak_master_account` WHERE `pikpak_master_account`.`keepshare_user_id` <> '' AND `pikpak_master_account`.`password` <> '' AND NOT `pikpak_master_account`.`user_id` IN (SELECT `pikpak_token`.`user_id` FROM `pikpak_token`)",
+  "time": "2024-04-17T14:50:57.661+08:00"
+}
+{
+  "file": "account/token.go:53",
+  "func": "account.(*Manager).queryShouldKeepAliveMasterUserIds",
+  "level": "debug",
+  "msg": "should login account length: 1",
+  "time": "2024-04-17T14:50:57.661+08:00"
+}
+{
+  "file": "account/token.go:22",
+  "func": "account.(*Manager).keepTokenAliveWorker",
+  "level": "debug",
+  "msg": "should login account user_id: ZPWltj9yiKLpQ491",
+  "time": "2024-04-17T14:50:57.661+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 6.987,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:50:57.661+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:50:57.661+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 7.244,
+  "level": "debug",
+  "msg": "",
+  "rows": 1,
+  "sql": "SELECT count(*) FROM `pikpak_worker_account` WHERE `pikpak_worker_account`.`master_user_id` = '' AND `pikpak_worker_account`.`premium_expiration` > '2024-04-17 14:50:57.654'",
+  "time": "2024-04-17T14:50:57.661+08:00"
+}
+{
+  "file": "account/buffer.go:206",
+  "func": "account.(*Manager).checkPremiumWorkerBuffer.func1",
+  "level": "debug",
+  "msg": "not used premium worker count: 0 10",
+  "time": "2024-04-17T14:50:57.661+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.304,
+  "level": "debug",
+  "msg": "",
+  "rows": 1,
+  "sql": "SELECT * FROM `pikpak_master_account` WHERE `pikpak_master_account`.`user_id` = 'ZPWltj9yiKLpQ491' LIMIT 1",
+  "time": "2024-04-17T14:50:57.661+08:00"
+}
+{
+  "file": "api/token.go:85",
+  "func": "api.(*API).CreateToken",
+  "level": "debug",
+  "msg": "create token for email: 1f0d8jvb45lhf@keepshare.org password: #Pk.2924508905",
+  "time": "2024-04-17T14:50:57.661+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 8.2,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:50:57.662+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.91,
+  "level": "debug",
+  "msg": "",
+  "rows": 1,
+  "sql": "SELECT * FROM `pikpak_worker_account` WHERE `pikpak_worker_account`.`master_user_id` = '' AND `pikpak_worker_account`.`premium_expiration` < '2024-04-17 14:50:57.661' LIMIT 1",
+  "time": "2024-04-17T14:50:57.662+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.292,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_redeem_code` WHERE `pikpak_redeem_code`.`status` = 'NOT_USED' ORDER BY `pikpak_redeem_code`.`updated_at` LIMIT 1",
+  "time": "2024-04-17T14:50:57.663+08:00"
+}
+{
+  "file": "account/buffer.go:224",
+  "func": "account.(*Manager).checkPremiumWorkerBuffer.func1",
+  "level": "debug",
+  "msg": "not used normal account: &{Zh4irXL2BooGLLsp  1fhlgm67q3mj7@mail.keepshare.org H9ZxBgalqfeh 0 6442450944 2000-01-01 00:00:00 +0800 CST 2024-04-16 15:03:09 +0800 CST 2024-04-16 15:03:09 +0800 CST 2000-01-01 00:00:00 +0800 CST }, code:<nil>",
+  "time": "2024-04-17T14:50:57.663+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 5.014,
+  "level": "info",
+  "msg": "",
+  "rows": 1,
+  "sql": "INSERT INTO `pikpak_token` (`user_id`,`access_token`,`refresh_token`,`expiration`,`created_at`) VALUES ('ZPWltj9yiKLpQ491','eyJhbGciOiJSUzI1NiIsImtpZCI6IjllZDk1ZmNmLWU3NjItNDFiNi04ZGJmLWY1ODlmZjMzZGU3YSJ9.eyJpc3MiOiJodHRwczovL3VzZXIubXlwaWtwYWsuY29tIiwic3ViIjoiWlBXbHRqOXlpS0xwUTQ5MSIsImF1ZCI6IllOeFQ5dzdHTWRXdkVPS2EiLCJleHAiOjE3MTMzNDM4NTcsImlhdCI6MTcxMzMzNjY1NywiYXRfaGFzaCI6InIuMkVDZVVmeUdFZTZRSWJJMlBvWXY1dyIsInNjb3BlIjoidXNlciBwYW4gc3luYyBvZmZsaW5lIiwicHJvamVjdF9pZCI6IjJ3a3M1NmMzMWRjODBzeG01cDkifQ.Qae2TadX_4bGwPu42J2aF03xuGWKEtMTL6BYdNKVVq0j2IP_TBOS6EQXHO6M78ITUuXhFELfmmY_SdPvdkU0UBo3VDpRlyhHK5BX-2gA7tGLD-Eo29VvhIOvyUQMGpQa4zSqBm5vch54KfGOm2_QxsckagDcEF-1wp19cCTwgW2LIb7ckvhn4oDSRuC8EovGAbRYY9uJf5l9QI8YTRS6bOeZuItG4ADQ3X_JGPrwdQYUb3dcHuojGVArN-zKSZLeSoqvEdULzgyv3CiMEMKOr-HKVS5MHbuhRViFrHFsxYpjxGy5tImCRoKmpN1mNJ1uqultPbAOdo9BEe-MXhSRew','os.fFde5ZhwqmYfcVEeIDublEGWehtgVrH6gj8oKjOrs9j6inZZVHulxNsnfyQ2','2024-04-17 16:50:57.855','2024-04-17 14:50:57.855') ON DUPLICATE KEY UPDATE `access_token`=VALUES(`access_token`),`refresh_token`=VALUES(`refresh_token`),`expiration`=VALUES(`expiration`)",
+  "time": "2024-04-17T14:50:57.860+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.667,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_token` WHERE `pikpak_token`.`created_at` <= '2024-04-17 14:40:57.86' ORDER BY `pikpak_token`.`created_at` LIMIT 5000",
+  "time": "2024-04-17T14:50:57.861+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.655,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:50:59.663+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 2.537,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:50:59' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:50:59.663+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:50:59.663+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 2.334,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:50:59.664+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:50:59.664+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.603,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:00.656',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:00.655'",
+  "time": "2024-04-17T14:51:00.657+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.57,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:01.664+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:01.665+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.818,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:01.665+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 2.916,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:01' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:01.667+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:01.667+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 2.985,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:03.658',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:03.658'",
+  "time": "2024-04-17T14:51:03.661+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.62,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:03.666+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:03.666+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.745,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:03.666+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.436,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:03' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:03.667+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:03.668+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.887,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:05.667+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:05.667+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.214,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:05.668+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.643,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:05' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:05.668+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:05.668+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.299,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:06.662',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:06.661'",
+  "time": "2024-04-17T14:51:06.662+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.011,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:07' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:07.670+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:07.670+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.323,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:07.670+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 4.82,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:07.674+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:07.674+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.939,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:09.663',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:09.662'",
+  "time": "2024-04-17T14:51:09.664+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.647,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:09' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:09.671+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:09.671+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.836,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:09.671+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.573,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:09.674+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:09.675+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.816,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:11' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:11.673+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:11.674+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.05,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:11.674+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.599,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:11.675+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:11.676+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.318,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:12.666',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:12.665'",
+  "time": "2024-04-17T14:51:12.666+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.667,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:13' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:13.674+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:13.675+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.783,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:13.675+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.426,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:13.676+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:13.676+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.817,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:15.668',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:15.667'",
+  "time": "2024-04-17T14:51:15.669+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.583,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:15' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:15.676+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:15.676+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.432,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:15.677+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:15.677+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.346,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:15.677+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.553,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:17' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:17.677+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:17.677+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.493,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:17.677+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:17.677+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.634,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:17.678+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.979,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:18.671',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:18.67'",
+  "time": "2024-04-17T14:51:18.672+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.597,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:19' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:19.678+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:19.678+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.528,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:19.678+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:19.678+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 5.569,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:19.683+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 2.134,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:21.673',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:21.673'",
+  "time": "2024-04-17T14:51:21.675+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.631,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:21.680+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:21.680+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.462,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:21' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:21.680+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:21.681+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.907,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:21.685+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.978,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:23' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:23.682+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:23.682+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.031,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:23.682+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:23.683+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.368,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:23.687+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.294,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:24.677',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:24.676'",
+  "time": "2024-04-17T14:51:24.677+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.998,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:25.685+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:25.685+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.001,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:25' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:25.685+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:25.685+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.857,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:25.688+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.707,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "select * from `keepshare_shared_link` where state = 'CREATED' and original_link_hash in (select original_link_hash from `pikpak_file` where status = 'PHASE_TYPE_COMPLETE' AND updated_at > '2024-04-16 14:51:27')",
+  "time": "2024-04-17T14:51:27.660+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.469,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:27.678',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:27.678'",
+  "time": "2024-04-17T14:51:27.679+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.904,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:27' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:27.687+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:27.687+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.035,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:27.687+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:27.687+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.813,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:27.689+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.037,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:29' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:29.689+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:29.689+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.182,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:29.689+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:29.689+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.965,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:29.690+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 2.686,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:30.681',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:30.68'",
+  "time": "2024-04-17T14:51:30.683+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.656,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:31.691+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:31.691+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.642,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:31' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:31.691+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:31.691+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 3.659,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:31.694+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.854,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:33.685',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:33.684'",
+  "time": "2024-04-17T14:51:33.686+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.507,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:33' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:33.692+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:33.692+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.547,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:33.692+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:33.692+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.577,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:33.695+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.693,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:35' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:35.693+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:35.694+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.763,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:35.694+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:35.694+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.761,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:35.697+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.487,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:36.688',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:36.687'",
+  "time": "2024-04-17T14:51:36.689+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.963,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:37.695+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:37.695+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.956,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:37' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:37.695+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:37.695+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.78,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:37.698+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 2.705,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:39.69',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:39.689'",
+  "time": "2024-04-17T14:51:39.692+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.45,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:39.696+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:39.696+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.579,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:39' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:39.696+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:39.696+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.615,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:39.699+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.917,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:41.697+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.049,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:41' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:41.697+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:41.698+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:41.697+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.744,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:41.700+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.479,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:42.694',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:42.693'",
+  "time": "2024-04-17T14:51:42.695+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.63,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:43.698+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:43.699+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.693,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:43' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:43.699+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:43.699+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.773,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:43.701+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.326,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:45.697',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:45.696'",
+  "time": "2024-04-17T14:51:45.697+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.535,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:45' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:45.699+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:45.699+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.511,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:45.699+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:45.700+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.529,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:45.702+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.872,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:47.702+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:47.702+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.832,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:47' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:47.702+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:47.702+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.81,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:47.703+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.808,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:48.698',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:48.697'",
+  "time": "2024-04-17T14:51:48.698+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.565,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:49.703+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:49.703+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.528,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:49' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:49.703+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:49.703+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.635,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:49.704+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.525,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:51.699',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:51.699'",
+  "time": "2024-04-17T14:51:51.700+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.775,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:51.704+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:51.704+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.836,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:51' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:51.704+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:51.704+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 1.543,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:51.706+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.572,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:53.705+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:53.706+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.621,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:53' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:53.706+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:53.706+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.675,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:53.707+08:00"
+}
+{
+  "file": "gormutil/logger.go:99",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 2.251,
+  "level": "info",
+  "msg": "",
+  "rows": 0,
+  "sql": "UPDATE `keepshare_shared_link` SET `state`='ERROR',`updated_at`='2024-04-17 14:51:54.702',`error`='TIMEOUT' WHERE `keepshare_shared_link`.`state` IN ('UNKNOWN','PENDING','CREATED') AND `keepshare_shared_link`.`created_at` < '2024-04-15 12:51:54.701'",
+  "time": "2024-04-17T14:51:54.703+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.691,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `status` in ('PHASE_TYPE_RUNNING', 'PHASE_TYPE_PENDING') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND `created_at`>'2024-04-15 14:51:55' AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*60 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY updated_at LIMIT 10000",
+  "time": "2024-04-17T14:51:55.707+08:00"
+}
+{
+  "file": "api/file.go:411",
+  "func": "api.(*API).triggerFilesFromDB",
+  "level": "debug",
+  "msg": "current internal trigger chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:55.707+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.598,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `keepshare_shared_link` WHERE `state` in ('PENDING', 'CREATED') AND (`updated_at`, `auto_id`) > ('1970-01-01 00:00:00 +0000 UTC', '0') AND TIMESTAMPDIFF(SECOND, `updated_at`, NOW())*300 > TIMESTAMPDIFF(SECOND, `created_at`, `updated_at`) ORDER BY state DESC,updated_at,auto_id LIMIT 1000",
+  "time": "2024-04-17T14:51:55.707+08:00"
+}
+{
+  "file": "server/background.go:57",
+  "func": "server.(*asyncBackgroundTask).getTaskFromDB",
+  "level": "info",
+  "msg": "current uncompleted chan length: 0, from db length: 0",
+  "time": "2024-04-17T14:51:55.707+08:00"
+}
+{
+  "file": "gormutil/logger.go:97",
+  "func": "gormutil.(*gormLogger).Trace",
+  "latency_ms": 0.761,
+  "level": "debug",
+  "msg": "",
+  "rows": 0,
+  "sql": "SELECT * FROM `pikpak_file` WHERE `pikpak_file`.`status` IN ('PHASE_TYPE_RUNNING','PHASE_TYPE_PENDING') AND `pikpak_file`.`created_at` > '2024-04-17 14:40:57.654' ORDER BY `pikpak_file`.`created_at` LIMIT 10000",
+  "time": "2024-04-17T14:51:55.708+08:00"
+}

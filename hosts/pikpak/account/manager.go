@@ -79,6 +79,9 @@ func NewManager(q *query.Query, api *api.API, d *hosts.Dependencies) *Manager {
 	go m.checkWorkerBuffer()
 	go m.checkPremiumWorkerBuffer()
 
+	go m.keepTokenAliveWorker()
+	go m.registerRefreshTokenTask()
+
 	return m
 }
 

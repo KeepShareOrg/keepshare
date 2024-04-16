@@ -42,4 +42,6 @@ const (
 	AsyncQueueInviteSubAccount = "invite_sub_account"
 	AsyncQueueSyncWorkerInfo   = "sync_worker_info"
 	AsyncQueueStatisticTask    = "statistic"
+	AsyncQueueResetPassword    = "reset_password"
+	AsyncQueueRefreshToken     = "refresh_token"
 )

@@ -6,7 +6,7 @@ package pikpak
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
 )
 
@@ -39,4 +39,23 @@ func (p *PikPak) HostInfo(ctx context.Context, userID string, options map[string
 	}
 
 	return resp, nil
+}
+
+// ChangeMasterAccountPassword changes the master account password.
+func (p *PikPak) ChangeMasterAccountPassword(ctx context.Context, userID, newPassword string, rememberMe bool) (string, error) {
+	// query the master account registration email
+	registrationEmail, err := p.q.MasterAccount.WithContext(ctx).
+		Select(p.q.MasterAccount.Email).
+		Where(p.q.MasterAccount.KeepshareUserID.Eq(userID)).
+		Take()
+	if err != nil {
+		return "", fmt.Errorf("query master account email error, %v", err.Error())
+	}
+	log.Debugf("master account email is %s", registrationEmail.Email)
+
+	taskID, err := p.api.ResetPassword(ctx, registrationEmail.Email, newPassword, rememberMe)
+	if err != nil {
+		return "", err
+	}
+	return taskID, nil
 }

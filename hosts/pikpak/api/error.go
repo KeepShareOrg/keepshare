@@ -5,6 +5,7 @@
 package api
 
 import (
+	"errors"
 	"strings"
 )
 
@@ -82,4 +83,26 @@ func IsHasJoinedReferralErr(err error) bool {
 	}
 
 	return strings.Contains(err.Error(), "has_joined_referral")
+}
+
+var (
+	EmptyPasswordErr = errors.New("password is empty")
+)
+
+// IsEmptyPasswordErr returns whether the error is caused by empty password.
+func IsEmptyPasswordErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return errors.Is(err, EmptyPasswordErr)
+}
+
+// IsInvalidGrantErr returns whether the error is caused by invalid grant.
+func IsInvalidGrantErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "invalid_grant")
 }

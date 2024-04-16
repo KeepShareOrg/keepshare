@@ -8,7 +8,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/server/constant"
 	"sync"
+	"time"
 
 	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/hibiken/asynq"
@@ -51,9 +53,15 @@ func New(opt redis.Options, queues map[string]int) *Queue {
 	}
 
 	conf := asynq.Config{
-		Concurrency: 10,
+		Concurrency: 20,
 		Logger:      log.Log(),
 		Queues:      queues,
+		RetryDelayFunc: func(n int, e error, t *asynq.Task) time.Duration {
+			if t.Type() == constant.AsyncQueueResetPassword {
+				return 5 * time.Second
+			}
+			return asynq.DefaultRetryDelayFunc(n, e, t)
+		},
 	}
 	conf.LogLevel.Set(log.Log().Level.String())
 	if conf.LogLevel < asynq.InfoLevel {

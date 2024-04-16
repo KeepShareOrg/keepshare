@@ -76,3 +76,49 @@ func getHostInfo(c *gin.Context) {
 //
 //	c.JSON(http.StatusOK, resp)
 //}
+
+// changeHostPassword change host password
+func changeHostPassword(c *gin.Context) {
+	var r struct {
+		RememberMe  bool   `json:"remember_me"`
+		NewPassword string `json:"new_password"`
+	}
+
+	if err := c.BindJSON(&r); err != nil {
+		mdw.RespInternal(c, err.Error())
+		return
+	}
+
+	hostName := c.DefaultQuery("host", config.DefaultHost())
+	host := hosts.Get(hostName)
+
+	ctx := c.Request.Context()
+	userID := c.GetString(constant.UserID)
+
+	taskID, err := host.ChangeMasterAccountPassword(ctx, userID, r.NewPassword, r.RememberMe)
+	if err != nil {
+		mdw.RespInternal(c, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"task_id": taskID})
+}
+
+// getChangePasswordTaskInfo get change password task info
+func getChangePasswordTaskInfo(c *gin.Context) {
+	ctx := c.Request.Context()
+	taskID := c.Query("id")
+
+	if taskID == "" {
+		mdw.RespInternal(c, "task id is required")
+		return
+	}
+
+	status, err := config.Redis().Get(ctx, taskID).Result()
+	if err != nil {
+		mdw.RespInternal(c, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": status})
+}

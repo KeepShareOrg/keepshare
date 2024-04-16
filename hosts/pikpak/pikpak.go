@@ -49,6 +49,7 @@ func New(d *hosts.Dependencies) hosts.Host {
 	go p.deleteFilesBackground()
 
 	d.Queue.RegisterHandler(taskTypeSyncWorkerInfo, asynq.HandlerFunc(p.syncWorkerHandler))
+	p.api.RegisterResetPasswordHandler()
 
 	return p
 }

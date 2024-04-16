@@ -39,16 +39,34 @@ func (api *API) getToken(ctx context.Context, userID string, isMaster bool) (tok
 		return r.AccessToken, nil
 	}
 
-	token, err = api.createToken(ctx, userID, isMaster)
-	if IsInvalidAccountOrPasswordErr(err) {
+	if r != nil && r.RefreshToken != "" {
+		tokenInfo, err := api.RefreshToken(ctx, r.RefreshToken)
+		if err == nil {
+			return tokenInfo.AccessToken, nil
+		}
+		api.q.Token.WithContext(ctx).Where(api.q.Token.UserID.Eq(userID)).Delete()
+	}
+
+	token, err = api.CreateToken(ctx, userID, isMaster)
+	if IsEmptyPasswordErr(err) {
+		if isMaster {
+			// TODO: should notify the user, fill the new password or reset password
+		}
+	} else if IsInvalidAccountOrPasswordErr(err) {
 		log.WithContext(ctx).Debugf("delete invalid account: %s", userID)
-		api.q.WorkerAccount.WithContext(ctx).Where(api.q.WorkerAccount.UserID.Eq(userID)).Delete()
+		if isMaster {
+			ma := api.q.MasterAccount
+			ma.WithContext(ctx).Where(ma.UserID.Eq(userID)).Update(ma.Password, "")
+		} else {
+			wa := api.q.WorkerAccount
+			wa.WithContext(ctx).Where(wa.UserID.Eq(userID)).Delete()
+		}
 	}
 
 	return token, err
 }
 
-func (api *API) createToken(ctx context.Context, userID string, isMaster bool) (string, error) {
+func (api *API) CreateToken(ctx context.Context, userID string, isMaster bool) (string, error) {
 	var email, password string
 	if isMaster {
 		account, err := api.q.MasterAccount.WithContext(ctx).Where(api.q.MasterAccount.UserID.Eq(userID)).Take()
@@ -66,10 +84,15 @@ func (api *API) createToken(ctx context.Context, userID string, isMaster bool) (
 
 	log.WithContext(ctx).Debugf("create token for email: %s password: %s", email, password)
 
+	// if the user does not check the remember me checkbox, password is empty
+	if password == "" {
+		return "", EmptyPasswordErr
+	}
+
 	var e RespErr
 	var r struct {
 		AccessToken  string `json:"access_token"`
-		RefreshToken string `json:"refresh_token"` // TODO
+		RefreshToken string `json:"refresh_token"`
 		ExpiresIn    int64  `json:"expires_in"`
 	}
 	body, err := resCli.R().
@@ -110,4 +133,47 @@ func (api *API) createToken(ctx context.Context, userID string, isMaster bool) (
 	}
 
 	return t.AccessToken, nil
+}
+
+func (api *API) RefreshToken(ctx context.Context, refreshToken string) (*model.Token, error) {
+	var e *RespErr
+	var r struct {
+		TokenType    string   `json:"token_type"`
+		AccessToken  string   `json:"access_token"`
+		RefreshToken string   `json:"refresh_token"`
+		IdToken      string   `json:"id_token"`
+		ExpiresIn    int      `json:"expires_in"`
+		Scope        string   `json:"scope"`
+		Sub          string   `json:"sub"`
+		UserGroup    []string `json:"user_group"`
+		UserId       string   `json:"user_id"`
+	}
+
+	resp, err := resCli.R().SetContext(ctx).SetError(&e).SetResult(&r).SetBody(JSON{
+		"client_id":     webClientID,
+		"grant_type":    "refresh_token",
+		"refresh_token": refreshToken,
+	}).Post(userURL("/v1/auth/token"))
+
+	log.Debugf("refresh token resp body: %v", resp)
+
+	if err := e.Error(); err != nil {
+		return nil, fmt.Errorf("refresh token err: %w", err)
+	}
+
+	now := time.Now()
+	t := &model.Token{
+		UserID:       r.UserId,
+		AccessToken:  r.AccessToken,
+		RefreshToken: r.RefreshToken,
+		Expiration:   now.Add(time.Duration(r.ExpiresIn) * time.Second),
+		CreatedAt:    now,
+	}
+
+	err = api.q.Token.WithContext(ctx).Clauses(clause.OnConflict{UpdateAll: true}).Create(t)
+	if err != nil {
+		return nil, fmt.Errorf("update token err: %w", err)
+	}
+
+	return t, nil
 }

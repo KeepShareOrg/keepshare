@@ -37,6 +37,9 @@ type Host interface {
 
 	// AddEventListener add an event listener to the host.
 	AddEventListener(event EventType, callback ListenerCallback)
+
+	// ChangeMasterAccountPassword changes the master account password of the host.
+	ChangeMasterAccountPassword(ctx context.Context, userID, newPassword string, rememberMe bool) (string, error)
 }
 
 // EventType is the type of event.
