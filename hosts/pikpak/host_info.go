@@ -63,3 +63,29 @@ func (p *PikPak) ChangeMasterAccountPassword(ctx context.Context, userID, newPas
 func (p *PikPak) ConfirmMasterAccountPassword(ctx context.Context, keepShareUserID, password string, savePassword bool) error {
 	return p.api.ConfirmPassword(ctx, keepShareUserID, password, savePassword)
 }
+
+const (
+	LoginStatusValid   = "valid"
+	LoginStatusInvalid = "invalid"
+)
+
+func (p *PikPak) GetMasterAccountLoginStatus(ctx context.Context, keepShareUserID string) (string, error) {
+	tk := p.q.Token
+	ma := p.q.MasterAccount
+
+	loginStatus := LoginStatusInvalid
+	var res struct {
+		Password    string
+		AccessToken string
+	}
+	err := ma.WithContext(ctx).Select(ma.Password, tk.AccessToken).LeftJoin(tk, ma.UserID.EqCol(tk.UserID)).Where(ma.KeepshareUserID.Eq(keepShareUserID)).Scan(&res)
+	if err != nil {
+		return loginStatus, err
+	}
+
+	if res.Password != "" || res.AccessToken != "" {
+		loginStatus = LoginStatusValid
+	}
+
+	return loginStatus, nil
+}

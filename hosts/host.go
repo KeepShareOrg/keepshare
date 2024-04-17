@@ -43,6 +43,9 @@ type Host interface {
 
 	// ConfirmMasterAccountPassword  confirms the master account password of the host.
 	ConfirmMasterAccountPassword(ctx context.Context, keepShareUserID, password string, savePassword bool) error
+
+	// GetMasterAccountLoginStatus returns the login status of the host.
+	GetMasterAccountLoginStatus(ctx context.Context, keepShareUserID string) (string, error)
 }
 
 // EventType is the type of event.

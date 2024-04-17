@@ -151,3 +151,19 @@ func confirmPassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{})
 }
+
+func getLoginStatus(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	hostName := c.DefaultQuery("host", config.DefaultHost())
+	host := hosts.Get(hostName)
+
+	ksUserID := c.GetString(constant.UserID)
+	status, err := host.GetMasterAccountLoginStatus(ctx, ksUserID)
+	if err != nil {
+		mdw.RespInternal(c, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": status})
+}
