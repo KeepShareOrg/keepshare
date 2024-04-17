@@ -59,3 +59,7 @@ func (p *PikPak) ChangeMasterAccountPassword(ctx context.Context, userID, newPas
 	}
 	return taskID, nil
 }
+
+func (p *PikPak) ConfirmMasterAccountPassword(ctx context.Context, keepShareUserID, password string, savePassword bool) error {
+	return p.api.ConfirmPassword(ctx, keepShareUserID, password, savePassword)
+}

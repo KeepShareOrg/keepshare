@@ -40,6 +40,9 @@ type Host interface {
 
 	// ChangeMasterAccountPassword changes the master account password of the host.
 	ChangeMasterAccountPassword(ctx context.Context, userID, newPassword string, rememberMe bool) (string, error)
+
+	// ConfirmMasterAccountPassword  confirms the master account password of the host.
+	ConfirmMasterAccountPassword(ctx context.Context, keepShareUserID, password string, savePassword bool) error
 }
 
 // EventType is the type of event.

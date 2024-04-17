@@ -147,6 +147,7 @@ func apiRouter(router *gin.Engine) {
 
 	g.PATCH("/host/password", mdw.Auth, changeHostPassword)
 	g.GET("/host/password/task", mdw.Auth, getChangePasswordTaskInfo)
+	g.POST("/host/password/confirm", mdw.Auth, confirmPassword)
 }
 
 func consoleRouter(router *gin.Engine) {

@@ -5,6 +5,7 @@
 package server
 
 import (
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"net/http"
 
 	"github.com/KeepShareOrg/keepshare/config"
@@ -121,4 +122,32 @@ func getChangePasswordTaskInfo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": status})
+}
+
+// confirmPassword confirm password
+func confirmPassword(c *gin.Context) {
+	var r struct {
+		Password     string `json:"password"`
+		SavePassword bool   `json:"save_password"`
+	}
+
+	if err := c.BindJSON(&r); err != nil {
+		mdw.RespInternal(c, err.Error())
+		return
+	}
+
+	hostName := c.DefaultQuery("host", config.DefaultHost())
+	host := hosts.Get(hostName)
+
+	ksUserID := c.GetString(constant.UserID)
+	log.Infof("confirming password for keep share user %s %v", ksUserID, r.Password)
+	ctx := c.Request.Context()
+
+	err := host.ConfirmMasterAccountPassword(ctx, ksUserID, r.Password, r.SavePassword)
+	if err != nil {
+		mdw.RespInternal(c, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
 }

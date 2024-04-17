@@ -89,50 +89,12 @@ func (api *API) CreateToken(ctx context.Context, userID string, isMaster bool) (
 		return "", EmptyPasswordErr
 	}
 
-	var e RespErr
-	var r struct {
-		AccessToken  string `json:"access_token"`
-		RefreshToken string `json:"refresh_token"`
-		ExpiresIn    int64  `json:"expires_in"`
-	}
-	body, err := resCli.R().
-		SetContext(ctx).
-		SetResult(&r).
-		SetError(&e).
-		SetBody(JSON{
-			"username":  email,
-			"password":  password,
-			"client_id": clientID,
-		}).
-		Post(userURL("/v1/auth/signin"))
-
+	tokenInfo, err := api.signIn(ctx, userID, email, password)
 	if err != nil {
-		return "", fmt.Errorf("sign in err: %w", err)
+		return "", err
 	}
 
-	if err := e.Error(); err != nil {
-		return "", fmt.Errorf("sign in err: %w", err)
-	}
-
-	if r.AccessToken == "" {
-		return "", fmt.Errorf("unexpected body: %s", body.Body())
-	}
-
-	now := time.Now()
-	t := &model.Token{
-		UserID:       userID,
-		AccessToken:  r.AccessToken,
-		RefreshToken: r.RefreshToken,
-		Expiration:   now.Add(time.Duration(r.ExpiresIn) * time.Second),
-		CreatedAt:    now,
-	}
-
-	err = api.q.Token.WithContext(ctx).Clauses(clause.OnConflict{UpdateAll: true}).Create(t)
-	if err != nil {
-		return "", fmt.Errorf("update token err: %w", err)
-	}
-
-	return t.AccessToken, nil
+	return tokenInfo.AccessToken, nil
 }
 
 func (api *API) RefreshToken(ctx context.Context, refreshToken string) (*model.Token, error) {
@@ -176,4 +138,71 @@ func (api *API) RefreshToken(ctx context.Context, refreshToken string) (*model.T
 	}
 
 	return t, nil
+}
+
+func (api *API) ConfirmPassword(ctx context.Context, keepShareUserID, password string, savePassword bool) error {
+	ma := api.q.MasterAccount
+	account, err := ma.WithContext(ctx).Where(ma.KeepshareUserID.Eq(keepShareUserID)).Take()
+	if err != nil {
+		return fmt.Errorf("get master account info err: %w", err)
+	}
+
+	_, err = api.signIn(ctx, account.UserID, account.Email, password)
+	if err != nil {
+		return fmt.Errorf("sign in err: %w", err)
+	}
+
+	if savePassword {
+		ma.WithContext(ctx).Where(ma.KeepshareUserID.Eq(keepShareUserID)).Update(ma.Password, password)
+	}
+	return nil
+}
+
+type signInResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int64  `json:"expires_in"`
+}
+
+func (api *API) signIn(ctx context.Context, userID, username, password string) (*signInResponse, error) {
+	var e *RespErr
+	var r *signInResponse
+	body, err := resCli.R().
+		SetContext(ctx).
+		SetResult(&r).
+		SetError(&e).
+		SetBody(JSON{
+			"username":  username,
+			"password":  password,
+			"client_id": clientID,
+		}).
+		Post(userURL("/v1/auth/signin"))
+
+	if err != nil {
+		return nil, fmt.Errorf("sign in err: %w", err)
+	}
+
+	if err := e.Error(); err != nil {
+		return nil, fmt.Errorf("sign in err: %w", err)
+	}
+
+	if r.AccessToken == "" {
+		return nil, fmt.Errorf("unexpected body: %s", body.Body())
+	}
+
+	now := time.Now()
+	t := &model.Token{
+		UserID:       userID,
+		AccessToken:  r.AccessToken,
+		RefreshToken: r.RefreshToken,
+		Expiration:   now.Add(time.Duration(r.ExpiresIn) * time.Second),
+		CreatedAt:    now,
+	}
+
+	err = api.q.Token.WithContext(ctx).Clauses(clause.OnConflict{UpdateAll: true}).Create(t)
+	if err != nil {
+		return nil, fmt.Errorf("update token err: %w", err)
+	}
+
+	return r, nil
 }
