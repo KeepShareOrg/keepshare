@@ -42,7 +42,7 @@ func (p *PikPak) HostInfo(ctx context.Context, userID string, options map[string
 }
 
 // ChangeMasterAccountPassword changes the master account password.
-func (p *PikPak) ChangeMasterAccountPassword(ctx context.Context, userID, newPassword string, rememberMe bool) (string, error) {
+func (p *PikPak) ChangeMasterAccountPassword(ctx context.Context, userID, newPassword string, savePassword bool) (string, error) {
 	// query the master account registration email
 	registrationEmail, err := p.q.MasterAccount.WithContext(ctx).
 		Select(p.q.MasterAccount.Email).
@@ -53,7 +53,7 @@ func (p *PikPak) ChangeMasterAccountPassword(ctx context.Context, userID, newPas
 	}
 	log.Debugf("master account email is %s", registrationEmail.Email)
 
-	taskID, err := p.api.ResetPassword(ctx, registrationEmail.Email, newPassword, rememberMe)
+	taskID, err := p.api.ResetPassword(ctx, registrationEmail.Email, newPassword, savePassword)
 	if err != nil {
 		return "", err
 	}

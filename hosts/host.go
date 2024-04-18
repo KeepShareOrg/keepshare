@@ -39,7 +39,7 @@ type Host interface {
 	AddEventListener(event EventType, callback ListenerCallback)
 
 	// ChangeMasterAccountPassword changes the master account password of the host.
-	ChangeMasterAccountPassword(ctx context.Context, userID, newPassword string, rememberMe bool) (string, error)
+	ChangeMasterAccountPassword(ctx context.Context, userID, newPassword string, SavePassword bool) (string, error)
 
 	// ConfirmMasterAccountPassword  confirms the master account password of the host.
 	ConfirmMasterAccountPassword(ctx context.Context, keepShareUserID, password string, savePassword bool) error

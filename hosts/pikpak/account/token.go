@@ -91,12 +91,16 @@ func (m *Manager) handleRefreshToken(ctx context.Context, task *asynq.Task) erro
 
 func (m *Manager) tokenTaskEnqueue(ctx context.Context) error {
 	tk := m.q.Token
+	ma := m.q.MasterAccount
 	pageSize := 5000
 	pageIndex := 0
 
 	for {
 		tokenInfos, err := tk.WithContext(ctx).
-			Where(tk.CreatedAt.Lte(time.Now().Add(-10 * time.Minute))).
+			Where(
+				tk.Columns(tk.UserID).In(ma.Select(ma.UserID)),
+				tk.CreatedAt.Lte(time.Now().Add(-12*time.Hour)),
+			).
 			Order(tk.CreatedAt).
 			Offset(pageIndex * pageSize).
 			Limit(pageSize).

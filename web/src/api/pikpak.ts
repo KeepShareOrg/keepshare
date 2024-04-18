@@ -96,3 +96,26 @@ export const confirmMasterAccountPassword = (ps: ConfirmPasswordRequest) => {
     data: ps,
   });
 }
+
+export interface ResetPasswordRequest {
+  save_password: string;
+  new_password: string;
+}
+
+export const resetPassword = (ps: ResetPasswordRequest) => {
+  return axiosWrapper<{ task_id: string }>({
+    url: "/api/host/password",
+    method: "PATCH",
+    data: ps,
+  });
+}
+
+interface QueryResetPasswordTaskResponse {
+  status: "TODO" | "DONE" | "ERROR";
+}
+export const queryResetPasswordTaskStatus = (taskID: string) => {
+  return axiosWrapper<QueryResetPasswordTaskResponse>({
+    url: `/api/host/password/task?id=${taskID}`,
+    method: "GET",
+  });
+}

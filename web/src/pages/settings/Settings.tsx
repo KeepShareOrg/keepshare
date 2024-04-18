@@ -1,21 +1,21 @@
-import { useState, useRef } from 'react';
+import { useState, useRef } from "react";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { Button, Divider, Space, Tabs, Typography, theme } from "antd";
-import debounce from 'lodash-es/debounce';
+import debounce from "lodash-es/debounce";
 
-import { sendVerifyEmail } from '@/api/account';
+import { sendVerifyEmail } from "@/api/account";
 import useStore from "@/store";
 
-import ModifyEmailModal from './ModifyEmailModal';
-import ModifyPasswordModal from './ModifyPasswordModal';
-import { TextLink } from './style';
+import ModifyEmailModal from "./ModifyEmailModal";
+import ModifyPasswordModal from "./ModifyPasswordModal";
+import { TextLink } from "./style";
 
 const { Text } = Typography;
 
 const Settings = () => {
   const [openModifyEmailModal, setOpenModifyEmailModal] = useState(false);
   const [openModifyPasswordModal, setOpenModifyPasswordModal] = useState(false);
-  const [sentEmailMessage, setSentEmailMessage] = useState('');
+  const [sentEmailMessage, setSentEmailMessage] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
   const { token } = theme.useToken();
   const hasSentEmail = useRef(false);
@@ -39,11 +39,11 @@ const Settings = () => {
     setSendingEmail(false);
 
     if (result.error) {
-      setSentEmailMessage('Email sending failed, please try again later.');
+      setSentEmailMessage("Email sending failed, please try again later.");
       return;
     }
-    
-    setSentEmailMessage('Email has been sent, please check it.');
+
+    setSentEmailMessage("Email has been sent, please check it.");
   }, 300);
 
   const handleModifyEmailModalClose = () => {
@@ -63,14 +63,17 @@ const Settings = () => {
         </Space>
         <Space direction="vertical">
           <Text>{userInfo.email}</Text>
-          <Button icon={<MailOutlined style={{ color: token.colorPrimary }} />} onClick={handleOpenModifyEmailModal}>
+          <Button
+            icon={<MailOutlined style={{ color: token.colorPrimary }} />}
+            onClick={handleOpenModifyEmailModal}
+          >
             Modify Email
           </Button>
           {userInfo.email_verified ? null : (
-            <Space direction="vertical" align="start" >
+            <Space direction="vertical" align="start">
               <Text>
-                You can reset your password if you forget it or get necessary notifications 
-                if you
+                You can reset your password if you forget it or get necessary
+                notifications if you
                 <TextLink
                   padding={token.paddingXS}
                   color={token.colorPrimaryHover}
@@ -79,10 +82,14 @@ const Settings = () => {
                   disabled={Boolean(sentEmailMessage)}
                   onClick={handleSendVerifyEmail}
                 >
-                  {sendingEmail ? 'Email Sending...' : 'Verify Your Email.'}
+                  {sendingEmail ? "Email Sending..." : "Verify Your Email."}
                 </TextLink>
               </Text>
-              {sentEmailMessage && <Text style={{ fontWeight: token.fontWeightStrong }}>{sentEmailMessage}</Text>}
+              {sentEmailMessage && (
+                <Text style={{ fontWeight: token.fontWeightStrong }}>
+                  {sentEmailMessage}
+                </Text>
+              )}
             </Space>
           )}
         </Space>
@@ -94,7 +101,10 @@ const Settings = () => {
         </Space>
         <Space direction="vertical">
           <Text>···········</Text>
-          <Button icon={<LockOutlined style={{ color: token.colorPrimary }} />} onClick={handleOpenModifyPasswordModal}>
+          <Button
+            icon={<LockOutlined style={{ color: token.colorPrimary }} />}
+            onClick={handleOpenModifyPasswordModal}
+          >
             Modify Password
           </Button>
         </Space>

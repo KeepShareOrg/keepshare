@@ -22,7 +22,7 @@ const (
 	taskTypeResetPassword = "reset_password"
 )
 
-func (api *API) ResetPassword(ctx context.Context, email, password string, rememberMe bool) (string, error) {
+func (api *API) ResetPassword(ctx context.Context, email, password string, savePassword bool) (string, error) {
 	l := log.WithContext(ctx).WithField("email", email)
 
 	var err error
@@ -55,7 +55,7 @@ func (api *API) ResetPassword(ctx context.Context, email, password string, remem
 		TaskID:         taskID,
 		Email:          email,
 		Password:       password,
-		RememberMe:     rememberMe,
+		SavePassword:   savePassword,
 		VerificationID: verificationID,
 		EmailSendTime:  sendTime,
 	})
@@ -220,7 +220,7 @@ type ResetPasswordTask struct {
 	RetryTimes     int       `json:"retry_times"`
 	Email          string    `json:"email"`
 	Password       string    `json:"password"`
-	RememberMe     bool      `json:"remember_me"`
+	SavePassword   bool      `json:"save_password"`
 	VerificationID string    `json:"verification_id"`
 	EmailSendTime  time.Time `json:"email_send_time"`
 }
@@ -247,7 +247,7 @@ func (api *API) handleResetPasswordTask(ctx context.Context, t *asynq.Task) erro
 		return nil
 	}
 
-	if task.RememberMe {
+	if task.SavePassword {
 		ma := api.q.MasterAccount
 		ma.WithContext(ctx).Where(ma.Email.Eq(task.Email)).Update(ma.Password, task.Password)
 	}

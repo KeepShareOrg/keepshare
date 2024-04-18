@@ -14,7 +14,7 @@ import {
   getPikPakMasterAccountLoginStatus,
 } from "@/api/pikpak";
 import useStore from "@/store";
-import EnterPasswordModal from "@/components/management/EnterPasswordModal";
+import ModifyMasterPasswordModal from "@/components/management/ModifyMasterPasswordModal";
 
 const { Text, Paragraph } = Typography;
 
@@ -26,7 +26,7 @@ const General = () => {
   ]);
   const [loginValidStatus, setLoginValidStatus] = useState(false);
 
-  useEffect(() => {
+  const init = () => {
     getPikPakHostInfo().then(({ data, error }) => {
       if (error) {
         message.error(error.message);
@@ -40,10 +40,12 @@ const General = () => {
         setLoginValidStatus(data?.status === "valid");
       }
     });
-  }, []);
+  };
+
+  useEffect(() => init(), []);
 
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [enterPwdModalVisible, setEnterPwdModalVisible] = useState(false);
+  const [modifyPwdModalVisible, setModifyPwdModalVisible] = useState(false);
   return (
     <>
       <Space align="start" wrap>
@@ -81,7 +83,7 @@ const General = () => {
             )}
             <Button
               icon={<LockOutlined style={{ color: token.colorPrimary }} />}
-              onClick={() => setEnterPwdModalVisible(true)}
+              onClick={() => setModifyPwdModalVisible(true)}
             >
               Modify Password
             </Button>
@@ -136,7 +138,7 @@ const General = () => {
               {!loginValidStatus && (
                 <Button
                   type="primary"
-                  onClick={() => setEnterPwdModalVisible(true)}
+                  onClick={() => setModifyPwdModalVisible(true)}
                 >
                   Enter Password
                 </Button>
@@ -176,9 +178,10 @@ const General = () => {
         </Space>
       </Space>
 
-      <EnterPasswordModal
-        visible={enterPwdModalVisible}
-        toggleVisible={setEnterPwdModalVisible}
+      <ModifyMasterPasswordModal
+        visible={modifyPwdModalVisible}
+        toggleVisible={setModifyPwdModalVisible}
+        refreshInfo={init}
       />
     </>
   );

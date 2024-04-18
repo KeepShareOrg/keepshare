@@ -81,8 +81,8 @@ func getHostInfo(c *gin.Context) {
 // changeHostPassword change host password
 func changeHostPassword(c *gin.Context) {
 	var r struct {
-		RememberMe  bool   `json:"remember_me"`
-		NewPassword string `json:"new_password"`
+		SavePassword bool   `json:"save_password"`
+		NewPassword  string `json:"new_password"`
 	}
 
 	if err := c.BindJSON(&r); err != nil {
@@ -96,7 +96,7 @@ func changeHostPassword(c *gin.Context) {
 	ctx := c.Request.Context()
 	userID := c.GetString(constant.UserID)
 
-	taskID, err := host.ChangeMasterAccountPassword(ctx, userID, r.NewPassword, r.RememberMe)
+	taskID, err := host.ChangeMasterAccountPassword(ctx, userID, r.NewPassword, r.SavePassword)
 	if err != nil {
 		mdw.RespInternal(c, err.Error())
 		return
