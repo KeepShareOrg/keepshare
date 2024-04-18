@@ -76,7 +76,7 @@ func (m *Manager) handleRefreshToken(ctx context.Context, task *asynq.Task) erro
 		return err
 	}
 
-	_, err := m.api.RefreshToken(ctx, t.RefreshToken)
+	_, err := m.api.RefreshToken(ctx, t.UserID, t.RefreshToken)
 	if err != nil {
 		if api.IsInvalidGrantErr(err) {
 			//if refresh token failed, delete the token

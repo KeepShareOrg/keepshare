@@ -40,7 +40,7 @@ func (api *API) getToken(ctx context.Context, userID string, isMaster bool) (tok
 	}
 
 	if r != nil && r.RefreshToken != "" {
-		tokenInfo, err := api.RefreshToken(ctx, r.RefreshToken)
+		tokenInfo, err := api.RefreshToken(ctx, userID, r.RefreshToken)
 		if err == nil {
 			return tokenInfo.AccessToken, nil
 		}
@@ -97,7 +97,7 @@ func (api *API) CreateToken(ctx context.Context, userID string, isMaster bool) (
 	return tokenInfo.AccessToken, nil
 }
 
-func (api *API) RefreshToken(ctx context.Context, refreshToken string) (*model.Token, error) {
+func (api *API) RefreshToken(ctx context.Context, userID, refreshToken string) (*model.Token, error) {
 	var e *RespErr
 	var r struct {
 		TokenType    string   `json:"token_type"`
@@ -112,7 +112,7 @@ func (api *API) RefreshToken(ctx context.Context, refreshToken string) (*model.T
 	}
 
 	resp, err := resCli.R().SetContext(ctx).SetError(&e).SetResult(&r).SetBody(JSON{
-		"client_id":     webClientID,
+		"client_id":     clientID,
 		"grant_type":    "refresh_token",
 		"refresh_token": refreshToken,
 	}).Post(userURL("/v1/auth/token"))
@@ -125,7 +125,7 @@ func (api *API) RefreshToken(ctx context.Context, refreshToken string) (*model.T
 
 	now := time.Now()
 	t := &model.Token{
-		UserID:       r.UserId,
+		UserID:       userID,
 		AccessToken:  r.AccessToken,
 		RefreshToken: r.RefreshToken,
 		Expiration:   now.Add(time.Duration(r.ExpiresIn) * time.Second),

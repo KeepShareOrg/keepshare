@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import { Background, MainLayoutHeader } from "./style";
 import MainHeader from "@/components/common/mainHeader/MainHeader";
 import MainAside from "@/components/common/mainAside/MainAside";
+import LoginWarningModal from "@/components/common/LoginWarningModal";
 
 const MainLayout = () => {
   const { Content } = Layout;
@@ -26,6 +27,8 @@ const MainLayout = () => {
           <Outlet />
         </Content>
       </Layout>
+
+      <LoginWarningModal />
     </Background>
   );
 };

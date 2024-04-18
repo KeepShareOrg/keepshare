@@ -73,3 +73,26 @@ export const clearPikPakAccountStorage = (
     data: params,
   });
 };
+
+export interface GetPikPakMasterAccountLoginStatusResponse {
+  status: "valid" | "invalid";
+}
+// get pikpak master account login status
+export const getPikPakMasterAccountLoginStatus = () => {
+  return axiosWrapper<GetPikPakMasterAccountLoginStatusResponse>({
+    url: "/api/host/password/status",
+    method: "GET",
+  });
+}
+
+export interface ConfirmPasswordRequest {
+  password: string;
+  save_password: boolean;
+}
+export const confirmMasterAccountPassword = (ps: ConfirmPasswordRequest) => {
+  return axiosWrapper({
+    url: "/api/host/password/confirm",
+    method: "POST",
+    data: ps,
+  });
+}

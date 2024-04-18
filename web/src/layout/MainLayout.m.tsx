@@ -2,8 +2,11 @@ import { Drawer, Layout, theme } from "antd";
 import { Outlet } from "react-router-dom";
 import { Background, MainLayoutHeader } from "./style";
 import MainHeader from "@/components/common/mainHeader/MainHeader";
-import MainAside, { ASIDE_WIDTH } from "@/components/common/mainAside/MainAside";
+import MainAside, {
+  ASIDE_WIDTH,
+} from "@/components/common/mainAside/MainAside";
 import useStore from "@/store";
+import LoginWarningModal from "@/components/common/LoginWarningModal";
 
 const MainLayout = () => {
   const { Content } = Layout;
@@ -47,6 +50,8 @@ const MainLayout = () => {
       >
         <MainAside />
       </Drawer>
+
+      <LoginWarningModal />
     </Background>
   );
 };

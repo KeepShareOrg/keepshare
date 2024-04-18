@@ -118,8 +118,9 @@ export const getAxiosWrapper = (client: AxiosInstance) => {
       client<T>(options)
         .then((response) => resolve({ data: response.data, error: null }))
         // eslint-disable-next-line
-        .catch((error: any) =>
-          resolve({ data: null, error: error.response?.data }),
+        .catch((error: any) => {
+          return resolve({ data: null, error: error.response?.data || { error: error.code, message: error.message } });
+        }
         );
     });
 }
