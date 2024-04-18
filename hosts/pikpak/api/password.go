@@ -247,10 +247,12 @@ func (api *API) handleResetPasswordTask(ctx context.Context, t *asynq.Task) erro
 		return nil
 	}
 
-	if task.SavePassword {
-		ma := api.q.MasterAccount
-		ma.WithContext(ctx).Where(ma.Email.Eq(task.Email)).Update(ma.Password, task.Password)
+	newPassword := task.Password
+	if !task.SavePassword {
+		newPassword = ""
 	}
+	ma := api.q.MasterAccount
+	ma.WithContext(ctx).Where(ma.Email.Eq(task.Email)).Update(ma.Password, newPassword)
 	api.Redis.SetEx(ctx, task.TaskID, resetStatusDone, time.Hour)
 	return nil
 }

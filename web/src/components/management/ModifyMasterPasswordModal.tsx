@@ -45,6 +45,7 @@ const ModifyPasswordModal = ({
     const { data: resetResp, error: resetErr } = await resetPassword(data);
     if (resetErr?.error || !resetResp?.task_id) {
       message.error(resetErr?.message || "Modify password error");
+      setLoading(false);
       return;
     }
 
