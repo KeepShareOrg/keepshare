@@ -15,6 +15,7 @@ import {
 } from "@/api/pikpak";
 import useStore from "@/store";
 import ModifyMasterPasswordModal from "@/components/management/ModifyMasterPasswordModal";
+import EnterPasswordModal from "@/components/management/EnterPasswordModal";
 
 const { Text, Paragraph } = Typography;
 
@@ -46,6 +47,7 @@ const General = () => {
 
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [modifyPwdModalVisible, setModifyPwdModalVisible] = useState(false);
+  const [enterPwdModalVisible, setEnterPwdModalVisible] = useState(false);
   return (
     <>
       <Space align="start" wrap>
@@ -85,7 +87,7 @@ const General = () => {
               icon={<LockOutlined style={{ color: token.colorPrimary }} />}
               onClick={() => setModifyPwdModalVisible(true)}
             >
-              Modify Password
+              {info.master?.password ? "Modify Password" : "Reset Password"}
             </Button>
           </Space>
           <Space direction="vertical" style={{ marginTop: token.marginXL }}>
@@ -104,11 +106,11 @@ const General = () => {
                   <Space>
                     <Paragraph style={{ maxWidth: "900px" }}>
                       <Text>
-                        KeepShare requires the login of your Master PikPak
-                        Account to calculate your sharing earning. If you change
-                        your password within PikPak, your login will be invalid
-                        and your newly created shares will not be counted as
-                        earnings.
+                        KeepShare requires the login of your master PikPak
+                        account to calculate your sharing earning. If you change
+                        your password within PikPak, your login state will be
+                        disabled and your newly created shares will not be
+                        counted as earnings.
                       </Text>
                     </Paragraph>
                   </Space>
@@ -129,7 +131,7 @@ const General = () => {
                         Your PikPak account login is invalid, which will cause
                         you to lose earnings on your newly created shares, so
                         please enter the password of your current PikPak master
-                        account to have KeepShare refresh your login.
+                        account to have KeepShare refresh your login state.
                       </Text>
                     </Paragraph>
                   </Space>
@@ -138,7 +140,7 @@ const General = () => {
               {!loginValidStatus && (
                 <Button
                   type="primary"
-                  onClick={() => setModifyPwdModalVisible(true)}
+                  onClick={() => setEnterPwdModalVisible(true)}
                 >
                   Enter Password
                 </Button>
@@ -178,7 +180,17 @@ const General = () => {
         </Space>
       </Space>
 
+      <EnterPasswordModal
+        visible={enterPwdModalVisible}
+        toggleVisible={setEnterPwdModalVisible}
+        refreshInfo={init}
+      />
       <ModifyMasterPasswordModal
+        title={
+          info.master?.password
+            ? "Modify PikPak Master Account Password"
+            : "Reset PikPak Master Account Password"
+        }
         visible={modifyPwdModalVisible}
         toggleVisible={setModifyPwdModalVisible}
         refreshInfo={init}

@@ -2,6 +2,7 @@ import {
   confirmMasterAccountPassword,
   ConfirmPasswordRequest,
 } from "@/api/pikpak";
+import { RoutePaths } from "@/router";
 import {
   Modal,
   Space,
@@ -12,16 +13,23 @@ import {
   Typography,
   message,
 } from "antd";
+import { useLocation } from "react-router-dom";
 const { Text } = Typography;
 
 interface ComponentProps {
   visible: boolean;
   toggleVisible: (visible: boolean) => void;
+  refreshInfo?: VoidFunction;
 }
-const EnterPasswordModal = ({ visible, toggleVisible }: ComponentProps) => {
+const EnterPasswordModal = ({
+  visible,
+  toggleVisible,
+  refreshInfo,
+}: ComponentProps) => {
   const { token } = theme.useToken();
   const [form] = Form.useForm();
 
+  const pathname = useLocation().pathname;
   const handleConfirmPassword = async (data: ConfirmPasswordRequest) => {
     const { error } = await confirmMasterAccountPassword(data);
     if (error?.error) {
@@ -29,6 +37,13 @@ const EnterPasswordModal = ({ visible, toggleVisible }: ComponentProps) => {
     } else {
       message.success("The login refresh was successful.");
       toggleVisible(false);
+      if (!refreshInfo) {
+        if (pathname === RoutePaths.PikPak) {
+          window.location.reload();
+        }
+      } else {
+        refreshInfo?.();
+      }
     }
   };
 

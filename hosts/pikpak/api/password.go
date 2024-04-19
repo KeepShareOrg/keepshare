@@ -17,7 +17,7 @@ import (
 const (
 	resetStatusTodo  = "TODO"
 	resetStatusDone  = "DONE"
-	resetStatusError = "Error"
+	resetStatusError = "ERROR"
 
 	taskTypeResetPassword = "reset_password"
 )
@@ -217,7 +217,6 @@ func (api *API) RegisterResetPasswordHandler() {
 
 type ResetPasswordTask struct {
 	TaskID         string    `json:"task_id"`
-	RetryTimes     int       `json:"retry_times"`
 	Email          string    `json:"email"`
 	Password       string    `json:"password"`
 	SavePassword   bool      `json:"save_password"`
@@ -254,5 +253,9 @@ func (api *API) handleResetPasswordTask(ctx context.Context, t *asynq.Task) erro
 	ma := api.q.MasterAccount
 	ma.WithContext(ctx).Where(ma.Email.Eq(task.Email)).Update(ma.Password, newPassword)
 	api.Redis.SetEx(ctx, task.TaskID, resetStatusDone, time.Hour)
+
+	if account, err := ma.WithContext(ctx).Where(ma.Email.Eq(task.Email)).Take(); err == nil {
+		api.signIn(ctx, account.UserID, task.Email, task.Password)
+	}
 	return nil
 }

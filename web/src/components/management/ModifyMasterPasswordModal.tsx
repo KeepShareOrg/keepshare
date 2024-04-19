@@ -17,12 +17,14 @@ import { useState } from "react";
 const { Text } = Typography;
 
 interface ComponentProps {
+  title: string;
   visible: boolean;
   toggleVisible: (visible: boolean) => void;
   refreshInfo: VoidFunction;
 }
 const ModifyPasswordModal = ({
   visible,
+  title,
   toggleVisible,
   refreshInfo,
 }: ComponentProps) => {
@@ -83,7 +85,7 @@ const ModifyPasswordModal = ({
 
   return (
     <Modal
-      title="Modify  PikPak Master Account Password"
+      title={title}
       centered
       open={visible}
       maskClosable={false}

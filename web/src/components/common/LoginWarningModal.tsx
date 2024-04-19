@@ -30,7 +30,7 @@ const LoginWarningModal = () => {
         maskClosable={false}
         keyboard={false}
         closable={false}
-        cancelText="Not now"
+        cancelText="Later"
         okText="Enter Password"
         okButtonProps={{ onClick: handleEnterPassword }}
       >
