@@ -5,6 +5,9 @@
 package server
 
 import (
+	"github.com/KeepShareOrg/keepshare/config"
+	"github.com/KeepShareOrg/keepshare/hosts"
+	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"net/http"
 
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
@@ -69,6 +72,21 @@ func signUp(c *gin.Context) {
 		Username:  user.Name,
 	})
 	if err != nil {
+		mdw.RespInternal(c, err.Error())
+		return
+	}
+
+	// assign master account
+	hostName := util.FirstNotEmpty(c.Query("host"), config.DefaultHost())
+	host := hosts.Get(hostName)
+	if host == nil {
+		query.User.WithContext(c.Request.Context()).Where(query.User.ID.Eq(user.ID)).Delete()
+		c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "invalid_host", i18n.WithDataMap("host", hostName)))
+		return
+	}
+
+	if err := host.AssignMasterAccount(c.Request.Context(), user.ID); err != nil {
+		query.User.WithContext(c.Request.Context()).Where(query.User.ID.Eq(user.ID)).Delete()
 		mdw.RespInternal(c, err.Error())
 		return
 	}

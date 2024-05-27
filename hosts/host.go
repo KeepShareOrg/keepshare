@@ -46,6 +46,9 @@ type Host interface {
 
 	// GetMasterAccountLoginStatus returns the login status of the host.
 	GetMasterAccountLoginStatus(ctx context.Context, keepShareUserID string) (string, error)
+
+	// AssignMasterAccount assigns the master account of the host.
+	AssignMasterAccount(ctx context.Context, keepShareUserID string) error
 }
 
 // EventType is the type of event.

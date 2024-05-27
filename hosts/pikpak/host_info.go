@@ -89,3 +89,12 @@ func (p *PikPak) GetMasterAccountLoginStatus(ctx context.Context, keepShareUserI
 
 	return loginStatus, nil
 }
+
+func (p *PikPak) AssignMasterAccount(ctx context.Context, keepShareUserID string) error {
+	_, err := p.m.GetMaster(ctx, keepShareUserID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
