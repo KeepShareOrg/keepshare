@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
+	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"time"
 
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
@@ -167,10 +168,17 @@ type signInResponse struct {
 func (api *API) signIn(ctx context.Context, userID, username, password string) (*signInResponse, error) {
 	var e *RespErr
 	var r *signInResponse
+
+	captchaToken, err := api.signInCaptcha(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+
 	body, err := resCli.R().
 		SetContext(ctx).
 		SetResult(&r).
 		SetError(&e).
+		SetHeader("X-Captcha-Token", captchaToken).
 		SetBody(JSON{
 			"username":  username,
 			"password":  password,
@@ -205,4 +213,34 @@ func (api *API) signIn(ctx context.Context, userID, username, password string) (
 	}
 
 	return r, nil
+}
+
+func (api *API) signInCaptcha(ctx context.Context, email string) (string, error) {
+	var r struct {
+		*RespErr
+		CaptchaToken string `json:"captcha_token"`
+	}
+
+	b := util.ToJSON(map[string]any{
+		"action":    "POST:/v1/auth/signin",
+		"client_id": webClientID,
+		"device_id": deviceID,
+		"meta": map[string]string{
+			"email": email,
+		},
+	})
+	resp, err := resCli.R().SetContext(ctx).SetError(&r).SetResult(&r).SetBody(b).SetHeaders(map[string]string{
+		"x-client-id": webClientID,
+		"x-device-id": deviceID,
+	}).Post(userURL("/v1/shield/captcha/init"))
+	if err != nil {
+		return "", err
+	}
+
+	log.WithContext(ctx).Debugf("get captcha token resp body: %s", resp.String())
+	if err = r.Error(); err != nil {
+		return "", err
+	}
+
+	return r.CaptchaToken, nil
 }
