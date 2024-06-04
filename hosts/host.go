@@ -49,6 +49,9 @@ type Host interface {
 
 	// AssignMasterAccount assigns the master account of the host.
 	AssignMasterAccount(ctx context.Context, keepShareUserID string) error
+
+	// DonateRedeemCode donates the redeem code of the host.
+	DonateRedeemCode(ctx context.Context, nickname, userID string, redeemCodes []string) error
 }
 
 // EventType is the type of event.

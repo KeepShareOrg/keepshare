@@ -7,7 +7,11 @@ package pikpak
 import (
 	"context"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/hosts/pikpak/comm"
+	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
+	"gorm.io/gorm/clause"
+	"time"
 )
 
 // HostInfo returns basic information of the host.
@@ -93,6 +97,29 @@ func (p *PikPak) GetMasterAccountLoginStatus(ctx context.Context, keepShareUserI
 func (p *PikPak) AssignMasterAccount(ctx context.Context, keepShareUserID string) error {
 	_, err := p.m.GetMaster(ctx, keepShareUserID)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *PikPak) DonateRedeemCode(ctx context.Context, nickname, userID string, redeemCodes []string) error {
+	info, err := p.q.MasterAccount.WithContext(ctx).Where(p.q.MasterAccount.KeepshareUserID.Eq(userID)).Take()
+
+	list := make([]*model.RedeemCode, len(redeemCodes))
+	for idx, redeemCode := range redeemCodes {
+		list[idx] = &model.RedeemCode{
+			Code:                   redeemCode,
+			Status:                 comm.RedeemCodeStatusNotUsed,
+			Donor:                  nickname,
+			DonationTargetMasterID: info.UserID,
+			CreatedAt:              time.Now(),
+			UpdatedAt:              time.Now(),
+		}
+	}
+
+	err = p.q.RedeemCode.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(list...)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).WithFields(log.Fields{"nickname": nickname, "userID": userID}).Error("donate redeem code error")
 		return err
 	}
 

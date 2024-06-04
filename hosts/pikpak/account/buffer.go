@@ -217,7 +217,11 @@ func (m *Manager) checkPremiumWorkerBuffer() {
 
 			// select a not used redeem code
 			notUsedRedeemCode, err := t.RedeemCode.WithContext(ctx).
-				Where(t.RedeemCode.Status.Eq(comm.RedeemCodeStatusNotUsed)).
+				Where(
+					t.RedeemCode.Status.Eq(comm.RedeemCodeStatusNotUsed),
+					// Automatic allocation can only allocate codes without a specified donation target.
+					t.RedeemCode.DonationTargetMasterID.Eq(""),
+				).
 				Order(t.RedeemCode.UpdatedAt).
 				Take()
 
@@ -226,31 +230,9 @@ func (m *Manager) checkPremiumWorkerBuffer() {
 				return fmt.Errorf("found not use redeem code err: %v", err)
 			}
 
-			// redeem
-			err = m.api.Redeem(ctx, notUsedNormalAccount.UserID, notUsedRedeemCode.Code)
-			if err != nil {
-				// mark the redeem code as invalid
-				t.RedeemCode.WithContext(ctx).
-					Where(t.RedeemCode.AutoID.Eq(notUsedRedeemCode.AutoID)).
-					Updates(&model.RedeemCode{
-						Status: comm.RedeemCodeInvalid,
-						Error:  err.Error(),
-					})
-
-				return fmt.Errorf("redeem err: %v", err)
+			if err := m.redeemAndUpdateCode(ctx, notUsedNormalAccount, notUsedRedeemCode); err != nil {
+				log.Errorf("redeem and update code err: %v", err)
 			}
-
-			// mark the redeem code as used
-			t.RedeemCode.WithContext(ctx).
-				Where(t.RedeemCode.AutoID.Eq(notUsedRedeemCode.AutoID)).
-				Updates(&model.RedeemCode{
-					UsedUserID: notUsedNormalAccount.UserID,
-					Status:     comm.RedeemCodeStatusUsed,
-				})
-
-			time.Sleep(time.Second * 10)
-			// update the account premium expiration info
-			m.api.UpdateWorkerPremium(ctx, notUsedNormalAccount)
 		}
 
 		return nil
@@ -264,4 +246,37 @@ func (m *Manager) checkPremiumWorkerBuffer() {
 		}
 		time.Sleep(m.premiumBufferInterval)
 	}
+}
+
+func (m *Manager) redeemAndUpdateCode(ctx context.Context, userInfo *model.WorkerAccount, redeemCodeInfo *model.RedeemCode) error {
+	t := m.q
+	// redeem
+	err := m.api.Redeem(ctx, userInfo.UserID, redeemCodeInfo.Code)
+	if err != nil {
+		// mark the redeem code as invalid
+		t.RedeemCode.WithContext(ctx).
+			Where(t.RedeemCode.AutoID.Eq(redeemCodeInfo.AutoID)).
+			Updates(&model.RedeemCode{
+				Status: comm.RedeemCodeInvalid,
+				Error:  err.Error(),
+			})
+
+		return fmt.Errorf("redeem err: %v", err)
+	}
+
+	// mark the redeem code as used
+	t.RedeemCode.WithContext(ctx).
+		Where(t.RedeemCode.AutoID.Eq(redeemCodeInfo.AutoID)).
+		Updates(&model.RedeemCode{
+			UsedUserID: userInfo.UserID,
+			Status:     comm.RedeemCodeStatusUsed,
+		})
+
+	go func() {
+		time.Sleep(time.Second * 15)
+		// update the account premium expiration info
+		m.api.UpdateWorkerPremium(context.Background(), userInfo)
+	}()
+
+	return nil
 }

@@ -83,7 +83,7 @@ export const getPikPakMasterAccountLoginStatus = () => {
     url: "/api/host/password/status",
     method: "GET",
   });
-}
+};
 
 export interface ConfirmPasswordRequest {
   password: string;
@@ -95,7 +95,7 @@ export const confirmMasterAccountPassword = (ps: ConfirmPasswordRequest) => {
     method: "POST",
     data: ps,
   });
-}
+};
 
 export interface ResetPasswordRequest {
   save_password: string;
@@ -108,7 +108,7 @@ export const resetPassword = (ps: ResetPasswordRequest) => {
     method: "PATCH",
     data: ps,
   });
-}
+};
 
 interface QueryResetPasswordTaskResponse {
   status: "TODO" | "DONE" | "ERROR";
@@ -118,4 +118,19 @@ export const queryResetPasswordTaskStatus = (taskID: string) => {
     url: `/api/host/password/task?id=${taskID}`,
     method: "GET",
   });
+};
+
+interface DonateRedeemCodeParams {
+  nickname?: string;
+  channel_id: string;
+  drive: string;
+  redeem_codes: string[];
 }
+
+export const donateRedeemCode = (params: DonateRedeemCodeParams) => {
+  return axiosWrapper({
+    url: "/api/donation",
+    method: "POST",
+    data: params,
+  });
+};

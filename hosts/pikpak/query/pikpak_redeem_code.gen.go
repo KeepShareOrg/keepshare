@@ -34,6 +34,8 @@ func newRedeemCode(db *gorm.DB, opts ...gen.DOOption) redeemCode {
 	_redeemCode.CreatedAt = field.NewTime(tableName, "created_at")
 	_redeemCode.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_redeemCode.Error = field.NewString(tableName, "error")
+	_redeemCode.Donor = field.NewString(tableName, "donor")
+	_redeemCode.DonationTargetMasterID = field.NewString(tableName, "donation_target_master_id")
 
 	_redeemCode.fillFieldMap()
 
@@ -43,14 +45,16 @@ func newRedeemCode(db *gorm.DB, opts ...gen.DOOption) redeemCode {
 type redeemCode struct {
 	redeemCodeDo
 
-	ALL        field.Asterisk
-	AutoID     field.Int64
-	Code       field.String
-	Status     field.String // NOT_USED, USED, INVALID
-	UsedUserID field.String
-	CreatedAt  field.Time
-	UpdatedAt  field.Time
-	Error      field.String
+	ALL                    field.Asterisk
+	AutoID                 field.Int64
+	Code                   field.String
+	Status                 field.String // NOT_USED, USED, INVALID
+	UsedUserID             field.String
+	CreatedAt              field.Time
+	UpdatedAt              field.Time
+	Error                  field.String
+	Donor                  field.String
+	DonationTargetMasterID field.String
 
 	fieldMap map[string]field.Expr
 }
@@ -74,6 +78,8 @@ func (r *redeemCode) updateTableName(table string) *redeemCode {
 	r.CreatedAt = field.NewTime(table, "created_at")
 	r.UpdatedAt = field.NewTime(table, "updated_at")
 	r.Error = field.NewString(table, "error")
+	r.Donor = field.NewString(table, "donor")
+	r.DonationTargetMasterID = field.NewString(table, "donation_target_master_id")
 
 	r.fillFieldMap()
 
@@ -90,7 +96,7 @@ func (r *redeemCode) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (r *redeemCode) fillFieldMap() {
-	r.fieldMap = make(map[string]field.Expr, 7)
+	r.fieldMap = make(map[string]field.Expr, 9)
 	r.fieldMap["auto_id"] = r.AutoID
 	r.fieldMap["code"] = r.Code
 	r.fieldMap["status"] = r.Status
@@ -98,6 +104,8 @@ func (r *redeemCode) fillFieldMap() {
 	r.fieldMap["created_at"] = r.CreatedAt
 	r.fieldMap["updated_at"] = r.UpdatedAt
 	r.fieldMap["error"] = r.Error
+	r.fieldMap["donor"] = r.Donor
+	r.fieldMap["donation_target_master_id"] = r.DonationTargetMasterID
 }
 
 func (r redeemCode) clone(db *gorm.DB) redeemCode {

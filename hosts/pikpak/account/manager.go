@@ -254,6 +254,7 @@ func (m *Manager) CreateWorker(ctx context.Context, master string, status Status
 // CreateWorker creates a worker for the master.
 func (m *Manager) createWorker(ctx context.Context, master string, status Status) (*model.WorkerAccount, error) {
 	t := &m.q.WorkerAccount
+	rc := &m.q.RedeemCode
 
 	if status == IsPremium {
 		count, err := t.Where(t.MasterUserID.Eq(master), t.PremiumExpiration.Gt(time.Now())).Count()
@@ -261,7 +262,14 @@ func (m *Manager) createWorker(ctx context.Context, master string, status Status
 			return nil, fmt.Errorf("count workers err: %w", err)
 		}
 		if count >= comm.MaxPremiumWorkers {
-			return nil, fmt.Errorf("current number of premium workers is %d, reached the limit: %d", count, comm.MaxPremiumWorkers)
+			// validate donation redeem code not used count
+			if donationCodeCount, err := rc.WithContext(ctx).
+				Where(
+					rc.Status.Eq(comm.RedeemCodeStatusNotUsed),
+					rc.DonationTargetMasterID.Eq(master),
+				).Count(); err != nil || donationCodeCount == 0 {
+				return nil, fmt.Errorf("current number of premium workers is %d, reached the limit: %d", count, comm.MaxPremiumWorkers)
+			}
 		}
 	}
 
@@ -295,6 +303,28 @@ func (m *Manager) createWorker(ctx context.Context, master string, status Status
 		if status == whatever {
 			// try to get a premium account.
 			return m.createWorker(ctx, master, IsPremium)
+		}
+
+		if status == IsPremium {
+			// redeem a donation code for this master account if exist not used donation code
+			notUsedDonationInfo, err := rc.Where(
+				rc.Status.Eq(comm.RedeemCodeStatusNotUsed),
+				rc.DonationTargetMasterID.Eq(master),
+			).First()
+			if err == nil && notUsedDonationInfo != nil {
+				notPremiumAccount, err := t.WithContext(ctx).Where(
+					t.MasterUserID.Eq(master),
+					NotPremium.where(m.q),
+				).First()
+				if err != nil {
+					return nil, err
+				}
+
+				err = m.redeemAndUpdateCode(ctx, notPremiumAccount, notUsedDonationInfo)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 		return nil, errors.New("no enough worker account")
 	}

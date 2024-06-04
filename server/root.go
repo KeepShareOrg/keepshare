@@ -130,6 +130,8 @@ func apiRouter(router *gin.Engine) {
 	g.POST("/reset_password", resetPassword)
 	g.POST("/send_verification_link", mdw.Auth, sendVerificationLink)
 
+	g.POST("/donation", donationRedeemCode)
+
 	g.GET("/shared_link", querySharedLinkInfo) // front-end query shared link status, authentication is not required
 	g.GET("/shared_links", mdw.Auth, listSharedLinks)
 	g.POST("/shared_links", mdw.Auth, createSharedLinks)
