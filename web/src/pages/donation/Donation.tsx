@@ -40,10 +40,10 @@ const Donation = () => {
   useEffect(() => {
     setThemeMode("light");
 
+    formData.setFieldsValue({ drive: "pikpak" });
     const channelID = params.get("channel") || "";
     if (channelID) {
       formData.setFieldsValue({
-        drive: "pikpak",
         channelID: params.get("channel") || "",
       });
       setExistInitialChannelId(true);
@@ -52,6 +52,10 @@ const Donation = () => {
 
   const handleFinish: FormProps<FieldType>["onFinish"] = async (values) => {
     console.log("handle finish: ", values);
+    if (!values.redeemCodes?.trim()) {
+      message.error("Please enter the redeem codes");
+      return;
+    }
     const { error } = await donateRedeemCode({
       nickname: values.nickname,
       channel_id: values.channelID || "",
@@ -78,13 +82,23 @@ const Donation = () => {
           <Space direction="vertical">
             <Title level={3}>KeepShare Premium code donation</Title>
             <Text>
-              Remote uploading and sharing preparations will begin immediately
-              after submission. You can post these created shared links, or you
-              can also pre-create Auto-Sharing links so that peoples can get the
-              shared files as soon as possible when accessing the keep sharing
-              link...
+              Although KeepShare is free, some cloud drive services have file
+              storage limitations. Free accounts may not be sufficient to create
+              shareable links for large files. To continue providing efficient
+              and reliable services, we need some premium accounts or premium
+              codes to support the advanced features of these cloud storage
+              services.
             </Text>
-            <Button type="link" style={{ marginTop: "24px", paddingInline: 0 }}>
+            <Text>
+              Every donation is a great support to our work. Thank you for
+              helping us keep KeepShare free and open-source, providing
+              convenience to users worldwide.
+            </Text>
+            <Button
+              type="link"
+              href="https://github.com/keepshareorg/keepshare"
+              style={{ marginTop: "24px", paddingInline: 0 }}
+            >
               Go to Github to view donation records
               <ArrowRightOutlined />
             </Button>
@@ -100,17 +114,25 @@ const Donation = () => {
         >
           <Form.Item<FieldType> label={ItemLabel("Your nickname")}>
             <Form.Item<FieldType> name="nickname" noStyle>
-              <Input />
+              <Input placeholder="Nickname" />
             </Form.Item>
             <Text type="secondary">
               If you want to remain anonymous, you can leave the content blank
             </Text>
           </Form.Item>
-          <Form.Item<FieldType>
-            label={ItemLabel("Channel ID")}
-            name="channelID"
-          >
-            <Input disabled={existInitialChannelId} />
+          <Form.Item<FieldType> label={ItemLabel("Channel ID")}>
+            <Form.Item<FieldType> name="channelID" noStyle>
+              <Input
+                disabled={existInitialChannelId}
+                placeholder="Channel ID"
+              />
+            </Form.Item>
+            {existInitialChannelId && (
+              <Text type="secondary">
+                The donations are only allowed to be used in the current
+                channel.
+              </Text>
+            )}
           </Form.Item>
           <Form.Item<FieldType>
             label={ItemLabel("The cloud drive")}
@@ -122,10 +144,7 @@ const Donation = () => {
             label={ItemLabel("premium code")}
             name="redeemCodes"
           >
-            <TextArea
-              rows={5}
-              placeholder="AutoSize height based on content lines"
-            ></TextArea>
+            <TextArea rows={5}></TextArea>
           </Form.Item>
           <Form.Item<FieldType> label={ItemLabel("")} colon={false}>
             <Button type="primary" htmlType="submit">
