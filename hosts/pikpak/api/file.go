@@ -188,7 +188,26 @@ func (api *API) UpdateFilesStatus(ctx context.Context, workerUserID string, file
 	}).Debugf("query task resp body: %s", body.Body())
 
 	if err = e.Error(); err != nil {
-		// TODO token expired
+		// token expired, need to re-login this account
+		if e.ErrorCode == 16 {
+			go func() {
+				//signIn
+				w := &api.q.WorkerAccount
+				worker, err := w.Where(w.UserID.Eq(workerUserID)).Take()
+				if err != nil {
+					return
+				}
+				if _, err := api.signIn(context.Background(), worker.UserID, worker.Email, worker.Password); err == nil {
+					log.WithFields(map[string]any{
+						"worker": worker.UserID,
+					}).Debugf("re-sign in success.")
+					err := api.UpdateFilesStatus(ctx, workerUserID, files, updateRunningTasks...)
+					if err != nil {
+						return
+					}
+				}
+			}()
+		}
 		return fmt.Errorf("query task err: %w", err)
 	}
 
