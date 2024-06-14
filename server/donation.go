@@ -51,11 +51,15 @@ func donationRedeemCode(c *gin.Context) {
 	}
 	channelID := strings.TrimSpace(req.ChannelID)
 
-	userInfo, err := query.User.WithContext(c).Where(query.User.Channel.Eq(channelID)).First()
-	if err != nil {
-		log.Errorf("get user count err: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "validate channel_id failed"})
-		return
+	targetID := ""
+	if channelID != "" {
+		userInfo, err := query.User.WithContext(c).Where(query.User.Channel.Eq(channelID)).First()
+		if err != nil {
+			log.Errorf("get user count err: %v", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "validate channel_id failed"})
+			return
+		}
+		targetID = userInfo.ID
 	}
 
 	// filter invalid redeem codes
@@ -72,7 +76,7 @@ func donationRedeemCode(c *gin.Context) {
 		return
 	}
 
-	err = host.DonateRedeemCode(c.Request.Context(), nickname, userInfo.ID, req.RedeemCodes)
+	err := host.DonateRedeemCode(c.Request.Context(), nickname, targetID, req.RedeemCodes)
 	if err != nil {
 		log.Errorf("donate redeem code err: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
