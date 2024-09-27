@@ -46,7 +46,7 @@ func (api *API) AddEventListener(event hosts.EventType, fn hosts.ListenerCallbac
 	eventListeners[event] = append(eventListeners[event], fn)
 }
 
-func (t *fileTask) toFile(master, worker, link string) *model.File {
+func (t *fileTask) toFile(keepshareUserID, master, worker, link string) *model.File {
 	if t == nil {
 		return nil
 	}
@@ -69,6 +69,7 @@ func (t *fileTask) toFile(master, worker, link string) *model.File {
 		CreatedAt:        now,
 		UpdatedAt:        now,
 		OriginalLinkHash: lk.Hash(link),
+		UniqueHash:       fmt.Sprintf("%s:%s", keepshareUserID, lk.Hash(link)),
 	}
 	if t.Status == comm.StatusError {
 		f.Error = t.Message
@@ -128,7 +129,13 @@ func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link st
 		return nil, fmt.Errorf("create file got unexpected body: %s", body.Body())
 	}
 
-	file = r.Task.toFile(master, worker, link)
+	ksUserID := ""
+	ma := &api.q.MasterAccount
+	if err := ma.WithContext(ctx).Where(ma.UserID.Eq(master)).Pluck(ma.KeepshareUserID, &ksUserID); err != nil {
+		return nil, err
+	}
+
+	file = r.Task.toFile(ksUserID, master, worker, link)
 
 	// store file record.
 	// file_id may be empty.
