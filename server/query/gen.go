@@ -16,11 +16,12 @@ import (
 )
 
 var (
-	Q          = new(Query)
-	BlackList  *blackList
-	Blacklist  *blacklist
-	SharedLink *sharedLink
-	User       *user
+	Q                  = new(Query)
+	BlackList          *blackList
+	Blacklist          *blacklist
+	SharedLink         *sharedLink
+	SharedLinkComplete *sharedLinkComplete
+	User               *user
 )
 
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
@@ -28,37 +29,41 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	BlackList = &Q.BlackList
 	Blacklist = &Q.Blacklist
 	SharedLink = &Q.SharedLink
+	SharedLinkComplete = &Q.SharedLinkComplete
 	User = &Q.User
 }
 
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
-		db:         db,
-		BlackList:  newBlackList(db, opts...),
-		Blacklist:  newBlacklist(db, opts...),
-		SharedLink: newSharedLink(db, opts...),
-		User:       newUser(db, opts...),
+		db:                 db,
+		BlackList:          newBlackList(db, opts...),
+		Blacklist:          newBlacklist(db, opts...),
+		SharedLink:         newSharedLink(db, opts...),
+		SharedLinkComplete: newSharedLinkComplete(db, opts...),
+		User:               newUser(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
-	BlackList  blackList
-	Blacklist  blacklist
-	SharedLink sharedLink
-	User       user
+	BlackList          blackList
+	Blacklist          blacklist
+	SharedLink         sharedLink
+	SharedLinkComplete sharedLinkComplete
+	User               user
 }
 
 func (q *Query) Available() bool { return q.db != nil }
 
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
-		db:         db,
-		BlackList:  q.BlackList.clone(db),
-		Blacklist:  q.Blacklist.clone(db),
-		SharedLink: q.SharedLink.clone(db),
-		User:       q.User.clone(db),
+		db:                 db,
+		BlackList:          q.BlackList.clone(db),
+		Blacklist:          q.Blacklist.clone(db),
+		SharedLink:         q.SharedLink.clone(db),
+		SharedLinkComplete: q.SharedLinkComplete.clone(db),
+		User:               q.User.clone(db),
 	}
 }
 
@@ -72,27 +77,30 @@ func (q *Query) WriteDB() *Query {
 
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
-		db:         db,
-		BlackList:  q.BlackList.replaceDB(db),
-		Blacklist:  q.Blacklist.replaceDB(db),
-		SharedLink: q.SharedLink.replaceDB(db),
-		User:       q.User.replaceDB(db),
+		db:                 db,
+		BlackList:          q.BlackList.replaceDB(db),
+		Blacklist:          q.Blacklist.replaceDB(db),
+		SharedLink:         q.SharedLink.replaceDB(db),
+		SharedLinkComplete: q.SharedLinkComplete.replaceDB(db),
+		User:               q.User.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
-	BlackList  IBlackListDo
-	Blacklist  IBlacklistDo
-	SharedLink ISharedLinkDo
-	User       IUserDo
+	BlackList          IBlackListDo
+	Blacklist          IBlacklistDo
+	SharedLink         ISharedLinkDo
+	SharedLinkComplete ISharedLinkCompleteDo
+	User               IUserDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
-		BlackList:  q.BlackList.WithContext(ctx),
-		Blacklist:  q.Blacklist.WithContext(ctx),
-		SharedLink: q.SharedLink.WithContext(ctx),
-		User:       q.User.WithContext(ctx),
+		BlackList:          q.BlackList.WithContext(ctx),
+		Blacklist:          q.Blacklist.WithContext(ctx),
+		SharedLink:         q.SharedLink.WithContext(ctx),
+		SharedLinkComplete: q.SharedLinkComplete.WithContext(ctx),
+		User:               q.User.WithContext(ctx),
 	}
 }
 

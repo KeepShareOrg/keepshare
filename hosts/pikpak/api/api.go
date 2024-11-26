@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/KeepShareOrg/keepshare/hosts"
-	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/query"
 	"github.com/coocood/freecache"
 	"github.com/go-resty/resty/v2"
@@ -52,15 +51,6 @@ type API struct {
 	cache *freecache.Cache
 
 	*hosts.Dependencies
-
-	recentTasksChan     chan runningFiles // task created in the last 10 minutes.
-	externalTriggerChan chan runningFiles // trigger by user.
-	internalTriggerChan chan runningFiles // trigger by server, select from db.
-}
-
-type runningFiles struct {
-	worker string // all files come from the same worker.
-	files  []*model.File
 }
 
 // New returns server api instance.
@@ -69,19 +59,6 @@ func New(q *query.Query, d *hosts.Dependencies) *API {
 		q:            q,
 		Dependencies: d,
 		cache:        freecache.NewCache(50 * 1024 * 1024),
-	}
-
-	consumers := viper.GetInt("pikpak.trigger_consumers")
-	if consumers <= 0 {
-		consumers = 64
-	}
-	api.externalTriggerChan = make(chan runningFiles, consumers)
-	api.internalTriggerChan = make(chan runningFiles, consumers)
-	api.recentTasksChan = make(chan runningFiles, consumers)
-
-	for i := 0; i < consumers; i++ {
-		go api.handelTriggerChan()
-		go api.recentTaskConsumer()
 	}
 
 	if v := viper.GetString("pikpak.device_id"); v != "" {
@@ -93,10 +70,7 @@ func New(q *query.Query, d *hosts.Dependencies) *API {
 		resCli = resCli.SetHeader("User-Agent", userAgent)
 	}
 
-	go api.triggerFilesFromDB()
-	go api.getRecentFilesFromDB()
 	go api.updatePremiumExpirationBackground()
-
 	return api
 }
 

@@ -28,7 +28,6 @@ import (
 	"github.com/KeepShareOrg/keepshare/server/model"
 	"github.com/KeepShareOrg/keepshare/server/query"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gen"
 	"gorm.io/gorm/clause"
 )
 
@@ -107,7 +106,7 @@ func autoSharingLink(c *gin.Context) {
 
 	switch share.State(sh.State) {
 	case share.StatusOK:
-		// TODO: We can add parameters to the PikPak sharing page to automatically play, but we need to add that only the current host is PikPak.
+		// We can add parameters to the PikPak sharing page to automatically play, but we need to add that only the current host is PikPak.
 		hostLink := fmt.Sprintf("%s?act=play", sh.HostSharedLink)
 		report.Sets(Map{
 			keyRedirectType: "share",
@@ -119,13 +118,6 @@ func autoSharingLink(c *gin.Context) {
 	default: // include StatusSensitive
 		l.Debug("share status:", sh.State)
 		RecordLinkAccessLog(ctx, sh.OriginalLinkHash, GetRequestIP(c.Request))
-
-		// push the uncompleted task to the background
-		set, err := config.Redis().SetNX(ctx, fmt.Sprintf("async_trigger_running:%d", sh.AutoID), "", 30*time.Second).Result()
-		if err == nil && set {
-			getAsyncBackgroundTaskInstance().pushAsyncTask(sh.AutoID)
-		}
-
 		statusPage := fmt.Sprintf("https://%s/console/shared/status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID)
 		// skip the status page loading if not yet create host task
 		if lastState == share.StatusCreated {
@@ -147,14 +139,21 @@ func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.H
 		return nil, "", errors.New("invalid link")
 	}
 
-	where := []gen.Condition{
-		query.SharedLink.UserID.Eq(userID),
-		query.SharedLink.OriginalLinkHash.Eq(linkHash),
+	var sh *model.SharedLink
+	if res, err := query.SharedLinkComplete.WithContext(ctx).Where(
+		query.SharedLinkComplete.UserID.Eq(userID),
+		query.SharedLinkComplete.OriginalLinkHash.Eq(linkHash),
+	).Take(); err == nil {
+		sh = (*model.SharedLink)(res)
 	}
-
-	sh, err := query.SharedLink.WithContext(ctx).Where(where...).Take()
-	if err != nil && !gormutil.IsNotFoundError(err) {
-		return nil, "", fmt.Errorf("query shared link error: %w", err)
+	if sh == nil {
+		sh, err = query.SharedLink.WithContext(ctx).Where(
+			query.SharedLink.UserID.Eq(userID),
+			query.SharedLink.OriginalLinkHash.Eq(linkHash),
+		).Take()
+		if err != nil && !gormutil.IsNotFoundError(err) {
+			return nil, "", fmt.Errorf("query shared link error: %w", err)
+		}
 	}
 
 	lastStatus = share.StatusNotFound

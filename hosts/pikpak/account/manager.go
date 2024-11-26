@@ -78,7 +78,6 @@ func NewManager(q *query.Query, api *api.API, d *hosts.Dependencies) *Manager {
 	go m.checkMasterBuffer()
 	go m.checkWorkerBuffer()
 	go m.checkPremiumWorkerBuffer()
-
 	go m.keepTokenAliveWorker()
 	go m.registerRefreshTokenTask()
 
@@ -215,7 +214,7 @@ func (m *Manager) getWorkerWithEnoughCapacity(ctx context.Context, master string
 		where = append(where, w)
 	}
 
-	return t.WithContext(ctx).Where(where...).Order(t.UsedSize.SubCol(t.LimitSize)).Limit(1).Take()
+	return t.WithContext(ctx).Where(where...).Limit(1).Take()
 }
 
 type inviteSubAccountRequest struct {

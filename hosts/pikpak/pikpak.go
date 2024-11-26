@@ -5,8 +5,10 @@
 package pikpak
 
 import (
+	"context"
 	"embed"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
 
 	"github.com/KeepShareOrg/keepshare/hosts"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/account"
@@ -48,7 +50,13 @@ func New(d *hosts.Dependencies) hosts.Host {
 
 	go p.deleteFilesBackground()
 
-	d.Queue.RegisterHandler(taskTypeSyncWorkerInfo, asynq.HandlerFunc(p.syncWorkerHandler))
+	// handle pikpak_file task
+	tm := api.GetTaskManagerInstance(p.q, p.api, d)
+	go tm.Start(context.TODO())
+
+	if err := d.Queue.RegisterHandler(taskTypeSyncWorkerInfo, asynq.HandlerFunc(p.syncWorkerHandler)); err != nil {
+		log.Errorf("register handler err: %v", err)
+	}
 	p.api.RegisterResetPasswordHandler()
 
 	return p

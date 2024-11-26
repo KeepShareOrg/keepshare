@@ -122,11 +122,19 @@ func querySharedLinkInfo(c *gin.Context) {
 	conditions := []gen.Condition{
 		query.SharedLink.AutoID.Eq(int64(autoID)),
 	}
-	res, err := query.SharedLink.WithContext(ctx).Where(conditions...).Take()
-	if err != nil {
-		report.Set(constant.Error, err)
-		mdw.RespInternal(c, err.Error())
-		return
+	var res *model.SharedLink
+	if resComplete, err := query.SharedLinkComplete.WithContext(ctx).Where(
+		query.SharedLinkComplete.AutoID.Eq(int64(autoID)),
+	).Take(); err == nil {
+		res = (*model.SharedLink)(resComplete)
+	}
+	if res == nil {
+		res, err = query.SharedLink.WithContext(ctx).Where(conditions...).Take()
+		if err != nil {
+			report.Set(constant.Error, err)
+			mdw.RespInternal(c, err.Error())
+			return
+		}
 	}
 
 	report.Sets(Map{
@@ -137,7 +145,7 @@ func querySharedLinkInfo(c *gin.Context) {
 	})
 
 	if res.State == share.StatusOK.String() {
-		// TODO: We can add parameters to the PikPak sharing page to automatically play, but we need to add that only the current host is PikPak.
+		// We can add parameters to the PikPak sharing page to automatically play, but we need to add that only the current host is PikPak.
 		hostLink := fmt.Sprintf("%v?act=play", res.HostSharedLink)
 		report.Sets(Map{
 			keyRedirectType: "share",
@@ -215,7 +223,7 @@ func initQueryTypes() {
 	table := query.SharedLink
 	for _, f := range []field.Expr{
 		table.Title,
-		table.OriginalLink, // TODO query by hash
+		table.OriginalLink,
 		table.HostSharedLink,
 		table.CreatedAt,
 		table.CreatedBy,

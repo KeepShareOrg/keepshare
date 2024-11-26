@@ -103,7 +103,7 @@ func Start() error {
 		Handler: router,
 	}
 
-	go getAsyncBackgroundTaskInstance().run()
+	go NewAsyncTaskRunner().Run()
 	return serveGraceful(srv)
 }
 

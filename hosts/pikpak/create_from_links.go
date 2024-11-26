@@ -25,6 +25,11 @@ import (
 	"github.com/samber/lo"
 )
 
+// CreateShare create a sharing link by files.
+func (p *PikPak) CreateShare(ctx context.Context, master string, worker string, fileID string) (sharedLink string, err error) {
+	return p.api.CreateShare(ctx, master, worker, fileID)
+}
+
 // CreateFromLinks create shared links based on the input original links.
 func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, originalLinks []string, createBy string) (sharedLinks map[string]*share.Share, err error) {
 	defer func() {
@@ -55,7 +60,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 	}
 
 	linksStatusOK := map[string]*model.File{}
-	linksStatusPending := map[string]*model.File{}
+	linksStatusNotCompleted := map[string]*model.File{}
 	linksStatusError := map[string]*model.File{}
 	for _, f := range files {
 		l := hashToLink[f.OriginalLinkHash]
@@ -63,20 +68,18 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		case comm.StatusOK:
 			linksStatusOK[l] = f
 		case comm.StatusError:
+			linksStatusError[l] = f
 			// delete error files
 			p.q.File.WithContext(ctx).Delete(f)
-			linksStatusError[l] = f
 		default:
-			// TODO delete timeout files
-			linksStatusPending[l] = f
-			p.api.TriggerRunningFile(f)
+			linksStatusNotCompleted[l] = f
 		}
 	}
 
 	sharedLinks = map[string]*share.Share{}
 	// only create files for new links.
 	for _, link := range originalLinks {
-		if linksStatusOK[link] != nil || linksStatusPending[link] != nil || linksStatusError[link] != nil {
+		if linksStatusOK[link] != nil || linksStatusError[link] != nil || linksStatusNotCompleted[link] != nil {
 			continue
 		}
 
@@ -115,10 +118,10 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 			return nil, fmt.Errorf("create from link error: %v", err)
 		}
 
-		linksStatusPending[link] = file
+		linksStatusNotCompleted[link] = file
 	}
 
-	for _, f := range linksStatusPending {
+	for _, f := range linksStatusNotCompleted {
 		originalLink := hashToLink[f.OriginalLinkHash]
 		sharedLinks[originalLink] = &share.Share{
 			State:          share.StatusCreated,
@@ -130,8 +133,8 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 			Size:           f.Size,
 		}
 	}
-	if len(linksStatusPending) > 0 && log.IsDebugEnabled() {
-		log.WithContext(ctx).Debug("links not completed:", lo.Keys(linksStatusPending))
+	if len(linksStatusNotCompleted) > 0 && log.IsDebugEnabled() {
+		log.WithContext(ctx).Debug("links not completed:", lo.Keys(linksStatusNotCompleted))
 	}
 
 	for _, f := range linksStatusOK {

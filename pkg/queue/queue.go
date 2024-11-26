@@ -57,10 +57,17 @@ func New(opt redis.Options, queues map[string]int) *Queue {
 		Logger:      log.Log(),
 		Queues:      queues,
 		RetryDelayFunc: func(n int, e error, t *asynq.Task) time.Duration {
+			delay := asynq.DefaultRetryDelayFunc(n, e, t)
+
 			if t.Type() == constant.AsyncQueueResetPassword {
 				return 5 * time.Second
 			}
-			return asynq.DefaultRetryDelayFunc(n, e, t)
+			if t.Type() == constant.TaskTypePPTask {
+				if delay > 5*time.Minute {
+					return 5 * time.Minute
+				}
+			}
+			return delay
 		},
 	}
 	conf.LogLevel.Set(log.Log().Level.String())
