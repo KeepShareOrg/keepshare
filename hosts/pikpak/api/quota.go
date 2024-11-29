@@ -129,14 +129,6 @@ func (api *API) UpdateWorkerStorage(ctx context.Context, worker string) error {
 
 // UpdateWorkerPremium updates the worker's premium expiration and also storage info.
 func (api *API) UpdateWorkerPremium(ctx context.Context, worker *model.WorkerAccount) error {
-	// update the worker's premium expiration once in 24h.
-	key := fmt.Sprintf("pikpak:updateWorkerPremium:%s", worker.UserID)
-	ok, _ := api.Redis.SetNX(ctx, key, "", 24*time.Hour).Result()
-	if !ok {
-		log.WithContext(ctx).Debugf("ignore update worker")
-		return nil
-	}
-
 	t := &api.q.WorkerAccount
 	exp, err := api.GetPremiumExpiration(ctx, worker.UserID)
 	if err != nil {

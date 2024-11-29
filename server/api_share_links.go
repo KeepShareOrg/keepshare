@@ -181,11 +181,11 @@ func batchQuerySharedLinksInfo(c *gin.Context) {
 
 	userID := c.GetString(constant.UserID)
 	conditions := []gen.Condition{
-		query.SharedLink.OriginalLinkHash.In(hashes...),
-		query.SharedLink.UserID.Eq(userID),
+		query.SharedLinkComplete.OriginalLinkHash.In(hashes...),
+		query.SharedLinkComplete.UserID.Eq(userID),
 	}
 
-	ret, err := query.SharedLink.Where(conditions...).Find()
+	ret, err := query.SharedLinkComplete.Where(conditions...).Find()
 	if err != nil {
 		mdw.RespInternal(c, err.Error())
 		return
@@ -220,7 +220,7 @@ type Query struct {
 var types = make(map[SupportQueryKey]any)
 
 func initQueryTypes() {
-	table := query.SharedLink
+	table := query.SharedLinkComplete
 	for _, f := range []field.Expr{
 		table.Title,
 		table.OriginalLink,
@@ -238,7 +238,7 @@ func initQueryTypes() {
 }
 
 // conditionQuery shared link query method, support query by filter condition
-func conditionQuery(ctx context.Context, filters []Query, userID string, pageIndex, limit int) ([]*model.SharedLink, int64, error) {
+func conditionQuery(ctx context.Context, filters []Query, userID string, pageIndex, limit int) ([]*model.SharedLinkComplete, int64, error) {
 	conditions := make([]gen.Condition, 0)
 
 	for _, f := range filters {
@@ -357,19 +357,19 @@ func conditionQuery(ctx context.Context, filters []Query, userID string, pageInd
 		}
 	}
 
-	conditions = append(conditions, query.SharedLink.UserID.Eq(userID))
+	conditions = append(conditions, query.SharedLinkComplete.UserID.Eq(userID))
 
 	// Only the first query returns the real total num
 	total := int64(0)
 	if pageIndex == 1 {
-		num, err := query.SharedLink.WithContext(ctx).Where(conditions...).Count()
+		num, err := query.SharedLinkComplete.WithContext(ctx).Where(conditions...).Count()
 		if err != nil {
 			return nil, 0, err
 		}
 		total = num
 	}
 
-	ret, err := query.SharedLink.WithContext(ctx).Where(conditions...).Order(query.SharedLink.AutoID.Desc()).Offset((pageIndex - 1) * limit).Limit(limit).Find()
+	ret, err := query.SharedLinkComplete.WithContext(ctx).Where(conditions...).Order(query.SharedLinkComplete.AutoID.Desc()).Offset((pageIndex - 1) * limit).Limit(limit).Find()
 	if err != nil {
 		return nil, 0, err
 	}
@@ -519,11 +519,11 @@ func deleteSharedLinksWithHost(ctx context.Context, userID string, host hosts.Ho
 	}
 
 	conditions := []gen.Condition{
-		query.SharedLink.OriginalLinkHash.In(hashes...),
-		query.SharedLink.UserID.Eq(userID),
+		query.SharedLinkComplete.OriginalLinkHash.In(hashes...),
+		query.SharedLinkComplete.UserID.Eq(userID),
 	}
 
-	ret, err := query.SharedLink.WithContext(ctx).Where(conditions...).Delete()
+	ret, err := query.SharedLinkComplete.WithContext(ctx).Where(conditions...).Delete()
 	if err != nil {
 		return 0, err
 	}

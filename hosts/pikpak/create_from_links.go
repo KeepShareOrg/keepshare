@@ -115,7 +115,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 
 		file, err := p.createFromLink(ctx, master, link)
 		if err != nil {
-			return nil, fmt.Errorf("create from link error: %v", err)
+			return nil, fmt.Errorf("create from link error: %v, link: %s", err, link)
 		}
 
 		linksStatusNotCompleted[link] = file
@@ -189,10 +189,11 @@ func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount
 	var excludeWorkers []string
 	var tryPremium int
 
-	log.ContextWithFields(ctx, log.Fields{"tryFree": 1})
+	log.ContextWithFields(ctx, log.Fields{"tryFree": 1, "link": link})
 	// firstly, try with an existed free worker and free size more than 1GB
 	worker, err := p.m.GetWorkerWithEnoughCapacity(ctx, master.UserID, util.GB, account.NotPremium, excludeWorkers)
 	if err != nil {
+		log.Errorf("get worker err: %v, link: %s", err, link)
 		return nil, err
 	}
 	file, err := p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)

@@ -48,8 +48,9 @@ const (
 
 // enum all statuses.
 const (
-	StatusOK    = "PHASE_TYPE_COMPLETE"
-	StatusError = "PHASE_TYPE_ERROR"
+	StatusOK      = "PHASE_TYPE_COMPLETE"
+	StatusError   = "PHASE_TYPE_ERROR"
+	StatusRunning = "PHASE_TYPE_RUNNING"
 )
 
 const (

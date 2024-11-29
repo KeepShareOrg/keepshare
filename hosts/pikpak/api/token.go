@@ -133,7 +133,7 @@ func (api *API) RefreshToken(ctx context.Context, userID, refreshToken string) (
 		CreatedAt:    now,
 	}
 
-	err = api.q.Token.WithContext(ctx).Where(api.q.Token.UserID.Eq(userID)).Clauses(clause.OnConflict{UpdateAll: true}).Create(t)
+	err = api.q.Token.WithContext(ctx).Clauses(clause.OnConflict{UpdateAll: true}).Create(t)
 	if err != nil {
 		return nil, fmt.Errorf("update token err: %w", err)
 	}
@@ -207,7 +207,7 @@ func (api *API) signIn(ctx context.Context, userID, username, password string) (
 		CreatedAt:    now,
 	}
 
-	err = api.q.Token.WithContext(ctx).Where(api.q.Token.UserID.Eq(userID)).Clauses(clause.OnConflict{UpdateAll: true}).Create(t)
+	err = api.q.Token.WithContext(ctx).Clauses(clause.OnConflict{UpdateAll: true}).Create(t)
 	if err != nil {
 		return nil, fmt.Errorf("update token err: %w", err)
 	}

@@ -221,6 +221,18 @@ func (t *TaskManager) ppTasksHandler(ctx context.Context, task *asynq.Task) erro
 	}
 
 	switch status.Status {
+	case comm.StatusRunning:
+		//if the task is running but progress is over 90% that means the task is complete,
+		//so we should update the status can create shared link
+		if status.Progress >= 90 && status.FileID != "" {
+			file.Status = comm.StatusOK
+			err := t.handleStatusOKTask(ctx, file)
+			if err != nil {
+				log.Errorf("handle status PHASE_TYPE_RUNNING but progress over 90% task error: ", err)
+				return err
+			}
+		}
+		return nil
 	case comm.StatusOK:
 		err := t.handleStatusOKTask(ctx, file)
 		if err != nil {
