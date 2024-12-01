@@ -124,7 +124,7 @@ func (t *TaskManager) GetRecentTasksFromDB(ctx context.Context, status []string,
 	tasks, err := f.WithContext(ctx).
 		Where(
 			f.Status.In(status...),
-			f.CreatedAt.Lt(time.Now().Add(beforeTime)),
+			f.CreatedAt.Gte(time.Now().Add(beforeTime)),
 		).
 		Order(f.CreatedAt).
 		Limit(limit).
@@ -240,6 +240,13 @@ func (t *TaskManager) ppTasksHandler(ctx context.Context, task *asynq.Task) erro
 			return err
 		}
 		return nil
+	case comm.StatusPending:
+		err := t.handleStatusPendingTask(ctx, file)
+		if err != nil {
+			log.Errorf("handle status PHASE_TYPE_PENDING task error: ", err)
+			return err
+		}
+		return nil
 	case comm.StatusError:
 		err := t.handleStatusErrorTask(ctx, file)
 		if err != nil {
@@ -260,6 +267,16 @@ func (t *TaskManager) handleStatusOKTask(ctx context.Context, file *model.File) 
 		FileID:    file.FileID,
 		UpdatedAt: time.Now(),
 	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// handleStatusPendingTask handle status PHASE_TYPE_PENDING
+func (t *TaskManager) handleStatusPendingTask(ctx context.Context, file *model.File) error {
+	f := &t.q.File
+	_, err := f.WithContext(ctx).Where(f.AutoID.Eq(file.AutoID)).Delete()
 	if err != nil {
 		return err
 	}
