@@ -106,3 +106,69 @@ func IsInvalidGrantErr(err error) bool {
 
 	return strings.Contains(err.Error(), "invalid_grant")
 }
+
+// IsSubTaskNumberLimitErr returns whether the error is caused by sub task number limit.
+func IsSubTaskNumberLimitErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "task_sub_task_num_limit")
+}
+
+// IsFileNameEmptyErr returns whether the error is caused by file name empty.
+func IsFileNameEmptyErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "file_name_empty")
+}
+
+// IsTaskUrlResolveError returns whether the error is caused by task url resolve error.
+func IsTaskUrlResolveError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "task_url_resolve_error")
+}
+
+// IsSpaceFolderNotExistError returns whether the error is caused by space folder not exist.
+func IsSpaceFolderNotExistError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "space_folder_not_exist")
+}
+
+// IsFileNotFoundError returns whether the error is caused by file not found.
+func IsFileNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "file_not_found")
+}
+
+// IsInternalError returns whether the error is caused by internal error.
+func IsInternalError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "internal")
+}
+
+// IsCaptchaInvalidError returns whether the error is caused by captcha invalid.
+func IsCaptchaInvalidError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "captcha_invalid")
+}
+
+// IsShouldNotRetryError returns whether the error is should not retry.
+func IsShouldNotRetryError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return IsTaskUrlResolveError(err) || IsFileNameEmptyErr(err) || IsSubTaskNumberLimitErr(err)
+}

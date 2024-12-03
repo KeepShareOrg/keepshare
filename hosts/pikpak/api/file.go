@@ -7,6 +7,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"strings"
 	"time"
 
@@ -76,7 +77,7 @@ func (t *fileTask) toFile(keepshareUserID, master, worker, link string) *model.F
 
 // CreateFilesFromLink create files from link.
 func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link string) (file *model.File, err error) {
-	log.ContextWithFields(ctx, log.Fields{
+	log := log.WithContext(ctx).WithFields(log.Fields{
 		"master": master,
 		"worker": worker,
 		"link":   link,
@@ -97,10 +98,12 @@ func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link st
 		Task fileTask `json:"task"`
 	}
 
+	requestID := uuid.New().String()
 	body, err := resCli.R().
 		SetContext(ctx).
 		SetAuthToken(token).
 		SetError(&e).
+		SetHeader("X-Request-Id", requestID).
 		SetResult(&r).
 		SetBody(JSON{
 			"kind":        "drive#file",
@@ -111,7 +114,7 @@ func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link st
 		Post(apiURL("/drive/v1/files"))
 
 	if err != nil {
-		return nil, fmt.Errorf("create file err: %w", err)
+		return nil, fmt.Errorf("create file err: %w, request-id: %v", err, requestID)
 	}
 
 	log.WithContext(ctx).Debugf("create file response body: %s", body.Body())

@@ -10,7 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/KeepShareOrg/keepshare/server/constant"
-	"math/rand"
+	"github.com/google/uuid"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -285,7 +285,10 @@ func (m *Manager) createWorker(ctx context.Context, master string, status Status
 	}
 
 	now := time.Now().Round(time.Second)
-	updatedUUID := fmt.Sprintf("%v", rand.Intn(1e10))
+	updatedUUID := uuid.New().String()
+	if len(updatedUUID) > 20 {
+		updatedUUID = updatedUUID[:20]
+	}
 	ret, err := t.WithContext(ctx).
 		Where(where...).
 		Order(t.CreatedAt).

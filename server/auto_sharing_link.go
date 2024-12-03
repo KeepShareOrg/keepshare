@@ -94,7 +94,7 @@ func autoSharingLink(c *gin.Context) {
 	defer report.Done()
 
 	l := log.WithContext(ctx)
-	sh, lastState, err := createShareLinkIfNotExist(ctx, user.ID, host, link, share.AutoShare)
+	sh, lastState, err := createShareLinkIfNotExist(context.Background(), user.ID, host, link, share.AutoShare)
 	if err != nil {
 		report.Set(constant.Error, err.Error())
 		mdw.RespInternal(c, err.Error())

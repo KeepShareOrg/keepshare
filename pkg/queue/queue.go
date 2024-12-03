@@ -53,7 +53,7 @@ func New(opt redis.Options, queues map[string]int) *Queue {
 	}
 
 	conf := asynq.Config{
-		Concurrency: 50,
+		Concurrency: 30,
 		Logger:      log.Log(),
 		Queues:      queues,
 		RetryDelayFunc: func(n int, e error, t *asynq.Task) time.Duration {

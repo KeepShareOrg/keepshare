@@ -7,6 +7,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"strconv"
 	"time"
 
@@ -122,6 +123,14 @@ func (api *API) UpdateWorkerStorage(ctx context.Context, worker string) error {
 		LimitSize: limit,
 		UpdatedAt: time.Now(),
 	}
+
+	// is premium account, can use space size less than 6GB, set invalid util
+	// is free account, can use space size less than 1GB, set invalid util
+	if (limit > 10*util.GB && (limit-used) < 6*util.GB) ||
+		(limit < 10*util.GB && (limit-used) < 1*util.GB) {
+		w.InvalidUntil = time.Now().Add(time.Hour * 24 * 365 * 100)
+	}
+
 	_, err = t.WithContext(ctx).Updates(w)
 	log.WithContext(ctx).Debugf("worker info updated: %+v", w)
 	return err

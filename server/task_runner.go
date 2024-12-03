@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/hosts"
+	"github.com/KeepShareOrg/keepshare/hosts/pikpak/api"
 	pm "github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	pq "github.com/KeepShareOrg/keepshare/hosts/pikpak/query"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
@@ -15,6 +16,7 @@ import (
 	"github.com/samber/lo"
 	"gorm.io/gen/field"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -23,6 +25,8 @@ type AsyncTaskRunner struct{}
 func NewAsyncTaskRunner() *AsyncTaskRunner {
 	return &AsyncTaskRunner{}
 }
+
+var createNotExistsHostTasksBuffer = make(chan *model.SharedLink, 100000)
 
 func (r *AsyncTaskRunner) Run() {
 	ctx := context.TODO()
@@ -80,13 +84,14 @@ func (r *AsyncTaskRunner) Run() {
 		})
 		log.Debugf("unExistsKeepShareTasks: %v %v", len(unExistsKeepShareTasks), unExistsKeepShareTasks)
 		// create not exists host tasks
-		go func() {
-			if err := r.createNotExistsHostTasks(ctx, unExistsKeepShareTasks); err != nil {
-				log.Errorf("create not exists host tasks error: %v", err)
-			}
-		}()
+		for _, task := range unExistsKeepShareTasks {
+			createNotExistsHostTasksBuffer <- task
+		}
+		//r.createNotExistsHostTasks(ctx, unExistsKeepShareTasks)
 		return nil
 	})
+
+	go r.createNotExistsHostTasks(ctx, createNotExistsHostTasksBuffer)
 }
 
 // WalkDBTasksByState walk db tasks
@@ -193,28 +198,52 @@ func (r *AsyncTaskRunner) handleErrorUniqueHashes(ctx context.Context, hashes []
 }
 
 // createHostTaskIfNotExists create host task if not exists
-func (r *AsyncTaskRunner) createNotExistsHostTasks(ctx context.Context, tasks []*model.SharedLink) error {
-	for _, ksl := range tasks {
-		host := hosts.Get(config.DefaultHost())
-		log.Infof("should create file: %#v %v", ksl, host)
-		_, err := host.CreateFromLinks(ctx, ksl.UserID, []string{ksl.OriginalLink}, ksl.CreatedBy)
-		if err != nil {
-			log.WithFields(map[string]interface{}{
-				"user_id":       ksl.UserID,
-				"original_link": ksl.OriginalLink,
-			}).Debugf("---> create share from links err: %v", err)
+func (r *AsyncTaskRunner) createNotExistsHostTasks(ctx context.Context, tasks chan *model.SharedLink) {
+	ch := make(chan struct{}, 200)
+	wg := sync.WaitGroup{}
 
-			if IsForbiddenShareResourceError(err) {
-				_, _ = query.SharedLink.WithContext(ctx).
-					Where(query.SharedLink.AutoID.Eq(ksl.AutoID)).
-					Updates(&model.SharedLink{
-						State:     constant.StatusError,
-						Error:     err.Error(),
-						UpdatedAt: time.Now(),
-					})
-			}
-			return fmt.Errorf("create share from links err: %w", err)
+	for ksl := range tasks {
+		rdsKey := fmt.Sprintf("create_not_exists_%s", ksl.OriginalLinkHash)
+		if ok, _ := config.Redis().SetNX(ctx, rdsKey, 1, time.Minute).Result(); !ok {
+			log.Infof("create not exists task is handling by other: %s", ksl.OriginalLink)
+			continue
 		}
+		wg.Add(1)
+		ch <- struct{}{}
+
+		go func(ksl *model.SharedLink) {
+			defer func() {
+				<-ch
+				wg.Done()
+				config.Redis().Del(ctx, rdsKey)
+			}()
+
+			host := hosts.Get(config.DefaultHost())
+			ctx := log.DataContext(ctx, log.DataContextOptions{RequestID: ""})
+			log := log.WithContext(ctx)
+			log.Infof("should create file: %#v %v", ksl, host)
+			_, err := host.CreateFromLinks(ctx, ksl.UserID, []string{ksl.OriginalLink}, ksl.CreatedBy)
+			if err != nil {
+				log.WithFields(map[string]interface{}{
+					"user_id":       ksl.UserID,
+					"original_link": ksl.OriginalLink,
+				}).Debugf("create share from links err: %v", err)
+
+				if IsForbiddenShareResourceError(err) || api.IsShouldNotRetryError(err) {
+					_, _ = query.SharedLink.WithContext(ctx).
+						Where(query.SharedLink.AutoID.Eq(ksl.AutoID)).
+						Updates(&model.SharedLink{
+							State:     constant.StatusError,
+							Error:     err.Error(),
+							UpdatedAt: time.Now(),
+						})
+				}
+				log.Errorf("create share from links err: %w", err)
+			} else {
+				log.Debugf("create share from links ok: %s", ksl.OriginalLink)
+			}
+		}(ksl)
 	}
-	return nil
+
+	wg.Wait()
 }

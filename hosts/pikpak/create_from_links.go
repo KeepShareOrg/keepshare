@@ -8,6 +8,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"time"
 
@@ -32,6 +34,7 @@ func (p *PikPak) CreateShare(ctx context.Context, master string, worker string, 
 
 // CreateFromLinks create shared links based on the input original links.
 func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, originalLinks []string, createBy string) (sharedLinks map[string]*share.Share, err error) {
+	log := log.WithContext(ctx)
 	defer func() {
 		if err != nil {
 			log.WithContext(ctx).Error("CreateFromLinks err:", err)
@@ -99,21 +102,28 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 			}
 
 			if status != comm.LinkStatusOK && progress < 95 {
-				infos, err := GetLinkAccessInfos(ctx, lk.Hash(link))
-				if err == nil && len(infos) < comm.SlowTaskTriggerConditionTimes {
-					sh := &share.Share{
-						State:        share.StatusCreated,
-						OriginalLink: link,
-						CreatedBy:    createBy,
-						CreatedAt:    time.Now(),
-					}
-					sharedLinks[link] = sh
-					continue
-				}
+				/* because the machine is slow, we need to check the access info to limit the rate */
+				//infos, err := GetLinkAccessInfos(ctx, lk.Hash(link))
+				//if err == nil && len(infos) < comm.SlowTaskTriggerConditionTimes {
+				//	sh := &share.Share{
+				//		State:        share.StatusCreated,
+				//		OriginalLink: link,
+				//		CreatedBy:    createBy,
+				//		CreatedAt:    time.Now(),
+				//	}
+				//	sharedLinks[link] = sh
+				//	continue
+				//}
 			}
 		}
 
-		file, err := p.createFromLink(ctx, master, link)
+		size, err := p.queryFilesizeByLink(ctx, link)
+		if err != nil {
+			log.Errorf("query file size by link error: %v, link: %s", err, link)
+			size = 3 * util.GB
+		}
+
+		file, err := p.createFromLink(ctx, master, link, size, []string{})
 		if err != nil {
 			return nil, fmt.Errorf("create from link error: %v, link: %s", err, link)
 		}
@@ -133,7 +143,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 			Size:           f.Size,
 		}
 	}
-	if len(linksStatusNotCompleted) > 0 && log.IsDebugEnabled() {
+	if len(linksStatusNotCompleted) > 0 {
 		log.WithContext(ctx).Debug("links not completed:", lo.Keys(linksStatusNotCompleted))
 	}
 
@@ -185,102 +195,128 @@ func isSensitiveLink(err string) bool {
 	return false
 }
 
-func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount, link string) (*model.File, error) {
-	var excludeWorkers []string
-	var tryPremium int
+func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount, link string, size int64, excludeWorkers []string) (file *model.File, err error) {
+	log := log.WithContext(ctx).WithFields(log.Fields{"tryFree": 1, "link": link})
 
-	log.ContextWithFields(ctx, log.Fields{"tryFree": 1, "link": link})
-	// firstly, try with an existed free worker and free size more than 1GB
-	worker, err := p.m.GetWorkerWithEnoughCapacity(ctx, master.UserID, util.GB, account.NotPremium, excludeWorkers)
-	if err != nil {
-		log.Errorf("get worker err: %v, link: %s", err, link)
-		return nil, err
+	var worker *model.WorkerAccount
+	workerAccountType := account.NotPremium
+	if size >= 6*util.GB {
+		workerAccountType = account.IsPremium
 	}
-	file, err := p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)
-	if api.IsAccountLimited(err) {
-		invalidUtil := time.Now()
-		if api.IsTaskDailyCreateLimitErr(err) {
-			invalidUtil = time.Now().Add(24 * time.Hour)
-		}
-		if api.IsTaskRunNumsLimitErr(err) || api.IsSpaceNotEnoughErr(err) {
-			invalidUtil = time.Now().Add(time.Hour)
-		}
-		if invalidUtil.Sub(time.Now()) > 0 {
-			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, invalidUtil); err != nil {
-				log.WithContext(ctx).WithField("worker", worker).Errorf("update account invalid util err: %v", err)
-			}
-		}
+	// try to get the limit_size is 0 byte account, if not exist, create one
+	worker, err = p.m.GetWorkerWithEnoughCapacity(ctx, master.UserID, size, workerAccountType, excludeWorkers)
+	if err != nil {
+		return nil, fmt.Errorf("get worker err: %v, link: %s", err, link)
+	}
 
-		excludeWorkers = append(excludeWorkers, worker.UserID)
-		if worker.LimitSize <= 0 || worker.LimitSize-worker.UsedSize > 5*util.GB {
-			goto tryWithPremiumAccount
-		} else {
-			goto tryWithNewFreeAccount
-		}
+	if worker == nil {
+		return nil, fmt.Errorf("worker is nil, link: %s", link)
 	}
-	if err != nil {
-		return nil, err
-	}
-	return file, nil
-
-tryWithNewFreeAccount:
-	log.ContextWithFields(ctx, log.Fields{"tryNewFree": 1})
-	worker, err = p.m.CreateWorker(ctx, master.UserID, account.NotPremium)
-	if err != nil {
-		return nil, err
-	}
+	log.Debugf("use worker: %v, account type: %v for link: %s", worker, workerAccountType, link)
 	file, err = p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)
-	if api.IsAccountLimited(err) {
-		invalidUtil := time.Now()
-		if api.IsTaskDailyCreateLimitErr(err) {
-			invalidUtil = time.Now().Add(24 * time.Hour)
-		}
-		if api.IsTaskRunNumsLimitErr(err) || api.IsSpaceNotEnoughErr(err) {
-			invalidUtil = time.Now().Add(time.Hour)
-		}
-		if invalidUtil.Sub(time.Now()) > 0 {
-			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, invalidUtil); err != nil {
+	if err != nil {
+		invalidUntil, match := getInvalidUntilByCreateLinkError(err, workerAccountType)
+		if match {
+			err := p.m.UpdateAccountInvalidUtil(ctx, worker, invalidUntil)
+			if err != nil {
 				log.WithContext(ctx).WithField("worker", worker).Errorf("update account invalid util err: %v", err)
 			}
 		}
 
-		excludeWorkers = append(excludeWorkers, worker.UserID)
-		goto tryWithPremiumAccount
-	}
-	if err != nil {
-		return nil, err
-	}
-	return file, nil
+		if api.IsShouldNotRetryError(err) {
+			log.WithContext(ctx).Errorf("create from link err: %v, should not retry", err)
+			return nil, err
+		}
 
-tryWithPremiumAccount:
-	tryPremium++
-	log.ContextWithFields(ctx, log.Fields{"tryPremium": tryPremium})
-	worker, err = p.m.GetWorkerWithEnoughCapacity(ctx, master.UserID, 6*util.GB, account.IsPremium, excludeWorkers)
-	if err != nil {
-		return nil, err
-	}
-	file, err = p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)
-	if api.IsAccountLimited(err) {
-		invalidUtil := time.Now()
-		if api.IsTaskDailyCreateLimitErr(err) {
-			invalidUtil = time.Now().Add(24 * time.Hour)
-		}
-		if api.IsTaskRunNumsLimitErr(err) || api.IsSpaceNotEnoughErr(err) {
-			invalidUtil = time.Now().Add(time.Hour)
-		}
-		if invalidUtil.Sub(time.Now()) > 0 {
-			if err := p.m.UpdateAccountInvalidUtil(ctx, worker, invalidUtil); err != nil {
-				log.WithContext(ctx).WithField("worker", worker).Errorf("update account invalid util err: %v", err)
+		maybeSize := size
+		if api.IsSpaceNotEnoughErr(err) {
+			if workerAccountType == account.IsPremium {
+				// if current use premium account, try to select other premium account with more space
+				maybeSize = size + (2 * util.GB)
+			} else {
+				maybeSize = int64(6 * util.GB)
 			}
 		}
-
+		go func() {
+			// update the account premium expiration info
+			_ = p.api.UpdateWorkerStorage(context.Background(), worker.UserID)
+		}()
 		excludeWorkers = append(excludeWorkers, worker.UserID)
-		goto tryWithPremiumAccount
+		return p.createFromLink(ctx, master, link, maybeSize, excludeWorkers)
 	}
-	if err != nil {
-		return nil, err
-	}
+
 	return file, nil
+}
+
+func getInvalidUntilByCreateLinkError(err error, workerAccountType account.Status) (invalidUntil time.Time, match bool) {
+	if err == nil {
+		return time.Now(), false
+	}
+
+	type UntilEntry struct {
+		Fn   func(error) bool
+		Time time.Time
+	}
+	forever := time.Hour * 24 * 365 * 100
+	afterForever := time.Now().Add(forever)
+	afterOneHour := time.Now().Add(time.Hour)
+	afterOneDay := time.Now().Add(time.Hour * 24)
+	// free account space less than 1GB, it will be invalid forever when the quota status update
+	freeAccountInvalidUtils := []UntilEntry{
+		{api.IsTaskRunNumsLimitErr, afterForever},
+		{api.IsTaskDailyCreateLimitErr, afterForever},
+	}
+	// premium account space less than 6GB, it will be invalid forever when the quota status update
+	premiumAccountInvalidUtils := []UntilEntry{
+		{api.IsTaskRunNumsLimitErr, afterOneHour},
+		{api.IsTaskDailyCreateLimitErr, afterOneDay},
+	}
+
+	invalidUtils := freeAccountInvalidUtils
+	if workerAccountType == account.IsPremium {
+		invalidUtils = premiumAccountInvalidUtils
+	}
+
+	if ue, ok := lo.Find(invalidUtils, func(k UntilEntry) bool {
+		return k.Fn(err)
+	}); ok {
+		match = true
+		invalidUntil = ue.Time
+	}
+
+	return
+}
+
+var httpClient = &http.Client{Timeout: 10 * time.Second}
+
+// queryFilesizeByLink query file size by link (call whatslink.info api)
+func (p *PikPak) queryFilesizeByLink(ctx context.Context, link string) (int64, error) {
+	addr := fmt.Sprintf("https://whatslink.info/api/v1/link?url=%s", link)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, addr, nil)
+	if err != nil {
+		return 0, err
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	if resp.StatusCode != 200 {
+		return 0, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	bs, _ := io.ReadAll(resp.Body)
+	var sizeInfo struct {
+		Size int64 `json:"size"`
+	}
+	err = json.Unmarshal(bs, &sizeInfo)
+	if err != nil {
+		return 0, err
+	}
+
+	return sizeInfo.Size, nil
 }
 
 // GetLinkAccessInfos get link access log list
