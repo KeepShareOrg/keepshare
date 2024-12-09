@@ -265,6 +265,7 @@ func getInvalidUntilByCreateLinkError(err error, workerAccountType account.Statu
 	freeAccountInvalidUtils := []UntilEntry{
 		{api.IsTaskRunNumsLimitErr, afterForever},
 		{api.IsTaskDailyCreateLimitErr, afterForever},
+		{api.IsTaskDailyCreateLimitErr, afterOneDay},
 	}
 	// premium account space less than 6GB, it will be invalid forever when the quota status update
 	premiumAccountInvalidUtils := []UntilEntry{
