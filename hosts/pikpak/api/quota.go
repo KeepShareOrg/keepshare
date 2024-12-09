@@ -7,7 +7,9 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
+	"gorm.io/gorm"
 	"strconv"
 	"time"
 
@@ -117,12 +119,13 @@ func (api *API) UpdateWorkerStorage(ctx context.Context, worker string) error {
 		return fmt.Errorf("get storage size err: %w", err)
 	}
 
-	w := &model.WorkerAccount{
-		UserID:    worker,
-		UsedSize:  used,
-		LimitSize: limit,
-		UpdatedAt: time.Now(),
+	w, err := t.Where(t.UserID.Eq(worker)).Take()
+	if err != nil {
+		return fmt.Errorf("update worker err: %w", err)
 	}
+	w.UsedSize = used
+	w.LimitSize = limit
+	w.UpdatedAt = time.Now()
 
 	// is premium account, can use space size less than 6GB, set invalid util
 	// is free account, can use space size less than 1GB, set invalid util
@@ -131,7 +134,11 @@ func (api *API) UpdateWorkerStorage(ctx context.Context, worker string) error {
 		w.InvalidUntil = time.Now().Add(time.Hour * 24 * 365 * 100)
 	}
 
-	_, err = t.WithContext(ctx).Updates(w)
+	err = config.MySQL().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		tx.Where(t.UserID.Eq(worker)).Delete(&model.WorkerAccount{})
+		tx.Table(t.TableName()).Create(w)
+		return nil
+	})
 	log.WithContext(ctx).Debugf("worker info updated: %+v", w)
 	return err
 }
@@ -160,7 +167,11 @@ func (api *API) UpdateWorkerPremium(ctx context.Context, worker *model.WorkerAcc
 	worker.LimitSize = limit
 	worker.UpdatedAt = time.Now()
 
-	_, err = t.WithContext(ctx).Select(t.PremiumExpiration, t.UsedSize, t.LimitSize, t.UpdatedAt).Updates(worker)
+	err = config.MySQL().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		tx.Where(t.UserID.Eq(worker.UserID)).Delete(&model.WorkerAccount{})
+		tx.Table(t.TableName()).Create(worker)
+		return nil
+	})
 	log.WithContext(ctx).Debugf("worker info updated: %+v", worker)
 	return err
 }

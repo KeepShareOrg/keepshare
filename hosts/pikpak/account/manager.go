@@ -9,8 +9,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -336,14 +338,12 @@ func (m *Manager) createWorker(ctx context.Context, master string, status Status
 
 // UpdateAccountInvalidUtil update worker invalid until
 func (m *Manager) UpdateAccountInvalidUtil(ctx context.Context, worker *model.WorkerAccount, until time.Time) error {
-	if _, err := m.q.WorkerAccount.WithContext(ctx).
-		Where(m.q.WorkerAccount.UserID.Eq(worker.UserID)).
-		Updates(&model.WorkerAccount{
-			InvalidUntil: until,
-		}); err != nil {
-		return fmt.Errorf("update worker err: %w", err)
-	}
-	return nil
+	worker.InvalidUntil = until
+	return config.MySQL().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		tx.Where(query.WorkerAccount.UserID.Eq(worker.UserID)).Delete(&model.WorkerAccount{})
+		tx.Table(m.q.WorkerAccount.TableName()).Create(worker)
+		return nil
+	})
 }
 
 type (
