@@ -154,6 +154,13 @@ func querySharedLinkInfo(c *gin.Context) {
 		res.HostSharedLink = hostLink
 	}
 
+	if c.Query("request_id") == "" {
+		_, err = query.SharedLink.WithContext(ctx).Where(conditions...).Update(query.SharedLink.Visitor, res.Visitor+1)
+		if err != nil {
+			log.Errorf("update visitor error: %v", err)
+		}
+	}
+
 	c.JSON(http.StatusOK, res)
 }
 

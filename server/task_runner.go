@@ -87,7 +87,6 @@ func (r *AsyncTaskRunner) Run() {
 		for _, task := range unExistsKeepShareTasks {
 			createNotExistsHostTasksBuffer <- task
 		}
-		//r.createNotExistsHostTasks(ctx, unExistsKeepShareTasks)
 		return nil
 	})
 
@@ -199,7 +198,7 @@ func (r *AsyncTaskRunner) handleErrorUniqueHashes(ctx context.Context, hashes []
 
 // createHostTaskIfNotExists create host task if not exists
 func (r *AsyncTaskRunner) createNotExistsHostTasks(ctx context.Context, tasks chan *model.SharedLink) {
-	ch := make(chan struct{}, 200)
+	ch := make(chan struct{}, 300)
 	wg := sync.WaitGroup{}
 
 	for ksl := range tasks {

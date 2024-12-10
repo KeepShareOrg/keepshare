@@ -103,17 +103,17 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 
 			if status != comm.LinkStatusOK && progress < 95 {
 				/* because the machine is slow, we need to check the access info to limit the rate */
-				//infos, err := GetLinkAccessInfos(ctx, lk.Hash(link))
-				//if err == nil && len(infos) < comm.SlowTaskTriggerConditionTimes {
-				//	sh := &share.Share{
-				//		State:        share.StatusCreated,
-				//		OriginalLink: link,
-				//		CreatedBy:    createBy,
-				//		CreatedAt:    time.Now(),
-				//	}
-				//	sharedLinks[link] = sh
-				//	continue
-				//}
+				infos, err := GetLinkAccessInfos(ctx, lk.Hash(link))
+				if err == nil && len(infos) < comm.SlowTaskTriggerConditionTimes {
+					sh := &share.Share{
+						State:        share.StatusCreated,
+						OriginalLink: link,
+						CreatedBy:    createBy,
+						CreatedAt:    time.Now(),
+					}
+					sharedLinks[link] = sh
+					continue
+				}
 			}
 		}
 
@@ -216,6 +216,7 @@ func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount
 	file, err = p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)
 	if err != nil {
 		invalidUntil, match := getInvalidUntilByCreateLinkError(err, workerAccountType)
+		log.Debugf("match result %v: %v, invalidUntil: %v", worker.UserID, match, invalidUntil)
 		if match {
 			err := p.m.UpdateAccountInvalidUtil(ctx, worker, invalidUntil)
 			if err != nil {
@@ -265,7 +266,6 @@ func getInvalidUntilByCreateLinkError(err error, workerAccountType account.Statu
 	freeAccountInvalidUtils := []UntilEntry{
 		{api.IsTaskRunNumsLimitErr, afterForever},
 		{api.IsTaskDailyCreateLimitErr, afterForever},
-		{api.IsTaskDailyCreateLimitErr, afterOneDay},
 	}
 	// premium account space less than 6GB, it will be invalid forever when the quota status update
 	premiumAccountInvalidUtils := []UntilEntry{

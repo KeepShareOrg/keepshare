@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
-	"gorm.io/gorm"
+	"gorm.io/gen/field"
 	"strconv"
 	"time"
 
@@ -113,38 +113,42 @@ func (api *API) updatePremiumExpirationBackground() {
 
 // UpdateWorkerStorage updates the worker's storage info from server.
 func (api *API) UpdateWorkerStorage(ctx context.Context, worker string) error {
+	if ok, _ := config.Redis().SetNX(ctx, fmt.Sprintf("update-worker-storage-%s", worker), 1, time.Second*10).Result(); !ok {
+		log.WithContext(ctx).WithField("worker", worker).Debug("update storage skipped")
+		return nil
+	}
 	t := &api.q.WorkerAccount
 	used, limit, err := api.GetStorageSize(ctx, worker)
 	if err != nil {
 		return fmt.Errorf("get storage size err: %w", err)
 	}
 
-	w, err := t.Where(t.UserID.Eq(worker)).Take()
-	if err != nil {
-		return fmt.Errorf("update worker err: %w", err)
+	newWorkerAccount := map[string]any{
+		t.UsedSize.ColumnName().String():  used,
+		t.LimitSize.ColumnName().String(): limit,
+		t.UpdatedAt.ColumnName().String(): time.Now(),
 	}
-	w.UsedSize = used
-	w.LimitSize = limit
-	w.UpdatedAt = time.Now()
-
+	updateFields := []field.Expr{t.UsedSize, t.LimitSize, t.UpdatedAt}
 	// is premium account, can use space size less than 6GB, set invalid util
 	// is free account, can use space size less than 1GB, set invalid util
 	if (limit > 10*util.GB && (limit-used) < 6*util.GB) ||
 		(limit < 10*util.GB && (limit-used) < 1*util.GB) {
-		w.InvalidUntil = time.Now().Add(time.Hour * 24 * 365 * 100)
+		updateFields = append(updateFields, t.InvalidUntil)
+		newWorkerAccount[t.InvalidUntil.ColumnName().String()] = time.Now().Add(time.Hour * 24 * 365 * 100)
 	}
 
-	err = config.MySQL().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		tx.Where(t.UserID.Eq(worker)).Delete(&model.WorkerAccount{})
-		tx.Table(t.TableName()).Create(w)
-		return nil
-	})
-	log.WithContext(ctx).Debugf("worker info updated: %+v", w)
+	log.WithContext(ctx).Debugf("worker info updated: %+v", newWorkerAccount)
+	_, err = t.WithContext(ctx).Where(t.UserID.Eq(worker)).Select(updateFields...).Updates(newWorkerAccount)
 	return err
 }
 
 // UpdateWorkerPremium updates the worker's premium expiration and also storage info.
 func (api *API) UpdateWorkerPremium(ctx context.Context, worker *model.WorkerAccount) error {
+	if ok, _ := config.Redis().SetNX(ctx, fmt.Sprintf("update-worker-storage-%s", worker.UserID), 1, time.Second*10).Result(); !ok {
+		log.WithContext(ctx).WithField("worker", worker).Debug("update storage skipped")
+		return nil
+	}
+
 	t := &api.q.WorkerAccount
 	exp, err := api.GetPremiumExpiration(ctx, worker.UserID)
 	if err != nil {
@@ -162,16 +166,14 @@ func (api *API) UpdateWorkerPremium(ctx context.Context, worker *model.WorkerAcc
 		return nil
 	}
 
-	worker.PremiumExpiration = *exp
-	worker.UsedSize = used
-	worker.LimitSize = limit
-	worker.UpdatedAt = time.Now()
-
-	err = config.MySQL().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		tx.Where(t.UserID.Eq(worker.UserID)).Delete(&model.WorkerAccount{})
-		tx.Table(t.TableName()).Create(worker)
-		return nil
-	})
 	log.WithContext(ctx).Debugf("worker info updated: %+v", worker)
+	_, err = t.WithContext(ctx).Where(t.UserID.Eq(worker.UserID)).Select(
+		t.PremiumExpiration, t.UsedSize, t.LimitSize, t.UpdatedAt,
+	).Updates(map[string]any{
+		t.PremiumExpiration.ColumnName().String(): *exp,
+		t.UsedSize.ColumnName().String():          used,
+		t.LimitSize.ColumnName().String():         limit,
+		t.UpdatedAt.ColumnName().String():         time.Now(),
+	})
 	return err
 }

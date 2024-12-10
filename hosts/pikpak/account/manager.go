@@ -12,7 +12,6 @@ import (
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -295,10 +294,11 @@ func (m *Manager) createWorker(ctx context.Context, master string, status Status
 		Where(where...).
 		Order(t.CreatedAt).
 		Limit(1).
-		Updates(&model.WorkerAccount{
-			MasterUserID: master,
-			UpdatedAt:    now,
-			UpdatedUUID:  updatedUUID,
+		Select(t.MasterUserID, t.UpdatedAt, t.UpdatedUUID).
+		Updates(map[string]any{
+			t.MasterUserID.ColumnName().String(): master,
+			t.UpdatedAt.ColumnName().String():    now,
+			t.UpdatedUUID.ColumnName().String():  updatedUUID,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("bind new worker err: %w", err)
@@ -338,12 +338,18 @@ func (m *Manager) createWorker(ctx context.Context, master string, status Status
 
 // UpdateAccountInvalidUtil update worker invalid until
 func (m *Manager) UpdateAccountInvalidUtil(ctx context.Context, worker *model.WorkerAccount, until time.Time) error {
-	worker.InvalidUntil = until
-	return config.MySQL().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		tx.Where(query.WorkerAccount.UserID.Eq(worker.UserID)).Delete(&model.WorkerAccount{})
-		tx.Table(m.q.WorkerAccount.TableName()).Create(worker)
+	if ok, _ := config.Redis().SetNX(ctx, fmt.Sprintf("w_%s", worker.UserID), 1, time.Minute).Result(); !ok {
+		log.WithContext(ctx).WithField("worker", worker).Debug("worker already updated")
 		return nil
-	})
+	}
+	ctx = log.DataContext(ctx)
+	wa := m.q.WorkerAccount
+	_, err := wa.
+		WithContext(ctx).
+		Where(wa.UserID.Eq(worker.UserID)).
+		Select(wa.InvalidUntil).
+		Update(wa.InvalidUntil, until)
+	return err
 }
 
 type (
