@@ -103,7 +103,9 @@ func Start() error {
 		Handler: router,
 	}
 
-	go NewAsyncTaskRunner().Run()
+	asyncTaskRunner := NewAsyncTaskRunner()
+	//go asyncTaskRunner.Run()
+	go asyncTaskRunner.ListenCompleteFiles()
 	return serveGraceful(srv)
 }
 

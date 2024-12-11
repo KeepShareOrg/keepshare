@@ -153,15 +153,32 @@ func querySharedLinkInfo(c *gin.Context) {
 		})
 		res.HostSharedLink = hostLink
 	}
-
-	if c.Query("request_id") == "" {
-		_, err = query.SharedLink.WithContext(ctx).Where(conditions...).Update(query.SharedLink.Visitor, res.Visitor+1)
-		if err != nil {
-			log.Errorf("update visitor error: %v", err)
-		}
-	}
+	go manualQueryFileStatus(context.Background(), res)
 
 	c.JSON(http.StatusOK, res)
+}
+
+func manualQueryFileStatus(ctx context.Context, sharedLink *model.SharedLink) {
+	if sharedLink == nil || sharedLink.State == share.StatusOK.String() {
+		return
+	}
+	if ok, _ := config.Redis().SetNX(ctx, fmt.Sprintf("manual_query:%v", sharedLink.OriginalLink), 1, time.Second*20).Result(); !ok {
+		return
+	}
+	host := hosts.Get(config.DefaultHost())
+	sharedLinks, err := host.CreateFromLinks(context.Background(), sharedLink.UserID, []string{sharedLink.OriginalLink}, sharedLink.CreatedBy)
+	if err != nil {
+		log.Errorf("shared links still not ok: %v", err)
+		return
+	}
+	log.Debugf("complete shared links: %#v", sharedLinks)
+	if v, ok := sharedLinks[sharedLink.OriginalLink]; ok && v.State == share.StatusOK {
+		query.SharedLink.WithContext(ctx).Where(query.SharedLink.AutoID.Eq(sharedLink.AutoID)).Updates(&model.SharedLink{
+			State:          share.StatusOK.String(),
+			HostSharedLink: v.HostSharedLink,
+			UpdatedAt:      time.Now(),
+		})
+	}
 }
 
 // batchQuerySharedLinksInfo batch query shared link current status and this shared link's info

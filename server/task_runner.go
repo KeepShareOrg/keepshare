@@ -28,6 +28,26 @@ func NewAsyncTaskRunner() *AsyncTaskRunner {
 
 var createNotExistsHostTasksBuffer = make(chan *model.SharedLink, 100000)
 
+func (r *AsyncTaskRunner) ListenCompleteFiles() {
+	pp := pq.Use(config.MySQL())
+	host := hosts.Get(config.DefaultHost())
+	ctx := context.Background()
+	host.AddEventListener(hosts.FileComplete, func(userID, originalLinkHash string) {
+		log.Debugf("file complete event: %s %s", userID, originalLinkHash)
+		files, err := pp.File.WithContext(ctx).Where(
+			pp.File.WorkerUserID.Eq(userID),
+			pp.File.OriginalLinkHash.Eq(originalLinkHash),
+		).Find()
+		if err != nil {
+			log.Errorf("query files error: %v", err)
+			return
+		}
+		if err := r.handleCompleteUniqueTasks(ctx, files); err != nil {
+			log.Errorf("handle complete unique tasks error: %v", err)
+		}
+	})
+}
+
 func (r *AsyncTaskRunner) Run() {
 	ctx := context.TODO()
 	r.WalkDBTasksByState(ctx, []string{
@@ -98,13 +118,12 @@ func (r *AsyncTaskRunner) WalkDBTasksByState(ctx context.Context, states []strin
 	var currentAutoID int64 = 0
 
 	for {
-		//ret, err := query.SharedLink.WithContext(gormutil.IgnoreTraceContext(ctx)).
 		ret, err := query.SharedLink.WithContext(ctx).
 			Where(
 				query.SharedLink.AutoID.Gt(currentAutoID),
 				query.SharedLink.State.In(states...),
 			).Order(query.SharedLink.AutoID).
-			Limit(5000).
+			Limit(1000).
 			Find()
 
 		if err != nil {
