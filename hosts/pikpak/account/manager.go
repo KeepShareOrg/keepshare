@@ -13,7 +13,6 @@ import (
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	"github.com/google/uuid"
 	"net/http"
-	"net/url"
 	"regexp"
 	"time"
 
@@ -414,99 +413,31 @@ func (m *Manager) inviteSubAccountByInvitetoken(ctx context.Context, task *asynq
 			l.Debug("inviteSubAccountByInvitetoken ok")
 		}
 	}()
-	var inviteToken string
-	for i := 0; i < 3; i++ {
-		//get invite token
-		var res *api.GetInviteTokenResponse
-		res, err = m.api.GetInviteToken(ctx, req.MasterUserID)
-		if err != nil {
-			err = fmt.Errorf("get invite token err: %w", err)
-			continue
-		}
-		if res == nil {
-			err = fmt.Errorf("invite token res is nil")
-			continue
-		}
-
-		if res.InviteToken == "" {
-			err = fmt.Errorf("invite token is null")
-			continue
-		}
-		err = m.api.VerifyInviteSubAccountTokenByInviteToken(ctx, res.InviteToken, req.WorkerUserID)
-		if err != nil {
-			err = fmt.Errorf("verify invite url err: %w", err)
-			continue
-		}
-		inviteToken = res.InviteToken
-		break
+	//get invite token
+	var res *api.GetInviteTokenResponse
+	res, err = m.api.GetInviteToken(ctx, req.MasterUserID)
+	if err != nil {
+		err = fmt.Errorf("get invite token err: %w", err)
+		return
+	} else if res == nil {
+		err = fmt.Errorf("invite token res is nil")
+		return
+	} else if res.InviteToken == "" {
+		err = fmt.Errorf("invite token is null")
+		return
 	}
+	err = m.api.VerifyInviteSubAccountTokenByInviteToken(ctx, res.InviteToken, req.WorkerUserID)
+	if err != nil {
+		err = fmt.Errorf("verify invite url err: %w", err)
+		return
+	}
+
 	l.WithFields(log.Fields{
 		"master":       req.MasterUserID,
 		"worker":       req.WorkerUserID,
-		"invite_token": inviteToken,
+		"invite_token": res.InviteToken,
 	})
 	return
-}
-
-func (m *Manager) inviteSubAccountByEmail(ctx context.Context, task *asynq.Task) (err error) {
-	var req inviteSubAccountRequest
-	_ = json.Unmarshal(task.Payload(), &req)
-	if req.MasterUserID == "" || req.WorkerEmail == "" {
-		log.WithContext(ctx).Debugf("task: %s, invalid msg: %s", task.Type(), task.Payload())
-		return nil
-	}
-
-	l := log.WithContext(ctx).WithFields(log.Fields{
-		"master": req.MasterUserID,
-		"worker": req.WorkerUserID,
-		"email":  req.WorkerEmail,
-	})
-	defer func() {
-		if err != nil {
-			l.WithError(err).Error("inviteSubAccountByEmail err")
-		} else {
-			l.Debug("inviteSubAccountByEmail ok")
-		}
-	}()
-
-	// send invite email
-	sendTime := time.Now()
-	err = m.api.InviteSubAccount(ctx, req.MasterUserID, req.WorkerEmail)
-	if err != nil {
-		if api.IsHasJoinedReferralErr(err) {
-			return nil
-		}
-		return fmt.Errorf("send invite request err: %w", err)
-	}
-
-	// verify email
-	var verifyURL string
-	for i := 0; i < 5; i++ {
-		time.Sleep(time.Second)
-		verifyURL, _, err = m.getInviteURL(ctx, req.WorkerEmail, sendTime)
-		if verifyURL != "" {
-			break
-		}
-	}
-	if verifyURL == "" {
-		return fmt.Errorf("invite sub account email not found err: %v", err)
-	}
-
-	u, err := url.Parse(verifyURL)
-	if err != nil || u.RawQuery == "" {
-		return fmt.Errorf("invalid verify url: %s", verifyURL)
-	}
-
-	token := u.Query().Get("token")
-	if len(token) < 10 {
-		return fmt.Errorf("invalid verify url: %s", verifyURL)
-	}
-
-	err = m.api.VerifyInviteSubAccountToken(ctx, token)
-	if err != nil {
-		return fmt.Errorf("verify invite url err: %w", err)
-	}
-	return nil
 }
 
 var (

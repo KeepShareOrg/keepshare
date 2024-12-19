@@ -110,7 +110,7 @@ func (api *API) VerifyInviteSubAccountTokenByInviteToken(ctx context.Context, In
 	var e RespErr
 	var r struct{}
 
-	body, err := resCli.R().
+	body, err := resCli.SetRetryCount(3).R().
 		SetContext(ctx).
 		SetAuthToken(authToken).
 		SetBody(JSON{"token": InviteToken}).
@@ -183,7 +183,7 @@ func (api *API) GetInviteToken(ctx context.Context, master string) (*GetInviteTo
 
 	var e RespErr
 	var r GetInviteTokenResponse
-	body, err := resCli.R().
+	body, err := resCli.SetRetryCount(3).R().
 		SetContext(ctx).
 		SetAuthToken(token).
 		SetError(&e).
