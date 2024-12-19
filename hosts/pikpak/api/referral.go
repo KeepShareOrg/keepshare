@@ -80,7 +80,6 @@ func (api *API) InviteSubAccount(ctx context.Context, master string, workerEmail
 func (api *API) VerifyInviteSubAccountToken(ctx context.Context, token string) error {
 	var e RespErr
 	var r struct{}
-
 	body, err := resCli.R().
 		SetContext(ctx).
 		SetQueryParam("token", token).
@@ -93,6 +92,37 @@ func (api *API) VerifyInviteSubAccountToken(ctx context.Context, token string) e
 	}
 
 	log.WithContext(ctx).Debugf("verify invite sub account token response body: %s, token: %v", body.Body(), token)
+
+	if err = e.Error(); err != nil {
+		return fmt.Errorf("verify invite sub account token err: %w", err)
+	}
+
+	return nil
+}
+
+// VerifyInviteSubAccountToken invite sub-account by invite token.
+func (api *API) VerifyInviteSubAccountTokenByInviteToken(ctx context.Context, InviteToken string, userId string) error {
+	authToken, err := api.getToken(ctx, userId, false)
+	if err != nil {
+		return err
+	}
+
+	var e RespErr
+	var r struct{}
+
+	body, err := resCli.SetRetryCount(3).R().
+		SetContext(ctx).
+		SetAuthToken(authToken).
+		SetBody(JSON{"token": InviteToken}).
+		SetError(&e).
+		SetResult(&r).
+		Post(referralURL("/promoting/v1/sub-account/verify"))
+
+	if err != nil {
+		return fmt.Errorf("verify invite sub account token err: %w", err)
+	}
+
+	log.WithContext(ctx).Debugf("verify invite sub account token response body: %s, InviteToken: %s, userId:%s", body.Body(), InviteToken, userId)
 
 	if err = e.Error(); err != nil {
 		return fmt.Errorf("verify invite sub account token err: %w", err)
@@ -134,6 +164,39 @@ func (api *API) GetCommissions(ctx context.Context, master string) (*GetCommissi
 	if err = e.Error(); err != nil {
 		// TODO token expired
 		return nil, fmt.Errorf("get commissions err: %w", err)
+	}
+
+	return &r, nil
+}
+
+// GetInviteTokenResponse is the response of the GetInviteToken API.
+type GetInviteTokenResponse struct {
+	InviteToken string `json:"invite_token"`
+}
+
+// GetInviteToken get invite token.
+func (api *API) GetInviteToken(ctx context.Context, master string) (*GetInviteTokenResponse, error) {
+	token, err := api.getToken(ctx, master, true)
+	if err != nil {
+		return nil, err
+	}
+
+	var e RespErr
+	var r GetInviteTokenResponse
+	body, err := resCli.SetRetryCount(3).R().
+		SetContext(ctx).
+		SetAuthToken(token).
+		SetError(&e).
+		SetResult(&r).
+		Get(referralURL("/promoting/v1/sub-account/invite-link?allow_login=true&action=get"))
+	if err != nil {
+		return nil, fmt.Errorf("get invite token err: %w", err)
+	}
+
+	log.WithContext(ctx).WithField("master", master).Debugf("get invite token response body: %s", body.Body())
+
+	if err = e.Error(); err != nil {
+		return nil, fmt.Errorf("get invite token err: %w", err)
 	}
 
 	return &r, nil
