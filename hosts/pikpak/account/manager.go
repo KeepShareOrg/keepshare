@@ -74,7 +74,7 @@ func NewManager(q *query.Query, api *api.API, d *hosts.Dependencies) *Manager {
 
 	m.initConfig()
 
-	m.Queue.RegisterHandler(taskTypeInviteSubAccount, asynq.HandlerFunc(m.inviteSubAccount))
+	m.Queue.RegisterHandler(taskTypeInviteSubAccount, asynq.HandlerFunc(m.inviteSubAccountByInvitetoken))
 
 	go m.checkMasterBuffer()
 	go m.checkWorkerBuffer()
@@ -399,7 +399,56 @@ func (m *Manager) CountWorkers(ctx context.Context, master string) (*CountWorker
 	return &resp, nil
 }
 
-func (m *Manager) inviteSubAccount(ctx context.Context, task *asynq.Task) (err error) {
+func (m *Manager) inviteSubAccountByInvitetoken(ctx context.Context, task *asynq.Task) (err error) {
+	var req inviteSubAccountRequest
+	_ = json.Unmarshal(task.Payload(), &req)
+	if req.MasterUserID == "" || req.WorkerUserID == "" {
+		log.WithContext(ctx).Debugf("task: %s, invalid msg: %s", task.Type(), task.Payload())
+		return nil
+	}
+	l := log.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			l.WithError(err).Error("inviteSubAccountByInvitetoken err")
+		} else {
+			l.Debug("inviteSubAccountByInvitetoken ok")
+		}
+	}()
+	var inviteToken string
+	for i := 0; i < 3; i++ {
+		//get invite token
+		var res *api.GetInviteTokenResponse
+		res, err = m.api.GetInviteToken(ctx, req.MasterUserID)
+		if err != nil {
+			err = fmt.Errorf("get invite token err: %w", err)
+			continue
+		}
+		if res == nil {
+			err = fmt.Errorf("invite token res is nil")
+			continue
+		}
+
+		if res.InviteToken == "" {
+			err = fmt.Errorf("invite token is null")
+			continue
+		}
+		err = m.api.VerifyInviteSubAccountTokenByInviteToken(ctx, res.InviteToken, req.WorkerUserID)
+		if err != nil {
+			err = fmt.Errorf("verify invite url err: %w", err)
+			continue
+		}
+		inviteToken = res.InviteToken
+		break
+	}
+	l.WithFields(log.Fields{
+		"master":       req.MasterUserID,
+		"worker":       req.WorkerUserID,
+		"invite_token": inviteToken,
+	})
+	return
+}
+
+func (m *Manager) inviteSubAccountByEmail(ctx context.Context, task *asynq.Task) (err error) {
 	var req inviteSubAccountRequest
 	_ = json.Unmarshal(task.Payload(), &req)
 	if req.MasterUserID == "" || req.WorkerEmail == "" {
@@ -414,9 +463,9 @@ func (m *Manager) inviteSubAccount(ctx context.Context, task *asynq.Task) (err e
 	})
 	defer func() {
 		if err != nil {
-			l.WithError(err).Error("inviteSubAccount err")
+			l.WithError(err).Error("inviteSubAccountByEmail err")
 		} else {
-			l.Debug("inviteSubAccount ok")
+			l.Debug("inviteSubAccountByEmail ok")
 		}
 	}()
 
