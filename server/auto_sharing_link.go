@@ -118,7 +118,7 @@ func autoSharingLink(c *gin.Context) {
 	default: // include StatusSensitive
 		l.Debug("share status:", sh.State)
 		RecordLinkAccessLog(ctx, sh.OriginalLinkHash, GetRequestIP(c.Request))
-		statusPage := fmt.Sprintf("http://%s/console/shared/status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID)
+		statusPage := fmt.Sprintf("https://%s/console/shared/status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID)
 		// skip the status page loading if not yet create host task
 		if lastState == share.StatusCreated {
 			// st: slow task, tasks that have been created for a while but have not yet been completed
