@@ -118,7 +118,7 @@ func autoSharingLink(c *gin.Context) {
 	default: // include StatusSensitive
 		l.Debug("share status:", sh.State)
 		RecordLinkAccessLog(ctx, sh.OriginalLinkHash, GetRequestIP(c.Request))
-		statusPage := fmt.Sprintf("https://%s/console/shared/status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID)
+		statusPage := fmt.Sprintf("http://%s/console/shared/status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID)
 		// skip the status page loading if not yet create host task
 		if lastState == share.StatusCreated {
 			// st: slow task, tasks that have been created for a while but have not yet been completed
@@ -159,8 +159,7 @@ func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.H
 	lastStatus = share.StatusNotFound
 	if sh != nil {
 		lastStatus = getShareStatus(ctx, userID, host, sh)
-		updateVisitTimeAndState(ctx, sh, lastStatus)
-
+		go updateVisitTimeAndState(ctx, sh, lastStatus)
 		switch lastStatus {
 		case share.StatusUnknown, share.StatusOK, share.StatusCreated, share.StatusPending:
 			break
@@ -182,7 +181,6 @@ func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.H
 			return nil, lastStatus, fmt.Errorf("create share error: %w", err)
 		}
 	}
-
 	return sh, lastStatus, nil
 }
 
@@ -239,34 +237,15 @@ func validateLink(link string) (simple string, hash string, ok bool) {
 }
 
 func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithProperties, link string, createBy string) (s *model.SharedLink, err error) {
-	sharedLinks, err := host.CreateFromLinks(ctx, userID, []string{link}, createBy)
-	if err != nil {
-		return nil, fmt.Errorf("create share from links err: %w", err)
-	}
-
-	sh := sharedLinks[link]
-	if sh == nil {
-		return nil, errors.New("get nil share")
-	}
-
 	now := time.Now()
 	s = &model.SharedLink{
-		UserID:             userID,
-		State:              sh.State.String(),
-		Host:               host.Name(),
-		CreatedBy:          sh.CreatedBy,
-		CreatedAt:          now,
-		UpdatedAt:          now,
-		Size:               sh.Size,
-		Visitor:            sh.Visitor,
-		Stored:             sh.Stored,
-		Revenue:            sh.Revenue,
-		Title:              sh.Title,
-		OriginalLinkHash:   lk.Hash(link),
-		HostSharedLinkHash: lk.Hash(sh.HostSharedLink),
-		OriginalLink:       link,
-		HostSharedLink:     sh.HostSharedLink,
-		Error:              sh.Error,
+		State:            string(share.StatusCreated),
+		UserID:           userID,
+		Host:             host.Name(),
+		CreatedAt:        now,
+		UpdatedAt:        now,
+		OriginalLinkHash: lk.Hash(link),
+		OriginalLink:     link,
 	}
 	if createBy == share.AutoShare {
 		s.LastVisitedAt = now
@@ -275,20 +254,8 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 	t := query.SharedLink
 	err = t.WithContext(ctx).
 		Clauses(clause.OnConflict{DoUpdates: clause.AssignmentColumns([]string{
-			// UNIQUE KEY `original_link_hash.user_id.host` (`original_link_hash`, `user_id`, `host`)
-			// Do not update these fields:
-			// user_id, host, original_link_hash, original_link, first_visited_at, last_visited_at, last_stored_at
-			t.State.ColumnName().String(),
-			t.CreatedBy.ColumnName().String(),
 			t.CreatedAt.ColumnName().String(),
 			t.UpdatedAt.ColumnName().String(),
-			t.Size.ColumnName().String(),
-			t.Visitor.ColumnName().String(),
-			t.Stored.ColumnName().String(),
-			t.Revenue.ColumnName().String(),
-			t.Title.ColumnName().String(),
-			t.HostSharedLinkHash.ColumnName().String(),
-			t.HostSharedLink.ColumnName().String(),
 		})}).
 		Create(s)
 	if err != nil {
@@ -297,6 +264,41 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 		return nil, err
 	}
 	log.WithContext(ctx).WithField("shared_record", s).Info("create shared record done")
+
+	go func() {
+		ctx = context.Background()
+		sharedLinks, err := host.CreateFromLinks(ctx, userID, []string{link}, createBy)
+		if err != nil {
+			log.WithContext(ctx).WithField("shared_record", s).Error(fmt.Errorf("create share from links err: %w", err))
+			return
+		}
+
+		sh := sharedLinks[link]
+
+		if sh == nil {
+			log.WithContext(ctx).WithField("shared_record", s).Error(errors.New("get nil  dddshare"))
+			return
+		}
+
+		update := &model.SharedLink{
+			State:              sh.State.String(),
+			CreatedBy:          sh.CreatedBy,
+			Size:               sh.Size,
+			Visitor:            sh.Visitor,
+			Stored:             sh.Stored,
+			Revenue:            sh.Revenue,
+			Title:              sh.Title,
+			HostSharedLinkHash: lk.Hash(sh.HostSharedLink),
+			HostSharedLink:     sh.HostSharedLink,
+			Error:              sh.Error,
+		}
+		log.WithContext(ctx).WithField("shared_record", s).Infof("sharedLinks update :%+v", update)
+		_, err = t.WithContext(ctx).Where(t.AutoID.Eq(s.AutoID)).Updates(update)
+		if err != nil {
+			log.WithContext(ctx).WithField("shared_record", s).WithField("autoID", s.AutoID).Error(errors.New("get nil share"))
+			return
+		}
+	}()
 
 	return s, nil
 }
