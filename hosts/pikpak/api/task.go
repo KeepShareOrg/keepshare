@@ -211,7 +211,13 @@ func (t *TaskManager) ppTasksHandler(ctx context.Context, task *asynq.Task) erro
 		OriginalLinkHash: ppTask.OriginalLinkHash,
 		UniqueHash:       fmt.Sprintf("%s:%s", ppTask.WorkerUserID, lk.Hash(ppTask.OriginalLinkHash)),
 	}
-
+	var callback = func() {
+		if callbackFns, ok := eventListeners[hosts.FileComplete]; ok {
+			for _, callbackFn := range callbackFns {
+				callbackFn(file.WorkerUserID, file.OriginalLinkHash)
+			}
+		}
+	}
 	switch status.Status {
 	case comm.StatusRunning:
 		//if the task is running but progress is over 90% that means the task is complete,
@@ -223,6 +229,7 @@ func (t *TaskManager) ppTasksHandler(ctx context.Context, task *asynq.Task) erro
 				log.Errorf("handle status PHASE_TYPE_RUNNING but progress over 90% task error: ", err)
 				return err
 			}
+			callback()
 		}
 		return nil
 	case comm.StatusOK:
@@ -232,11 +239,7 @@ func (t *TaskManager) ppTasksHandler(ctx context.Context, task *asynq.Task) erro
 			return err
 		}
 		log.Debugf("file complete: %v", file.OriginalLinkHash)
-		if callbackFns, ok := eventListeners[hosts.FileComplete]; ok {
-			for _, callbackFn := range callbackFns {
-				callbackFn(file.WorkerUserID, file.OriginalLinkHash)
-			}
-		}
+		callback()
 		return nil
 	case comm.StatusPending:
 		err := t.handleStatusPendingTask(ctx, file)

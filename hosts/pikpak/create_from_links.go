@@ -35,12 +35,32 @@ func (p *PikPak) CreateShare(ctx context.Context, master string, worker string, 
 // CreateFromLinks create shared links based on the input original links.
 func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, originalLinks []string, createBy string) (sharedLinks map[string]*share.Share, err error) {
 	log := log.WithContext(ctx)
+	var getLockKey = func(keepShareUserID string, link string) string {
+		return fmt.Sprintf("create_link:%s:%s", keepShareUserID, link)
+	}
 	defer func() {
 		if err != nil {
 			log.WithContext(ctx).Error("CreateFromLinks err:", err)
 		}
 	}()
 
+	var newOriginalLinks []string
+	for _, v := range originalLinks {
+		if ok, _ := p.m.Redis.SetNX(ctx, getLockKey(keepShareUserID, v), time.Now(), time.Second*10).Result(); ok {
+			newOriginalLinks = append(newOriginalLinks, v)
+		}
+	}
+
+	if len(newOriginalLinks) <= 0 {
+		return nil, nil
+	}
+	defer func() {
+		for _, v := range newOriginalLinks {
+			p.Redis.Del(context.Background(), getLockKey(keepShareUserID, v))
+		}
+	}()
+
+	originalLinks = newOriginalLinks
 	master, err := p.m.GetMaster(ctx, keepShareUserID)
 	if err != nil {
 		return nil, err
@@ -58,6 +78,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		p.q.File.OriginalLinkHash.In(hashes...),
 		p.q.File.MasterUserID.Eq(master.UserID),
 	).Find()
+
 	if err != nil && !gormutil.IsNotFoundError(err) {
 		return nil, fmt.Errorf("query files err: %w", err)
 	}
@@ -88,7 +109,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 
 		//if the link status is ok, it means the link will complete soon
 		if createBy == share.AutoShare {
-			status, progress := p.api.QueryLinkStatus(ctx, link)
+			status := p.api.QueryLinkStatus(ctx, link)
 			if status == comm.LinkStatusLimited {
 				sh := &share.Share{
 					State:        share.StatusSensitive,
@@ -101,20 +122,6 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 				continue
 			}
 
-			if status != comm.LinkStatusOK && progress < 95 {
-				/* because the machine is slow, we need to check the access info to limit the rate */
-				infos, err := GetLinkAccessInfos(ctx, lk.Hash(link))
-				if err == nil && len(infos) < comm.SlowTaskTriggerConditionTimes {
-					sh := &share.Share{
-						State:        share.StatusCreated,
-						OriginalLink: link,
-						CreatedBy:    createBy,
-						CreatedAt:    time.Now(),
-					}
-					sharedLinks[link] = sh
-					continue
-				}
-			}
 		}
 
 		size, err := p.queryFilesizeByLink(ctx, link)
@@ -124,6 +131,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		}
 
 		file, err := p.createFromLink(ctx, master, link, size, []string{})
+		log.WithContext(ctx).Infof("CreateFromLinks  link:%+v,  file:%+v, err:%+v", link, file, err)
 		if err != nil {
 			return nil, fmt.Errorf("create from link error: %v, link: %s", err, link)
 		}
