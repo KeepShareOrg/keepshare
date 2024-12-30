@@ -2,14 +2,12 @@ import { ResetPasswordSteps, StepComponentParams } from "@/constant";
 import { StyledButton, StyledForm, StyledInput } from "@/pages/signUp/style";
 import { Form, type AlertProps, theme, Alert } from "antd";
 import { isValidateEmail } from "@/util";
-import { sendVerificationCode } from '@/api/account';
+import { sendVerificationCode } from "@/api/account";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useStore from "@/store";
 
-const validateFormFailed = ({
-  email,
-}: { email?: string }): string => {
+const validateFormFailed = ({ email }: { email?: string }): string => {
   if (email?.trim() === "") {
     return "email is required";
   }
@@ -23,7 +21,7 @@ const validateFormFailed = ({
 // The first step to reset the password, and confirm the registered email number
 const StepSendVerification = ({ setStep }: StepComponentParams) => {
   const { t } = useTranslation();
-  const [form] = Form.useForm<{ email?: string }>();
+  const [form] = Form.useForm();
   const [isLoading, setIsLoading] = useState(false);
   const [formMessage, setFormMessage] = useState<{
     type: AlertProps["type"];
@@ -40,7 +38,7 @@ const StepSendVerification = ({ setStep }: StepComponentParams) => {
     const errorMessage = validateFormFailed(params);
     if (errorMessage) {
       setFormMessage({
-        type: 'error',
+        type: "error",
         message: errorMessage,
       });
       return;
@@ -49,7 +47,7 @@ const StepSendVerification = ({ setStep }: StepComponentParams) => {
     setIsLoading(true);
 
     const result = await sendVerificationCode({
-      action: 'reset_password',
+      action: "reset_password",
       email: params.email!,
     });
 
@@ -57,8 +55,8 @@ const StepSendVerification = ({ setStep }: StepComponentParams) => {
 
     if (result.error) {
       setFormMessage({
-        type: 'error',
-        message: result.error.message || 'send verification code fail.',
+        type: "error",
+        message: result.error.message || "send verification code fail.",
       });
       return;
     }

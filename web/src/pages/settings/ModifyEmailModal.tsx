@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Modal, Form, message } from "antd";
 
-import { changeAccountEmail } from '@/api/account';
-import { calcPasswordHash } from '@/util';
+import { changeAccountEmail } from "@/api/account";
+import { calcPasswordHash } from "@/util";
 import { RoutePaths } from "@/router";
 import useStore from "@/store";
 
-import { StyledForm, StyledInput, PasswordInput } from './style';
+import { StyledForm, StyledInput, PasswordInput } from "./style";
 
 interface FieldType {
   email?: string;
@@ -24,7 +24,7 @@ function ModifyEmailModal(props: ModifyEmailModalProps) {
   const { open } = props;
   const [modifyEmailConfirm, setModifyEmailConfirm] = useState(false);
   const [isModifyEmailLoading, setIsModifyEmailLoading] = useState(false);
-  const [form] = Form.useForm<FieldType>();
+  const [form] = Form.useForm();
   const navigate = useNavigate();
 
   const signOut = useStore((state) => state.signOut);
@@ -38,7 +38,7 @@ function ModifyEmailModal(props: ModifyEmailModalProps) {
     try {
       await form.validateFields({
         validateOnly: true,
-      })
+      });
       setModifyEmailConfirm(true);
     } catch {
       setModifyEmailConfirm(false);
@@ -47,7 +47,7 @@ function ModifyEmailModal(props: ModifyEmailModalProps) {
 
   const handleModifyEmail = async ({ email, password }: FieldType) => {
     if (!email || !password) {
-      console.error('can not find form field.');
+      console.error("can not find form field.");
       return;
     }
 
@@ -59,11 +59,11 @@ function ModifyEmailModal(props: ModifyEmailModalProps) {
     setIsModifyEmailLoading(false);
 
     if (result.error) {
-      message.error(result.error.message || 'modify email fail');
+      message.error(result.error.message || "modify email fail");
       return;
     }
 
-    message.success('modify email success!');
+    message.success("modify email success!");
     signOut();
     // navigate to login
     navigate(RoutePaths.Login);
@@ -93,8 +93,8 @@ function ModifyEmailModal(props: ModifyEmailModalProps) {
           label="New Email"
           name="email"
           rules={[
-            { required: true, message: 'email is required' },
-            { type: 'email', message: 'email address not valid' }
+            { required: true, message: "email is required" },
+            { type: "email", message: "email address not valid" },
           ]}
         >
           <StyledInput placeholder="new email" />
@@ -105,11 +105,11 @@ function ModifyEmailModal(props: ModifyEmailModalProps) {
           rules={[
             ({ getFieldValue }) => ({
               validator(_, value) {
-                if (value !== getFieldValue('email')) {
-                  return Promise.reject(new Error('Email is inconsistent'));
+                if (value !== getFieldValue("email")) {
+                  return Promise.reject(new Error("Email is inconsistent"));
                 }
                 return Promise.resolve();
-              }
+              },
             }),
           ]}
         >
@@ -118,9 +118,7 @@ function ModifyEmailModal(props: ModifyEmailModalProps) {
         <Form.Item<FieldType>
           label="Enter Password"
           name="password"
-          rules={[
-            { required: true, message: 'password is required' },
-          ]}
+          rules={[{ required: true, message: "password is required" }]}
         >
           <PasswordInput placeholder="password" />
         </Form.Item>

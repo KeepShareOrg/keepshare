@@ -7,7 +7,9 @@ import useStore from "@/store";
 
 const validateFormFailed = ({
   verificationCode,
-}: { verificationCode?: string }): string => {
+}: {
+  verificationCode?: string;
+}): string => {
   if (verificationCode?.trim() === "") {
     return "VerificationCode is null";
   }
@@ -22,7 +24,7 @@ const validateFormFailed = ({
 // Reset the second step of the password and verify the received mailbox verification code
 const StepEnterVerificationCode = ({ setStep }: StepComponentParams) => {
   const { t } = useTranslation();
-  const [form] = Form.useForm<{ verificationCode?: string }>();
+  const [form] = Form.useForm();
   const [formMessage, setFormMessage] = useState<{
     type: AlertProps["type"];
     message: string;
@@ -31,15 +33,15 @@ const StepEnterVerificationCode = ({ setStep }: StepComponentParams) => {
     message: "",
   });
   const { token } = theme.useToken();
-  const email = useStore(state => state.resetInfo.email);
-  const setResetInfo = useStore(state => state.setResetInfo);
+  const email = useStore((state) => state.resetInfo.email);
+  const setResetInfo = useStore((state) => state.setResetInfo);
 
   const handleVerify = () => {
     const params = form.getFieldsValue();
     const errorMessage = validateFormFailed(params);
     if (errorMessage) {
       setFormMessage({
-        type: 'error',
+        type: "error",
         message: errorMessage,
       });
       return;

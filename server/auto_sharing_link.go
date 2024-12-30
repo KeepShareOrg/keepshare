@@ -241,6 +241,7 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 	s = &model.SharedLink{
 		State:            string(share.StatusCreated),
 		UserID:           userID,
+		CreatedBy:        createBy,
 		Host:             host.Name(),
 		CreatedAt:        now,
 		UpdatedAt:        now,
@@ -276,13 +277,12 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 		sh := sharedLinks[link]
 
 		if sh == nil {
-			log.WithContext(ctx).WithField("shared_record", s).Error(errors.New("get nil  dddshare"))
+			log.WithContext(ctx).WithField("shared_record", s).Error(errors.New("get nil keepshare"))
 			return
 		}
 
 		update := &model.SharedLink{
 			State:              sh.State.String(),
-			CreatedBy:          sh.CreatedBy,
 			Size:               sh.Size,
 			Visitor:            sh.Visitor,
 			Stored:             sh.Stored,

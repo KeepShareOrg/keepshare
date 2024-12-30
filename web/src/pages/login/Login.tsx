@@ -48,7 +48,7 @@ const validateFormFailed = ({
 };
 
 const Login = () => {
-  const [form] = Form.useForm<FieldType>();
+  const [form] = Form.useForm();
   const [shouldVerify] = useState(false);
 
   const { token } = theme.useToken();

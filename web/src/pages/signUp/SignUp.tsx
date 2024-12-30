@@ -55,7 +55,7 @@ const validateFromFailed = ({
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const [form] = Form.useForm<FieldType>();
+  const [form] = Form.useForm();
   const [shouldVerify] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 

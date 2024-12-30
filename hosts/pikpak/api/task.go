@@ -184,6 +184,7 @@ func (t *TaskManager) taskEnQueue(queueType, taskType string, tasks []*model.Fil
 
 // ppTasksHandler if return nil, the task will remove from queue
 func (t *TaskManager) ppTasksHandler(ctx context.Context, task *asynq.Task) error {
+	log := log.WithContext(ctx)
 	var ppTask PikPakTask
 	err := json.Unmarshal(task.Payload(), &ppTask)
 	if err != nil {
@@ -196,7 +197,10 @@ func (t *TaskManager) ppTasksHandler(ctx context.Context, task *asynq.Task) erro
 		log.Errorf("%#v query task status failed: %v", ppTask, err)
 		return err
 	}
-	log.Debugf("file id: %v, status: %v", status.FileID, status.Status)
+	log.WithFields(map[string]interface{}{
+		"worker_id": ppTask.WorkerUserID,
+		"task_id":   ppTask.TaskID,
+	}).Debugf("%#v", status)
 
 	file := &model.File{
 		AutoID:           ppTask.AutoID,
@@ -204,7 +208,7 @@ func (t *TaskManager) ppTasksHandler(ctx context.Context, task *asynq.Task) erro
 		WorkerUserID:     ppTask.WorkerUserID,
 		FileID:           status.FileID,
 		TaskID:           ppTask.TaskID,
-		Status:           ppTask.Status,
+		Status:           status.Status,
 		IsDir:            ppTask.IsDir,
 		Size:             ppTask.Size,
 		Name:             status.FileName,
@@ -235,7 +239,7 @@ func (t *TaskManager) ppTasksHandler(ctx context.Context, task *asynq.Task) erro
 	case comm.StatusOK:
 		err := t.handleStatusOKTask(ctx, file)
 		if err != nil {
-			log.Errorf("handle status PHASE_TYPE_COMPLETE task error: ", err)
+			log.Errorf("handle status PHASE_TYPE_COMPLETE task error: %w", err)
 			return err
 		}
 		log.Debugf("file complete: %v", file.OriginalLinkHash)
@@ -244,14 +248,14 @@ func (t *TaskManager) ppTasksHandler(ctx context.Context, task *asynq.Task) erro
 	case comm.StatusPending:
 		err := t.handleStatusPendingTask(ctx, file)
 		if err != nil {
-			log.Errorf("handle status PHASE_TYPE_PENDING task error: ", err)
+			log.Errorf("handle status PHASE_TYPE_PENDING task error: %w", err)
 			return err
 		}
 		return nil
 	case comm.StatusError:
 		err := t.handleStatusErrorTask(ctx, file)
 		if err != nil {
-			log.Errorf("handle status PHASE_TYPE_ERROR task error: ", err)
+			log.Errorf("handle status PHASE_TYPE_ERROR task error: %w", err)
 			return err
 		}
 		return nil

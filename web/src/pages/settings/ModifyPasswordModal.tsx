@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Modal, Form, message } from "antd";
 
-import { changeAccountPassword } from '@/api/account';
-import { calcPasswordHash } from '@/util';
+import { changeAccountPassword } from "@/api/account";
+import { calcPasswordHash } from "@/util";
 import { RoutePaths } from "@/router";
 import useStore from "@/store";
 
-import { StyledForm, PasswordInput } from './style';
+import { StyledForm, PasswordInput } from "./style";
 
 interface FieldType {
   password?: string;
@@ -24,7 +24,7 @@ function ModifyPasswordModal(props: ModifyPasswordModalProps) {
   const { open } = props;
   const [confirmDisabled, setConfirmDisabled] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [form] = Form.useForm<FieldType>();
+  const [form] = Form.useForm();
   const navigate = useNavigate();
 
   const signOut = useStore((state) => state.signOut);
@@ -38,7 +38,7 @@ function ModifyPasswordModal(props: ModifyPasswordModalProps) {
     try {
       await form.validateFields({
         validateOnly: true,
-      })
+      });
       setConfirmDisabled(false);
     } catch {
       setConfirmDisabled(true);
@@ -47,7 +47,7 @@ function ModifyPasswordModal(props: ModifyPasswordModalProps) {
 
   const handleModifyPassword = async ({ password, newPassword }: FieldType) => {
     if (!password || !newPassword) {
-      console.error('can not find form field.')
+      console.error("can not find form field.");
       return;
     }
 
@@ -59,10 +59,10 @@ function ModifyPasswordModal(props: ModifyPasswordModalProps) {
     setIsLoading(false);
 
     if (result.error) {
-      return message.error(result.error.message || 'modify password fail');
+      return message.error(result.error.message || "modify password fail");
     }
 
-    message.success('modify password success');
+    message.success("modify password success");
     signOut();
     // navigate to login
     navigate(RoutePaths.Login);
@@ -83,7 +83,9 @@ function ModifyPasswordModal(props: ModifyPasswordModalProps) {
       <StyledForm
         form={form}
         layout="vertical"
-        onFinish={(values) => handleModifyPassword(values as unknown as FieldType)}
+        onFinish={(values) =>
+          handleModifyPassword(values as unknown as FieldType)
+        }
         onValuesChange={handleValuesChange}
         validateTrigger="onBlur"
         autoComplete="off"
@@ -93,7 +95,12 @@ function ModifyPasswordModal(props: ModifyPasswordModalProps) {
           name="password"
           initialValue=""
           rules={[
-            { required: true, type: 'string', message: 'password is required', transform: v => v.trim()},
+            {
+              required: true,
+              type: "string",
+              message: "password is required",
+              transform: (v) => v.trim(),
+            },
           ]}
         >
           <PasswordInput placeholder="password" />
@@ -102,8 +109,13 @@ function ModifyPasswordModal(props: ModifyPasswordModalProps) {
           label="New Password"
           name="newPassword"
           initialValue=""
-          rules={[  
-            { required: true, type: 'string', message: 'password is required', transform: v => v.trim()},
+          rules={[
+            {
+              required: true,
+              type: "string",
+              message: "password is required",
+              transform: (v) => v.trim(),
+            },
           ]}
         >
           <PasswordInput placeholder="password" />
@@ -115,11 +127,13 @@ function ModifyPasswordModal(props: ModifyPasswordModalProps) {
           rules={[
             ({ getFieldValue }) => ({
               validator(_, value) {
-                if (value !== getFieldValue('newPassword')) {
-                  return Promise.reject(new Error('new password is inconsistent'));
+                if (value !== getFieldValue("newPassword")) {
+                  return Promise.reject(
+                    new Error("new password is inconsistent"),
+                  );
                 }
                 return Promise.resolve();
-              }
+              },
             }),
           ]}
         >

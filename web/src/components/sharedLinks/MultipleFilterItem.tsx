@@ -47,10 +47,10 @@ export const MultipleFilterItem = ({
 
   const handleSelect = (
     _: SupportOperatorLabels,
-    item: DefaultOptionType | DefaultOptionType[],
+    item: DefaultOptionType | DefaultOptionType[] | undefined,
   ) => {
     Array.isArray(item) ||
-      setSelectedOperator(item.label as SupportOperatorLabels);
+      setSelectedOperator(item?.label as SupportOperatorLabels);
   };
 
   const [suffixUnit, setSuffixUnit] = useState<string>("");
