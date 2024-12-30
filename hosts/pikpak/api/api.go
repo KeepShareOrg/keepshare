@@ -45,7 +45,8 @@ var (
 		SetRetryCount(1)
 )
 
-type createLinkLimitData struct {
+// CreateLinkLimitData limit data
+type CreateLinkLimitData struct {
 	IpNum    uint32 `json:"ip_num"`
 	UnitTime uint32 `json:"unit_time"`
 }
@@ -56,7 +57,7 @@ type API struct {
 	cache *freecache.Cache
 
 	*hosts.Dependencies
-	createLinkLimitList map[string]createLinkLimitData
+	createLinkLimitList map[string]CreateLinkLimitData
 }
 
 // New returns server api instance.
@@ -77,9 +78,9 @@ func New(q *query.Query, d *hosts.Dependencies) *API {
 	}
 
 	if v := viper.GetStringMap("pikpak.create_link_limit"); len(v) > 0 {
-		api.createLinkLimitList = make(map[string]createLinkLimitData, len(v))
+		api.createLinkLimitList = make(map[string]CreateLinkLimitData, len(v))
 		for masterUserId, _ := range v {
-			api.createLinkLimitList[masterUserId] = createLinkLimitData{
+			api.createLinkLimitList[masterUserId] = CreateLinkLimitData{
 				IpNum:    viper.GetUint32(fmt.Sprintf("pikpak.create_link_limit.%s.ip_num", masterUserId)),
 				UnitTime: viper.GetUint32(fmt.Sprintf("pikpak.create_link_limit.%s.unit_time", masterUserId)),
 			}
@@ -169,6 +170,6 @@ func (api *API) randomEmail() string {
 }
 
 // GetCreateLinkLimitList Gets create link restriction configuration data
-func (api *API) GetCreateLinkLimitList() map[string]createLinkLimitData {
+func (api *API) GetCreateLinkLimitList() map[string]CreateLinkLimitData {
 	return api.createLinkLimitList
 }

@@ -208,17 +208,16 @@ func isSensitiveLink(err string) bool {
 
 func (p *PikPak) isAllowCreateLink(ctx context.Context, link string, userID string, ip string) (isAllow bool) {
 	log := log.WithContext(ctx).WithFields(log.Fields{"link": link})
-	limitData := p.api.GetCreateLinkLimitList()
-	if len(limitData) <= 0 {
-		isAllow = true
-		return
+	limitList := p.api.GetCreateLinkLimitList()
+	limitData := api.CreateLinkLimitData{
+		IpNum:    3,
+		UnitTime: 604800,
 	}
-	value, ok := limitData[userID]
-	if !ok {
-		isAllow = true
-		return
+	if len(limitList) > 0 {
+		if v, ok := limitList[userID]; ok {
+			limitData = v
+		}
 	}
-
 	hashName := fmt.Sprintf("create_link_limit:%s:%s", userID, link)
 	exists, err := p.m.Redis.Exists(ctx, hashName).Result()
 	if err != nil {
@@ -227,14 +226,14 @@ func (p *PikPak) isAllowCreateLink(ctx context.Context, link string, userID stri
 	}
 	p.m.Redis.HSet(ctx, hashName, ip, time.Now().Unix()).Result()
 	if exists != 1 {
-		p.m.Redis.Expire(ctx, hashName, time.Second*time.Duration(value.UnitTime))
+		p.m.Redis.Expire(ctx, hashName, time.Second*time.Duration(limitData.UnitTime))
 	}
 	ipNum, err := p.m.Redis.HLen(ctx, hashName).Result()
 	if err != nil {
 		log.Errorf("HLen err:%+v", err)
 		return
 	}
-	if ipNum > int64(value.IpNum) {
+	if ipNum > int64(limitData.IpNum) {
 		isAllow = true
 		return
 	}
