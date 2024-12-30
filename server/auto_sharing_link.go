@@ -94,7 +94,7 @@ func autoSharingLink(c *gin.Context) {
 	defer report.Done()
 
 	l := log.WithContext(ctx)
-	sh, lastState, err := createShareLinkIfNotExist(context.Background(), user.ID, host, link, share.AutoShare)
+	sh, lastState, err := createShareLinkIfNotExist(context.Background(), user.ID, host, link, share.AutoShare, c.ClientIP())
 	if err != nil {
 		report.Set(constant.Error, err.Error())
 		mdw.RespInternal(c, err.Error())
@@ -133,7 +133,7 @@ func autoSharingLink(c *gin.Context) {
 }
 
 // createShareLinkIfNotExist if the shared link does not exist, create a new one and return it.
-func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.HostWithProperties, link string, createBy string) (sharedLink *model.SharedLink, lastStatus share.State, err error) {
+func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.HostWithProperties, link string, createBy string, ip string) (sharedLink *model.SharedLink, lastStatus share.State, err error) {
 	linkRaw, linkHash, ok := validateLink(link)
 	if !ok || linkHash == "" {
 		return nil, "", errors.New("invalid link")
@@ -176,7 +176,7 @@ func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.H
 	}
 
 	if sh == nil {
-		sh, err = createShareByLink(ctx, userID, host, linkRaw, createBy)
+		sh, err = createShareByLink(ctx, userID, host, linkRaw, createBy, ip)
 		if err != nil {
 			return nil, lastStatus, fmt.Errorf("create share error: %w", err)
 		}
@@ -236,7 +236,7 @@ func validateLink(link string) (simple string, hash string, ok bool) {
 	return simple, hash, true
 }
 
-func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithProperties, link string, createBy string) (s *model.SharedLink, err error) {
+func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithProperties, link string, createBy string, ip string) (s *model.SharedLink, err error) {
 	now := time.Now()
 	s = &model.SharedLink{
 		State:            string(share.StatusCreated),
@@ -268,7 +268,7 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 
 	go func() {
 		ctx = context.Background()
-		sharedLinks, err := host.CreateFromLinks(ctx, userID, []string{link}, createBy)
+		sharedLinks, err := host.CreateFromLinks(ctx, userID, []string{link}, createBy, ip)
 		if err != nil {
 			log.WithContext(ctx).WithField("shared_record", s).Error(fmt.Errorf("create share from links err: %w", err))
 			return

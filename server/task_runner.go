@@ -240,7 +240,7 @@ func (r *AsyncTaskRunner) createNotExistsHostTasks(ctx context.Context, tasks ch
 			ctx := log.DataContext(ctx, log.DataContextOptions{RequestID: ""})
 			log := log.WithContext(ctx)
 			log.Infof("should create file: %#v %v", ksl, host)
-			_, err := host.CreateFromLinks(ctx, ksl.UserID, []string{ksl.OriginalLink}, ksl.CreatedBy)
+			_, err := host.CreateFromLinks(ctx, ksl.UserID, []string{ksl.OriginalLink}, ksl.CreatedBy, "")
 			if err != nil {
 				log.WithFields(map[string]interface{}{
 					"user_id":       ksl.UserID,

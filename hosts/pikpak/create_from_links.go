@@ -33,7 +33,7 @@ func (p *PikPak) CreateShare(ctx context.Context, master string, worker string, 
 }
 
 // CreateFromLinks create shared links based on the input original links.
-func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, originalLinks []string, createBy string) (sharedLinks map[string]*share.Share, err error) {
+func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, originalLinks []string, createBy string, ip string) (sharedLinks map[string]*share.Share, err error) {
 	log := log.WithContext(ctx)
 	var getLockKey = func(keepShareUserID string, link string) string {
 		return fmt.Sprintf("create_link:%s:%s", keepShareUserID, link)
@@ -121,7 +121,10 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 				sharedLinks[link] = sh
 				continue
 			}
-
+			if status == comm.LinkStatusUnknown && !p.isAllowCreateLink(ctx, link, keepShareUserID, ip) {
+				log.WithContext(ctx).Infof("CreateFromLinks  isAllowCreateLink link:%+v", link)
+				continue
+			}
 		}
 
 		size, err := p.queryFilesizeByLink(ctx, link)
@@ -201,6 +204,42 @@ func isSensitiveLink(err string) bool {
 		}
 	}
 	return false
+}
+
+func (p *PikPak) isAllowCreateLink(ctx context.Context, link string, masterUserID string, ip string) (isAllow bool) {
+	log := log.WithContext(ctx).WithFields(log.Fields{"link": link})
+	limitData := p.api.GetCreateLinkLimitList()
+	if len(limitData) <= 0 {
+		isAllow = true
+		return
+	}
+	value, ok := limitData[masterUserID]
+	if !ok {
+		isAllow = true
+		return
+	}
+
+	hashName := fmt.Sprintf("create_link_limit:%s:%s", masterUserID, link)
+	exists, err := p.m.Redis.Exists(ctx, hashName).Result()
+	if err != nil {
+		log.Errorf("Exists err:%+v", err)
+		return
+	}
+	p.m.Redis.HSet(ctx, hashName, ip, time.Now().Unix()).Result()
+	if exists != 1 {
+		p.m.Redis.Expire(ctx, hashName, time.Second*time.Duration(value.UnitTime))
+	}
+	ipNum, err := p.m.Redis.HLen(ctx, hashName).Result()
+	if err != nil {
+		log.Errorf("HLen err:%+v", err)
+		return
+	}
+	if ipNum > int64(value.IpNum) {
+		isAllow = true
+		return
+	}
+	isAllow = false
+	return
 }
 
 func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount, link string, size int64, excludeWorkers []string) (file *model.File, err error) {

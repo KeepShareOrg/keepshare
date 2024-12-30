@@ -234,8 +234,9 @@ func (t *TaskManager) ppTasksHandler(ctx context.Context, task *asynq.Task) erro
 				return err
 			}
 			callback()
+			return nil
 		}
-		return nil
+		return fmt.Errorf("task status running: %v", status.Status)
 	case comm.StatusOK:
 		err := t.handleStatusOKTask(ctx, file)
 		if err != nil {

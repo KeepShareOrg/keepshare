@@ -24,7 +24,7 @@ type Host interface {
 	CreateShare(ctx context.Context, master string, worker string, fileID string) (sharedLink string, err error)
 
 	// CreateFromLinks create shared links based on the input original links.
-	CreateFromLinks(ctx context.Context, userID string, originalLinks []string, createBy string) (sharedLinks map[string]*share.Share, err error)
+	CreateFromLinks(ctx context.Context, userID string, originalLinks []string, createBy string, ip string) (sharedLinks map[string]*share.Share, err error)
 
 	// GetStatuses return the statuses of each host shared link.
 	GetStatuses(ctx context.Context, userID string, hostSharedLinks []string) (statuses map[string]share.State, err error)
