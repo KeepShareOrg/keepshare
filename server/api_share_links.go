@@ -153,12 +153,12 @@ func querySharedLinkInfo(c *gin.Context) {
 		})
 		res.HostSharedLink = hostLink
 	}
-	go manualQueryFileStatus(context.Background(), res)
+	go manualQueryFileStatus(context.Background(), res, c.ClientIP())
 
 	c.JSON(http.StatusOK, res)
 }
 
-func manualQueryFileStatus(ctx context.Context, sharedLink *model.SharedLink) {
+func manualQueryFileStatus(ctx context.Context, sharedLink *model.SharedLink, ip string) {
 	if sharedLink == nil || sharedLink.State == share.StatusOK.String() {
 		return
 	}
@@ -166,7 +166,7 @@ func manualQueryFileStatus(ctx context.Context, sharedLink *model.SharedLink) {
 		return
 	}
 	host := hosts.Get(config.DefaultHost())
-	sharedLinks, err := host.CreateFromLinks(context.Background(), sharedLink.UserID, []string{sharedLink.OriginalLink}, sharedLink.CreatedBy)
+	sharedLinks, err := host.CreateFromLinks(context.Background(), sharedLink.UserID, []string{sharedLink.OriginalLink}, sharedLink.CreatedBy, ip)
 	if err != nil {
 		log.Errorf("shared links still not ok: %v", err)
 		return

@@ -45,12 +45,18 @@ var (
 		SetRetryCount(1)
 )
 
+type createLinkLimitData struct {
+	IpNum    uint32 `json:"ip_num"`
+	UnitTime uint32 `json:"unit_time"`
+}
+
 // API PikPak server api.
 type API struct {
 	q     *query.Query
 	cache *freecache.Cache
 
 	*hosts.Dependencies
+	createLinkLimitList map[string]createLinkLimitData
 }
 
 // New returns server api instance.
@@ -68,6 +74,16 @@ func New(q *query.Query, d *hosts.Dependencies) *API {
 	if v := viper.GetString("pikpak.user_agent"); v != "" {
 		userAgent = v
 		resCli = resCli.SetHeader("User-Agent", userAgent)
+	}
+
+	if v := viper.GetStringMap("pikpak.create_link_limit"); len(v) > 0 {
+		api.createLinkLimitList = make(map[string]createLinkLimitData, len(v))
+		for masterUserId, _ := range v {
+			api.createLinkLimitList[masterUserId] = createLinkLimitData{
+				IpNum:    viper.GetUint32(fmt.Sprintf("pikpak.create_link_limit.%s.ip_num", masterUserId)),
+				UnitTime: viper.GetUint32(fmt.Sprintf("pikpak.create_link_limit.%s.unit_time", masterUserId)),
+			}
+		}
 	}
 
 	go api.updatePremiumExpirationBackground()
@@ -150,4 +166,9 @@ func (api *API) randomEmail() string {
 	seq := atomic.AddUint64(&emailSequence, 1)
 	n := uint64(time.Now().UnixMilli())*mod + seq%mod
 	return strconv.FormatUint(n, 32) + "@" + api.Mailer.Domain()
+}
+
+// GetCreateLinkLimitList Gets create link restriction configuration data
+func (api *API) GetCreateLinkLimitList() map[string]createLinkLimitData {
+	return api.createLinkLimitList
 }

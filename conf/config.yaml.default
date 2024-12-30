@@ -71,6 +71,13 @@ pikpak:
   # If the number of not bound worker accounts less than `worker_buffer_size`, register a new one immediately.
   worker_buffer_interval: 1s
 
+  #Create link restriction
+  #The link from this master account must reach how many visits (one ip counts as one) before the link  is created
+  create_link_limit:
+    "4pc0ai1uqv59" :
+      ip_num: 5
+      unit_time: 604800
+
 # Configuration for email.
 email:
   # Email from username.
