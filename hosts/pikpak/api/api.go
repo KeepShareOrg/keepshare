@@ -76,9 +76,6 @@ func New(q *query.Query, d *hosts.Dependencies) *API {
 		resCli = resCli.SetHeader("User-Agent", userAgent)
 	}
 
-	if v := viper.GetString("pikpak.user_agent"); v != "" {
-
-	}
 	if v := viper.GetStringMap("pikpak.create_link_limit"); len(v) > 0 {
 		api.createLinkLimitList = make(map[string]createLinkLimitData, len(v))
 		for masterUserId, _ := range v {

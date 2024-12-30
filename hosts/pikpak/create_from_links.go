@@ -206,20 +206,20 @@ func isSensitiveLink(err string) bool {
 	return false
 }
 
-func (p *PikPak) isAllowCreateLink(ctx context.Context, link string, masterUserID string, ip string) (isAllow bool) {
+func (p *PikPak) isAllowCreateLink(ctx context.Context, link string, userID string, ip string) (isAllow bool) {
 	log := log.WithContext(ctx).WithFields(log.Fields{"link": link})
 	limitData := p.api.GetCreateLinkLimitList()
 	if len(limitData) <= 0 {
 		isAllow = true
 		return
 	}
-	value, ok := limitData[masterUserID]
+	value, ok := limitData[userID]
 	if !ok {
 		isAllow = true
 		return
 	}
 
-	hashName := fmt.Sprintf("create_link_limit:%s:%s", masterUserID, link)
+	hashName := fmt.Sprintf("create_link_limit:%s:%s", userID, link)
 	exists, err := p.m.Redis.Exists(ctx, hashName).Result()
 	if err != nil {
 		log.Errorf("Exists err:%+v", err)
