@@ -136,7 +136,7 @@ func (p *PikPak) processDeleteTask(task *model.DeleteQueue) {
 		return
 	}
 
-	if file != nil {
+	if file != nil && file.FileID != "" {
 		if err := p.api.DeleteShareByFileIDs(ctx, task.WorkerUserID, []string{file.FileID}); err != nil {
 			l.WithError(err).Errorf("delete share by file id %s err", file.FileID)
 			p.addRetryTimesForDeleteTask(ctx, task)

@@ -94,7 +94,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		case comm.StatusError:
 			linksStatusError[l] = f
 			// delete error files
-			p.q.File.WithContext(ctx).Delete(f)
+			p.q.File.WithContext(ctx).Where(p.q.File.AutoID.Eq(f.AutoID)).Delete(f)
 		default:
 			linksStatusNotCompleted[l] = f
 		}

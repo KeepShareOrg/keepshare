@@ -261,7 +261,10 @@ func (api *API) DeleteShareByFileIDs(ctx context.Context, worker string, fileIDs
 		return nil
 	}
 	t := &api.q.SharedLink
-	rows, err := t.WithContext(ctx).Select(t.ShareID).Where(t.FileID.In(fileIDs...)).Find()
+	rows, err := t.WithContext(ctx).Select(t.ShareID).Where(
+		t.WorkerUserID.Eq(worker),
+		t.FileID.In(fileIDs...),
+	).Find()
 	if err != nil && !gormutil.IsNotFoundError(err) {
 		return fmt.Errorf("select share ids from db err: %w", err)
 	}

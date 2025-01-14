@@ -360,7 +360,10 @@ func (api *API) DeleteFilesByIDs(ctx context.Context, worker string, fileIDs []s
 	}
 
 	// delete file records.
-	if _, err = api.q.File.WithContext(ctx).Where(api.q.File.FileID.In(fileIDs...)).Delete(); err != nil {
+	if _, err = api.q.File.WithContext(ctx).Where(
+		api.q.File.WorkerUserID.Eq(worker),
+		api.q.File.FileID.In(fileIDs...),
+	).Delete(); err != nil {
 		return fmt.Errorf("delete files from db err: %w", err)
 	}
 
