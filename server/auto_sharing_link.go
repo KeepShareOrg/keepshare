@@ -117,8 +117,8 @@ func autoSharingLink(c *gin.Context) {
 	report.Set(keyState, lastState)
 	l = l.WithFields(Map{constant.SharedLink: sh.HostSharedLink, constant.ShareStatus: sh.State})
 
-	// if the link not ok and warning refer to the channel id, we need redirect to the whatslink info page
-	if share.State(sh.State) != share.StatusOK && shouldRedirectToWhatsLinkInfoPage {
+	// if the link refer to the warning channel id, we need redirect to the whatslink info page
+	if shouldRedirectToWhatsLinkInfoPage {
 		l.Debug("redirect to whatslink info page")
 		c.Redirect(http.StatusFound, fmt.Sprintf("https://%s/console/shared/wsl-status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID))
 		return
