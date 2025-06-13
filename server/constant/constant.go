@@ -57,3 +57,7 @@ const (
 	TaskQueuePikPak = "pikpak"
 	TaskTypePPTask  = "pp_task"
 )
+
+const (
+	IsWarningChannel = "is_warning_channel"
+)

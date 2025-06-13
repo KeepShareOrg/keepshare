@@ -2,55 +2,29 @@ import type {
   GetLinkInfoFromWhatsLinkResponse,
   SharedLinkInfo,
 } from "@/api/link";
+import UnknownIcon from "@/assets/images/file-unknown.png";
 import { copyToClipboard, formatBytes } from "@/util";
 import { Button, Space, message, theme, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  BannerImage,
-  BannerWrapper,
-  ResourceLink,
-  SharedInfoBox,
-} from "./style";
-import { ArrowLeftOutlined, CopyOutlined } from "@ant-design/icons";
-import UnknownIcon from "@/assets/images/file-unknown.png";
-import LinkPng from "@/assets/images/icon-link.png";
-import { match } from "ts-pattern";
+import { ResourceLink, WslBannerImage, WslBannerWrapper, WslInfoWrapper } from "./style";
+import { CopyOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import linkPngUrl from "@/assets/images/icon-link.png";
+import { getShareIcon } from "./LinkInfo";
 
 const { Text } = Typography;
 
-export const getShareIcon = async (
-  fileType: GetLinkInfoFromWhatsLinkResponse["file_type"],
-): Promise<string> => {
-  try {
-    const result = await match(fileType)
-      .with("unknown", () => import("@/assets/images/file-unknown.png"))
-      .with("folder", () => import("@/assets/images/file-folder.png"))
-      .with("video", () => import("@/assets/images/file-video.png"))
-      .with("text", () => import("@/assets/images/file-text.png"))
-      .with("image", () => import("@/assets/images/file-image.png"))
-      .with("audio", () => import("@/assets/images/file-audio.png"))
-      .with("document", () => import("@/assets/images/file-document.png"))
-      .with("archive", () => import("@/assets/images/file-archive.png"))
-      .with("font", () => import("@/assets/images/file-font.png"))
-      .exhaustive();
-    return result.default || UnknownIcon;
-  } catch {
-    return UnknownIcon;
-  }
-};
-
-export type LinkFileInfo = Partial<SharedLinkInfo> & {
+export type WhatsLinkFileInfo = Partial<SharedLinkInfo> & {
   screenshot?: string;
   fileType?: GetLinkInfoFromWhatsLinkResponse["file_type"];
 };
 export type LinkInfoBlock = "banner" | "filename" | "link";
 
 interface LinkInfoInterface {
-  fileInfo: LinkFileInfo;
+  fileInfo: WhatsLinkFileInfo;
   visibleBlocks?: LinkInfoBlock[];
 }
-const LinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
+const WhatsLinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
   const { t } = useTranslation();
 
   const { title: filename, size: storage } = fileInfo;
@@ -87,43 +61,33 @@ const LinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
   }
 
   return (
-    <>
-      {blocks.includes("banner") &&
-        (fileInfo.screenshot ? (
-          <BannerWrapper style={{ marginInline: token.margin }}>
-            {fileInfo.screenshot && (
-              <BannerImage
-                src={fileInfo.screenshot}
+    <WslInfoWrapper>
+      {
+        blocks.includes("banner") &&
+        Array.isArray(fileInfo.screenshots) && fileInfo.screenshots?.length > 0 ?
+        (
+          <WslBannerWrapper>
+            {fileInfo.screenshots?.map(({ screenshot }, index) => (
+              <WslBannerImage
+                src={screenshot}
+                key={index}
                 alt="banner"
                 style={{
-                  width: "100%",
-                  height: "100%",
+                  height: "132px",
                 }}
               />
-            )}
-            <SharedInfoBox>
-              {t("whMzAm8sGpQfOTqadiXu")} {size}
-            </SharedInfoBox>
-          </BannerWrapper>
-        ) : (
+            ))}
+          </WslBannerWrapper>
+        ) :  (
           <Space
             direction="vertical"
             align="center"
             style={{ marginTop: "auto" }}
           >
             <img src={shareIcon} style={{ width: "94px" }} alt="shareIcon" />
-            {storage ? (
-              <Text
-                style={{
-                  color: token.colorTextTertiary,
-                  fontSize: token.fontSizeSM,
-                }}
-              >
-                {t("whMzAm8sGpQfOTqadiXu")} {size}
-              </Text>
-            ) : null}
           </Space>
-        ))}
+        )
+      }
 
       {blocks.includes("filename") && (
         <Text
@@ -138,6 +102,10 @@ const LinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
         </Text>
       )}
 
+      <Space>
+        <Text style={{ color: token.colorTextTertiary, fontSize: token.fontSizeSM }}>{size}</Text>
+      </Space>
+
       {blocks.includes("link") && (
         <>
           <Space
@@ -145,7 +113,7 @@ const LinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
             style={{ marginTop: token.marginLG, maxWidth: "680px" }}
           >
             <img
-              src={LinkPng}
+              src={linkPngUrl}
               alt="link"
               width="24"
               style={{ marginTop: "5px" }}
@@ -173,8 +141,8 @@ const LinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
           </Space>
         </>
       )}
-    </>
+    </WslInfoWrapper>
   );
 };
 
-export default LinkInfo;
+export default WhatsLinkInfo;

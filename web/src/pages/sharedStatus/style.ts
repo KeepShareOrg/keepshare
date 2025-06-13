@@ -11,11 +11,6 @@ export const Background = styled.div`
   background: url(${backgroundSvg}) no-repeat center/cover;
 `;
 
-export const LogoPng = styled.img`
-  margin: 12px 24px;
-  height: 64px;
-`;
-
 export const ContentWrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -29,7 +24,7 @@ export const ContentWrapper = styled.div`
 export const BannerWrapper = styled.div<{ poster?: string }>`
   position: relative;
   width: 100%;
-  max-width: 340px;
+  max-width: 1007px;
   height: 216px;
   border-radius: 16px;
   margin-inline: 6px;
@@ -82,4 +77,35 @@ export const ResourceLink = styled(Link)`
   &:hover {
     text-decoration: underline!important;
   }
-`  
+`
+
+export const LogoPng = styled.img`
+  height: 64px;
+`;
+
+export const WslInfoWrapper = styled.div`
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+export const WslBannerWrapper = styled.div`
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  overflow-y: scroll;
+  max-width: calc(100vw - 32px);
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+export const WslBannerImage = styled.img`
+  height: 132px;
+
+  & + & {
+    margin-left: 8px;
+  }
+`;

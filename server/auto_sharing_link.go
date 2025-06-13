@@ -8,9 +8,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/spf13/viper"
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -93,7 +95,18 @@ func autoSharingLink(c *gin.Context) {
 	})
 	defer report.Done()
 
+	shouldRedirectToWhatsLinkInfoPage := false
+	if c.Query("wsl") != "" {
+		shouldRedirectToWhatsLinkInfoPage = true
+	}
+	warningChannels := viper.GetStringSlice("warning_channels")
+	if warningChannels != nil {
+		log.Debugf("warning channels: %v", channel)
+		shouldRedirectToWhatsLinkInfoPage = slices.Contains(warningChannels, channel)
+	}
+
 	l := log.WithContext(ctx)
+	ctx = context.WithValue(ctx, constant.IsWarningChannel, shouldRedirectToWhatsLinkInfoPage)
 	sh, lastState, err := createShareLinkIfNotExist(context.Background(), user.ID, host, link, share.AutoShare, c.ClientIP())
 	if err != nil {
 		report.Set(constant.Error, err.Error())
@@ -103,6 +116,13 @@ func autoSharingLink(c *gin.Context) {
 
 	report.Set(keyState, lastState)
 	l = l.WithFields(Map{constant.SharedLink: sh.HostSharedLink, constant.ShareStatus: sh.State})
+
+	// if the link not ok and warning refer to the channel id, we need redirect to the whatslink info page
+	if share.State(sh.State) != share.StatusOK && shouldRedirectToWhatsLinkInfoPage {
+		l.Debug("redirect to whatslink info page")
+		c.Redirect(http.StatusFound, fmt.Sprintf("https://%s/console/shared/wsl-status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID))
+		return
+	}
 
 	switch share.State(sh.State) {
 	case share.StatusOK:
@@ -266,6 +286,10 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 	}
 	log.WithContext(ctx).WithField("shared_record", s).Info("create shared record done")
 
+	isWarningChannel := ctx.Value(constant.IsWarningChannel)
+	if isWarningChannel != "true" {
+		return s, nil
+	}
 	go func() {
 		ctx = context.Background()
 		sharedLinks, err := host.CreateFromLinks(ctx, userID, []string{link}, createBy, ip)

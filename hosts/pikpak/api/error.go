@@ -132,6 +132,14 @@ func IsTaskUrlResolveError(err error) bool {
 	return strings.Contains(err.Error(), "task_url_resolve_error")
 }
 
+// IsNotSupportUrlError returns whether the error is caused by not support url.
+func IsNotSupportUrlError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "task_url_unsupported")
+}
+
 // IsSpaceFolderNotExistError returns whether the error is caused by space folder not exist.
 func IsSpaceFolderNotExistError(err error) bool {
 	if err == nil {
@@ -170,5 +178,5 @@ func IsShouldNotRetryError(err error) bool {
 		return false
 	}
 
-	return IsTaskUrlResolveError(err) || IsFileNameEmptyErr(err) || IsSubTaskNumberLimitErr(err)
+	return IsTaskUrlResolveError(err) || IsFileNameEmptyErr(err) || IsSubTaskNumberLimitErr(err) || IsNotSupportUrlError(err)
 }
