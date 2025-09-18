@@ -59,5 +59,5 @@ const (
 )
 
 const (
-	IsWarningChannel = "is_warning_channel"
+	IsShouldSkipCreateLink = "skip_create_link"
 )

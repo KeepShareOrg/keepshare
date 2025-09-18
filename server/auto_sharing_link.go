@@ -6,9 +6,12 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/samber/lo"
 	"github.com/spf13/viper"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -106,8 +109,15 @@ func autoSharingLink(c *gin.Context) {
 	}
 
 	l := log.WithContext(ctx)
-	ctx = context.WithValue(ctx, constant.IsWarningChannel, shouldRedirectToWhatsLinkInfoPage)
-	sh, lastState, err := createShareLinkIfNotExist(context.Background(), user.ID, host, link, share.AutoShare, c.ClientIP())
+	shouldSkipCreateLink := shouldRedirectToWhatsLinkInfoPage
+	// if the channel and the link are warning, forbid to create shared link
+	hitForbidden := checkForbiddenRules(ctx, channel, link)
+	if hitForbidden {
+		shouldSkipCreateLink = true
+	}
+
+	ctx = context.WithValue(ctx, constant.IsShouldSkipCreateLink, shouldSkipCreateLink)
+	sh, lastState, err := createShareLinkIfNotExist(ctx, user.ID, host, link, share.AutoShare, c.ClientIP())
 	if err != nil {
 		report.Set(constant.Error, err.Error())
 		mdw.RespInternal(c, err.Error())
@@ -150,6 +160,80 @@ func autoSharingLink(c *gin.Context) {
 		})
 		c.Redirect(http.StatusFound, statusPage)
 	}
+}
+
+// checkForbiddenRules check if the channel and the link are forbidden
+func checkForbiddenRules(ctx context.Context, channelID, link string) bool {
+	type Rule struct {
+		ChannelID       string   `mapstructure:"channel_id"`
+		FilenameContain []string `mapstructure:"filename_contain"`
+	}
+
+	var rules []*Rule
+	if err := viper.UnmarshalKey("forbidden_rules", &rules); err != nil {
+		log.Errorf("failed to unmarshal forbidden_rules: %v", err)
+		return false
+	}
+
+	rule, hit := lo.Find(rules, func(item *Rule) bool {
+		return item.ChannelID == channelID
+	})
+	if !hit || rule == nil {
+		return false
+	}
+
+	info, err := queryLinkInfoByWhatsLinks(ctx, link)
+	if err != nil {
+		log.Errorf("query what's link info error: %v", err)
+		return false
+	}
+	hit = lo.SomeBy(rule.FilenameContain, func(item string) bool {
+		return strings.Contains(info.Name, item)
+	})
+
+	return hit
+}
+
+type WhatsLinkInfo struct {
+	Error       string `json:"error"`
+	Type        string `json:"type"`
+	FileType    string `json:"file_type"`
+	Name        string `json:"name"`
+	Size        int    `json:"size"`
+	Count       int    `json:"count"`
+	Screenshots []struct {
+		Time       int    `json:"time"`
+		Screenshot string `json:"screenshot"`
+	} `json:"screenshots"`
+}
+
+func queryLinkInfoByWhatsLinks(ctx context.Context, link string) (*WhatsLinkInfo, error) {
+	addr := fmt.Sprintf("https://whatslink.info/api/v1/link?url=%s", link)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, addr, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	bs, _ := io.ReadAll(resp.Body)
+	log.Debugf("whats link return: %s", bs)
+
+	var linkInfo *WhatsLinkInfo
+	err = json.Unmarshal(bs, &linkInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return linkInfo, nil
 }
 
 // createShareLinkIfNotExist if the shared link does not exist, create a new one and return it.
@@ -286,7 +370,7 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 	}
 	log.WithContext(ctx).WithField("shared_record", s).Info("create shared record done")
 
-	isWarningChannel := ctx.Value(constant.IsWarningChannel)
+	isWarningChannel := ctx.Value(constant.IsShouldSkipCreateLink)
 	if isWarningChannel != "true" {
 		return s, nil
 	}
