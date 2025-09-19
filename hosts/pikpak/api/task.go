@@ -16,7 +16,9 @@ import (
 	"github.com/KeepShareOrg/keepshare/pkg/queue"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	"github.com/hibiken/asynq"
+	"github.com/samber/lo"
 	"math"
+	"strings"
 	"sync"
 	"time"
 )
@@ -195,6 +197,17 @@ func (t *TaskManager) ppTasksHandler(ctx context.Context, task *asynq.Task) erro
 	status, err := t.api.queryTaskStatus(ctx, ppTask.WorkerUserID, ppTask.TaskID)
 	if err != nil {
 		log.Errorf("%#v query task status failed: %v", ppTask, err)
+		// if task not found, it means the task is already completed or missing, should remove the task from queue
+		shouldSkipErrorKeys := []string{
+			"task not found",
+			"user_blocked",
+		}
+		shouldSkip := lo.SomeBy(shouldSkipErrorKeys, func(key string) bool {
+			return strings.Contains(err.Error(), key)
+		})
+		if shouldSkip {
+			return nil
+		}
 		return err
 	}
 	log.WithFields(map[string]interface{}{
