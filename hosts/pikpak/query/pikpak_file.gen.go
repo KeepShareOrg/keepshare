@@ -39,6 +39,7 @@ func newFile(db *gorm.DB, opts ...gen.DOOption) file {
 	_file.CreatedAt = field.NewTime(tableName, "created_at")
 	_file.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_file.OriginalLinkHash = field.NewString(tableName, "original_link_hash")
+	_file.UniqueHash = field.NewString(tableName, "unique_hash")
 	_file.Error = field.NewString(tableName, "error")
 
 	_file.fillFieldMap()
@@ -62,6 +63,7 @@ type file struct {
 	CreatedAt        field.Time
 	UpdatedAt        field.Time
 	OriginalLinkHash field.String
+	UniqueHash       field.String // format: keepshare_uid:original_link_hash
 	Error            field.String
 
 	fieldMap map[string]field.Expr
@@ -91,6 +93,7 @@ func (f *file) updateTableName(table string) *file {
 	f.CreatedAt = field.NewTime(table, "created_at")
 	f.UpdatedAt = field.NewTime(table, "updated_at")
 	f.OriginalLinkHash = field.NewString(table, "original_link_hash")
+	f.UniqueHash = field.NewString(table, "unique_hash")
 	f.Error = field.NewString(table, "error")
 
 	f.fillFieldMap()
@@ -108,7 +111,7 @@ func (f *file) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (f *file) fillFieldMap() {
-	f.fieldMap = make(map[string]field.Expr, 13)
+	f.fieldMap = make(map[string]field.Expr, 14)
 	f.fieldMap["auto_id"] = f.AutoID
 	f.fieldMap["master_user_id"] = f.MasterUserID
 	f.fieldMap["worker_user_id"] = f.WorkerUserID
@@ -121,6 +124,7 @@ func (f *file) fillFieldMap() {
 	f.fieldMap["created_at"] = f.CreatedAt
 	f.fieldMap["updated_at"] = f.UpdatedAt
 	f.fieldMap["original_link_hash"] = f.OriginalLinkHash
+	f.fieldMap["unique_hash"] = f.UniqueHash
 	f.fieldMap["error"] = f.Error
 }
 

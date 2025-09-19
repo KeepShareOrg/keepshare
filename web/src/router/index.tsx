@@ -16,6 +16,7 @@ const Settings = lazy(() => import("@/pages/settings/Settings"));
 const PikPak = lazy(() => import("@/pages/management/pikpak/PikPak"));
 const Mega = lazy(() => import("@/pages/management/mega/Mega"));
 const SharedStatus = lazy(() => import("@/pages/sharedStatus/SharedStatus"));
+const WhatsLinkStatus = lazy(() => import("@/pages/sharedStatus/WhatsLinkStatus"));
 const Donation = lazy(() => import("@/pages/donation/Donation"));
 const EmailVerification = lazy(() => import("@/pages/email/Verification"));
 
@@ -31,6 +32,7 @@ export const enum RoutePaths {
   PikPak = "/console/management/pikpak",
   Mega = "/console/management/mega",
   SharedStatus = "/console/shared/status",
+  WhatsLinkStatus = "/console/shared/wsl-status",
   Donation = "/console/donation",
   EmailVerification = "/console/email-verification",
 }
@@ -125,6 +127,10 @@ const router = createBrowserRouter(
       {
         path: RoutePaths.SharedStatus,
         element: <SharedStatus />,
+      },
+      {
+        path: RoutePaths.WhatsLinkStatus,
+        element: <WhatsLinkStatus />,
       },
       {
         path: RoutePaths.Donation,

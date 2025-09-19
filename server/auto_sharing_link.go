@@ -6,11 +6,16 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/samber/lo"
+	"github.com/spf13/viper"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -28,7 +33,6 @@ import (
 	"github.com/KeepShareOrg/keepshare/server/model"
 	"github.com/KeepShareOrg/keepshare/server/query"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gen"
 	"gorm.io/gorm/clause"
 )
 
@@ -94,8 +98,25 @@ func autoSharingLink(c *gin.Context) {
 	})
 	defer report.Done()
 
+	shouldSkipCreateLink := false
+	if c.Query("wsl") != "" {
+		shouldSkipCreateLink = true
+	}
+	warningChannels := viper.GetStringSlice("warning_channels")
+	if warningChannels != nil {
+		log.Debugf("warning channels: %v", channel)
+		shouldSkipCreateLink = slices.Contains(warningChannels, channel)
+	}
+
 	l := log.WithContext(ctx)
-	sh, lastState, err := createShareLinkIfNotExist(ctx, user.ID, host, link, share.AutoShare)
+	// if the channel and the link are warning, forbid to create shared link
+	hitForbidden := checkForbiddenRules(ctx, channel, link)
+	if hitForbidden {
+		shouldSkipCreateLink = true
+	}
+
+	ctx = context.WithValue(ctx, constant.IsShouldSkipCreateLink, shouldSkipCreateLink)
+	sh, lastState, err := createShareLinkIfNotExist(ctx, user.ID, host, link, share.AutoShare, c.ClientIP())
 	if err != nil {
 		report.Set(constant.Error, err.Error())
 		mdw.RespInternal(c, err.Error())
@@ -105,9 +126,16 @@ func autoSharingLink(c *gin.Context) {
 	report.Set(keyState, lastState)
 	l = l.WithFields(Map{constant.SharedLink: sh.HostSharedLink, constant.ShareStatus: sh.State})
 
+	// if the link refer to the warning channel id, we need redirect to the whatslink info page
+	if shouldSkipCreateLink {
+		l.Debug("redirect to whatslink info page")
+		c.Redirect(http.StatusFound, fmt.Sprintf("https://%s/console/shared/wsl-status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID))
+		return
+	}
+
 	switch share.State(sh.State) {
 	case share.StatusOK:
-		// TODO: We can add parameters to the PikPak sharing page to automatically play, but we need to add that only the current host is PikPak.
+		// We can add parameters to the PikPak sharing page to automatically play, but we need to add that only the current host is PikPak.
 		hostLink := fmt.Sprintf("%s?act=play", sh.HostSharedLink)
 		report.Sets(Map{
 			keyRedirectType: "share",
@@ -119,13 +147,6 @@ func autoSharingLink(c *gin.Context) {
 	default: // include StatusSensitive
 		l.Debug("share status:", sh.State)
 		RecordLinkAccessLog(ctx, sh.OriginalLinkHash, GetRequestIP(c.Request))
-
-		// push the uncompleted task to the background
-		set, err := config.Redis().SetNX(ctx, fmt.Sprintf("async_trigger_running:%d", sh.AutoID), "", 30*time.Second).Result()
-		if err == nil && set {
-			getAsyncBackgroundTaskInstance().pushAsyncTask(sh.AutoID)
-		}
-
 		statusPage := fmt.Sprintf("https://%s/console/shared/status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID)
 		// skip the status page loading if not yet create host task
 		if lastState == share.StatusCreated {
@@ -140,19 +161,93 @@ func autoSharingLink(c *gin.Context) {
 	}
 }
 
+// checkForbiddenRules check if the channel and the link are forbidden
+func checkForbiddenRules(ctx context.Context, channelID, link string) bool {
+	type Rule struct {
+		ChannelID       string   `mapstructure:"channel_id"`
+		FilenameContain []string `mapstructure:"filename_contain"`
+	}
+
+	var rules []*Rule
+	if err := viper.UnmarshalKey("forbidden_rules", &rules); err != nil {
+		log.Errorf("failed to unmarshal forbidden_rules: %v", err)
+		return false
+	}
+
+	rule, hit := lo.Find(rules, func(item *Rule) bool {
+		return item.ChannelID == channelID
+	})
+	if !hit || rule == nil {
+		return false
+	}
+
+	info, err := queryLinkInfoByWhatsLinks(ctx, link)
+	if err != nil {
+		log.Errorf("query what's link info error: %v", err)
+		return false
+	}
+	hit = lo.SomeBy(rule.FilenameContain, func(item string) bool {
+		return strings.Contains(strings.ToLower(info.Name), strings.ToLower(item))
+	})
+
+	return hit
+}
+
+type WhatsLinkInfo struct {
+	Error       string `json:"error"`
+	Type        string `json:"type"`
+	FileType    string `json:"file_type"`
+	Name        string `json:"name"`
+	Size        int    `json:"size"`
+	Count       int    `json:"count"`
+	Screenshots []struct {
+		Time       int    `json:"time"`
+		Screenshot string `json:"screenshot"`
+	} `json:"screenshots"`
+}
+
+func queryLinkInfoByWhatsLinks(ctx context.Context, link string) (*WhatsLinkInfo, error) {
+	addr := fmt.Sprintf("https://whatslink.info/api/v1/link?url=%s", link)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, addr, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("referer", "https://whatslink.info/")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	bs, _ := io.ReadAll(resp.Body)
+	log.Debugf("whats link return: %s", bs)
+
+	var linkInfo *WhatsLinkInfo
+	err = json.Unmarshal(bs, &linkInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return linkInfo, nil
+}
+
 // createShareLinkIfNotExist if the shared link does not exist, create a new one and return it.
-func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.HostWithProperties, link string, createBy string) (sharedLink *model.SharedLink, lastStatus share.State, err error) {
+func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.HostWithProperties, link string, createBy string, ip string) (sharedLink *model.SharedLink, lastStatus share.State, err error) {
 	linkRaw, linkHash, ok := validateLink(link)
 	if !ok || linkHash == "" {
 		return nil, "", errors.New("invalid link")
 	}
 
-	where := []gen.Condition{
+	var sh *model.SharedLink
+	sh, err = query.SharedLink.WithContext(ctx).Where(
 		query.SharedLink.UserID.Eq(userID),
 		query.SharedLink.OriginalLinkHash.Eq(linkHash),
-	}
-
-	sh, err := query.SharedLink.WithContext(ctx).Where(where...).Take()
+	).Take()
 	if err != nil && !gormutil.IsNotFoundError(err) {
 		return nil, "", fmt.Errorf("query shared link error: %w", err)
 	}
@@ -160,8 +255,7 @@ func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.H
 	lastStatus = share.StatusNotFound
 	if sh != nil {
 		lastStatus = getShareStatus(ctx, userID, host, sh)
-		updateVisitTimeAndState(ctx, sh, lastStatus)
-
+		go updateVisitTimeAndState(ctx, sh, lastStatus)
 		switch lastStatus {
 		case share.StatusUnknown, share.StatusOK, share.StatusCreated, share.StatusPending:
 			break
@@ -178,12 +272,11 @@ func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.H
 	}
 
 	if sh == nil {
-		sh, err = createShareByLink(ctx, userID, host, linkRaw, createBy)
+		sh, err = createShareByLink(ctx, userID, host, linkRaw, createBy, ip)
 		if err != nil {
 			return nil, lastStatus, fmt.Errorf("create share error: %w", err)
 		}
 	}
-
 	return sh, lastStatus, nil
 }
 
@@ -239,35 +332,17 @@ func validateLink(link string) (simple string, hash string, ok bool) {
 	return simple, hash, true
 }
 
-func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithProperties, link string, createBy string) (s *model.SharedLink, err error) {
-	sharedLinks, err := host.CreateFromLinks(ctx, userID, []string{link}, createBy)
-	if err != nil {
-		return nil, fmt.Errorf("create share from links err: %w", err)
-	}
-
-	sh := sharedLinks[link]
-	if sh == nil {
-		return nil, errors.New("get nil share")
-	}
-
+func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithProperties, link string, createBy string, ip string) (s *model.SharedLink, err error) {
 	now := time.Now()
 	s = &model.SharedLink{
-		UserID:             userID,
-		State:              sh.State.String(),
-		Host:               host.Name(),
-		CreatedBy:          sh.CreatedBy,
-		CreatedAt:          now,
-		UpdatedAt:          now,
-		Size:               sh.Size,
-		Visitor:            sh.Visitor,
-		Stored:             sh.Stored,
-		Revenue:            sh.Revenue,
-		Title:              sh.Title,
-		OriginalLinkHash:   lk.Hash(link),
-		HostSharedLinkHash: lk.Hash(sh.HostSharedLink),
-		OriginalLink:       link,
-		HostSharedLink:     sh.HostSharedLink,
-		Error:              sh.Error,
+		State:            string(share.StatusCreated),
+		UserID:           userID,
+		CreatedBy:        createBy,
+		Host:             host.Name(),
+		CreatedAt:        now,
+		UpdatedAt:        now,
+		OriginalLinkHash: lk.Hash(link),
+		OriginalLink:     link,
 	}
 	if createBy == share.AutoShare {
 		s.LastVisitedAt = now
@@ -276,20 +351,8 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 	t := query.SharedLink
 	err = t.WithContext(ctx).
 		Clauses(clause.OnConflict{DoUpdates: clause.AssignmentColumns([]string{
-			// UNIQUE KEY `original_link_hash.user_id.host` (`original_link_hash`, `user_id`, `host`)
-			// Do not update these fields:
-			// user_id, host, original_link_hash, original_link, first_visited_at, last_visited_at, last_stored_at
-			t.State.ColumnName().String(),
-			t.CreatedBy.ColumnName().String(),
 			t.CreatedAt.ColumnName().String(),
 			t.UpdatedAt.ColumnName().String(),
-			t.Size.ColumnName().String(),
-			t.Visitor.ColumnName().String(),
-			t.Stored.ColumnName().String(),
-			t.Revenue.ColumnName().String(),
-			t.Title.ColumnName().String(),
-			t.HostSharedLinkHash.ColumnName().String(),
-			t.HostSharedLink.ColumnName().String(),
 		})}).
 		Create(s)
 	if err != nil {
@@ -298,6 +361,44 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 		return nil, err
 	}
 	log.WithContext(ctx).WithField("shared_record", s).Info("create shared record done")
+
+	skipCreateLink := ctx.Value(constant.IsShouldSkipCreateLink)
+	if skipCreateLink == true {
+		return s, nil
+	}
+	go func() {
+		ctx = context.Background()
+		sharedLinks, err := host.CreateFromLinks(ctx, userID, []string{link}, createBy, ip)
+		if err != nil {
+			log.WithContext(ctx).WithField("shared_record", s).Error(fmt.Errorf("create share from links err: %w", err))
+			return
+		}
+
+		sh := sharedLinks[link]
+
+		if sh == nil {
+			log.WithContext(ctx).WithField("shared_record", s).Error(errors.New("get nil keepshare"))
+			return
+		}
+
+		update := &model.SharedLink{
+			State:              sh.State.String(),
+			Size:               sh.Size,
+			Visitor:            sh.Visitor,
+			Stored:             sh.Stored,
+			Revenue:            sh.Revenue,
+			Title:              sh.Title,
+			HostSharedLinkHash: lk.Hash(sh.HostSharedLink),
+			HostSharedLink:     sh.HostSharedLink,
+			Error:              sh.Error,
+		}
+		log.WithContext(ctx).WithField("shared_record", s).Infof("sharedLinks update :%+v", update)
+		_, err = t.WithContext(ctx).Where(t.AutoID.Eq(s.AutoID)).Updates(update)
+		if err != nil {
+			log.WithContext(ctx).WithField("shared_record", s).WithField("autoID", s.AutoID).Error(errors.New("get nil share"))
+			return
+		}
+	}()
 
 	return s, nil
 }

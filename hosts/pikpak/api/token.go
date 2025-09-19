@@ -194,7 +194,7 @@ func (api *API) signIn(ctx context.Context, userID, username, password string) (
 		return nil, fmt.Errorf("sign in err: %w", err)
 	}
 
-	if r.AccessToken == "" {
+	if r == nil || r.AccessToken == "" {
 		return nil, fmt.Errorf("unexpected body: %s", body.Body())
 	}
 

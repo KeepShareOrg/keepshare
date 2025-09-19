@@ -24,6 +24,7 @@ type File struct {
 	CreatedAt        time.Time `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt        time.Time `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 	OriginalLinkHash string    `gorm:"column:original_link_hash;not null" json:"original_link_hash"`
+	UniqueHash       string    `gorm:"column:unique_hash;not null;comment:format: keepshare_uid:original_link_hash" json:"unique_hash"`
 	Error            string    `gorm:"column:error" json:"error"`
 }
 

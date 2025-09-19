@@ -45,3 +45,19 @@ const (
 	AsyncQueueResetPassword    = "reset_password"
 	AsyncQueueRefreshToken     = "refresh_token"
 )
+
+// enum all statuses.
+const (
+	StatusOK      = "PHASE_TYPE_COMPLETE"
+	StatusError   = "PHASE_TYPE_ERROR"
+	StatusRunning = "PHASE_TYPE_RUNNING"
+)
+
+const (
+	TaskQueuePikPak = "pikpak"
+	TaskTypePPTask  = "pp_task"
+)
+
+const (
+	IsShouldSkipCreateLink = "skip_create_link"
+)

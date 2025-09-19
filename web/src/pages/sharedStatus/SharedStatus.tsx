@@ -86,12 +86,13 @@ const SharedStatus = () => {
     }
 
     const isLoopEnd = loopTimes > MAX_LOOP_TIMES;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     // Get data from keepshare server, but the data may be incomplete (returned from PikPak)
     getSharedLinkInfo(autoId, requestId, isLoopEnd).then(
       ({ data: newFileInfo, error }) => {
         if (newFileInfo) {
           if (loopTimes <= MAX_LOOP_TIMES) {
-            const timer = setTimeout(() => {
+            timer = setTimeout(() => {
               setLoopTimes(loopTimes + 1);
               timer && clearTimeout(timer);
             }, 2000);
@@ -105,6 +106,7 @@ const SharedStatus = () => {
           const hostSharedLink = newFileInfo.host_shared_link;
           if (newStatus === "OK" && hostSharedLink) {
             location.href = hostSharedLink;
+            timer && clearTimeout(timer);
           } else {
             setStatus(newStatus);
             setFileInfo(Object.assign({}, fileInfo, newFileInfo));

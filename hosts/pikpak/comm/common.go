@@ -4,10 +4,6 @@
 
 package comm
 
-import (
-	"time"
-)
-
 // enum all statuses.
 const (
 	StatusOK      = "PHASE_TYPE_COMPLETE"
@@ -30,18 +26,8 @@ func IsFinalStatus(s string) bool {
 }
 
 const (
-	// CreateFileSyncWaitSeconds is the maximum wait time in seconds when creating a file from link.
-	CreateFileSyncWaitSeconds = 2
-
-	// RunningFilesMaxAge is the maximum time for a file from running to complete.
-	// After this time, set the file to error status.
-	RunningFilesMaxAge = 48 * time.Hour
-
-	// RunningFilesSelectLimit is the maximum number of running files selected from mysql each time.
-	RunningFilesSelectLimit = 10000
-
 	// MaxPremiumWorkers is the maximum number of premium workers bound to a master.
-	MaxPremiumWorkers = 20
+	MaxPremiumWorkers = 50
 
 	// SlowTaskTriggerConditionTimes is the maximum number of times to trigger a slow task.
 	SlowTaskTriggerConditionTimes = 2

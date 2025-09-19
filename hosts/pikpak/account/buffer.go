@@ -206,10 +206,12 @@ func (m *Manager) checkPremiumWorkerBuffer() {
 		log.Debugf("not used premium worker count: %v %v", notUsedPremiumCount, m.premiumBufferSize)
 		if notUsedPremiumCount < int64(m.premiumBufferSize) {
 			// select a not used normal worker account
+			subQuery := t.RedeemCode.Where(t.RedeemCode.Status.Eq(comm.RedeemCodeStatusUsed)).Select(t.RedeemCode.UsedUserID)
 			notUsedNormalAccount, err := t.WorkerAccount.WithContext(ctx).
 				Where(
 					t.WorkerAccount.MasterUserID.Eq(""),
 					t.WorkerAccount.PremiumExpiration.Lt(time.Now()),
+					t.WorkerAccount.Columns(t.WorkerAccount.UserID).NotIn(subQuery),
 				).Take()
 			if err != nil {
 				return fmt.Errorf("found not use normal account err: %v", err)

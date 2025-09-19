@@ -122,7 +122,8 @@ func querySharedLinkInfo(c *gin.Context) {
 	conditions := []gen.Condition{
 		query.SharedLink.AutoID.Eq(int64(autoID)),
 	}
-	res, err := query.SharedLink.WithContext(ctx).Where(conditions...).Take()
+	var res *model.SharedLink
+	res, err = query.SharedLink.WithContext(ctx).Where(conditions...).Take()
 	if err != nil {
 		report.Set(constant.Error, err)
 		mdw.RespInternal(c, err.Error())
@@ -137,7 +138,7 @@ func querySharedLinkInfo(c *gin.Context) {
 	})
 
 	if res.State == share.StatusOK.String() {
-		// TODO: We can add parameters to the PikPak sharing page to automatically play, but we need to add that only the current host is PikPak.
+		// We can add parameters to the PikPak sharing page to automatically play, but we need to add that only the current host is PikPak.
 		hostLink := fmt.Sprintf("%v?act=play", res.HostSharedLink)
 		report.Sets(Map{
 			keyRedirectType: "share",
@@ -145,8 +146,32 @@ func querySharedLinkInfo(c *gin.Context) {
 		})
 		res.HostSharedLink = hostLink
 	}
+	go manualQueryFileStatus(context.Background(), res, c.ClientIP())
 
 	c.JSON(http.StatusOK, res)
+}
+
+func manualQueryFileStatus(ctx context.Context, sharedLink *model.SharedLink, ip string) {
+	if sharedLink == nil || sharedLink.State == share.StatusOK.String() {
+		return
+	}
+	if ok, _ := config.Redis().SetNX(ctx, fmt.Sprintf("manual_query:%v", sharedLink.OriginalLink), 1, time.Second*20).Result(); !ok {
+		return
+	}
+	host := hosts.Get(config.DefaultHost())
+	sharedLinks, err := host.CreateFromLinks(context.Background(), sharedLink.UserID, []string{sharedLink.OriginalLink}, sharedLink.CreatedBy, ip)
+	if err != nil {
+		log.Errorf("shared links still not ok: %v", err)
+		return
+	}
+	log.Debugf("complete shared links: %#v", sharedLinks)
+	if v, ok := sharedLinks[sharedLink.OriginalLink]; ok && v.State == share.StatusOK {
+		query.SharedLink.WithContext(ctx).Where(query.SharedLink.AutoID.Eq(sharedLink.AutoID)).Updates(&model.SharedLink{
+			State:          share.StatusOK.String(),
+			HostSharedLink: v.HostSharedLink,
+			UpdatedAt:      time.Now(),
+		})
+	}
 }
 
 // batchQuerySharedLinksInfo batch query shared link current status and this shared link's info
@@ -215,7 +240,7 @@ func initQueryTypes() {
 	table := query.SharedLink
 	for _, f := range []field.Expr{
 		table.Title,
-		table.OriginalLink, // TODO query by hash
+		table.OriginalLink,
 		table.HostSharedLink,
 		table.CreatedAt,
 		table.CreatedBy,

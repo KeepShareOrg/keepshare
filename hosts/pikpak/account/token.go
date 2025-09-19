@@ -80,7 +80,7 @@ func (m *Manager) handleRefreshToken(ctx context.Context, task *asynq.Task) erro
 	if err != nil {
 		if api.IsInvalidGrantErr(err) {
 			//if refresh token failed, delete the token
-			m.q.Token.WithContext(ctx).Where(m.q.Token.RefreshToken.Eq(t.RefreshToken)).Delete()
+			m.q.Token.WithContext(ctx).Where(m.q.Token.UserID.Eq(t.UserID)).Delete()
 			return nil
 		}
 		return err

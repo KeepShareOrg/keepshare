@@ -3,7 +3,7 @@ import { StyledButton, StyledForm, PasswordInput } from "@/pages/signUp/style";
 import { type AlertProps, theme, Form, Alert } from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { resetAccountPassword } from '@/api/account';
+import { resetAccountPassword } from "@/api/account";
 import useStore from "@/store";
 import { calcPasswordHash } from "@/util";
 
@@ -31,13 +31,10 @@ const validateFormFailed = ({
 // Take the third step to reset the password and set a new password
 const StepEnterNewPassword = ({ setStep }: StepComponentParams) => {
   const { t } = useTranslation();
-  const [form] = Form.useForm<{
-    password?: string;
-    confirmPassword?: string;
-  }>();
+  const [form] = Form.useForm();
 
-  const resetInfo = useStore(state => state.resetInfo);
-  const setResetInfo = useStore(state => state.setResetInfo);
+  const resetInfo = useStore((state) => state.resetInfo);
+  const setResetInfo = useStore((state) => state.setResetInfo);
   const { token } = theme.useToken();
 
   const [formMessage, setFormMessage] = useState<{
@@ -50,7 +47,6 @@ const StepEnterNewPassword = ({ setStep }: StepComponentParams) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleResetPassword = async () => {
-
     const params = form.getFieldsValue();
 
     setIsLoading(true);
@@ -58,7 +54,7 @@ const StepEnterNewPassword = ({ setStep }: StepComponentParams) => {
     const result = await resetAccountPassword({
       email: resetInfo.email,
       password_hash: calcPasswordHash(params.password!),
-      action: 'reset_password',
+      action: "reset_password",
       verification_token: resetInfo.verificationToken,
       verification_code: resetInfo.verificationCode,
     });
@@ -66,13 +62,16 @@ const StepEnterNewPassword = ({ setStep }: StepComponentParams) => {
     setIsLoading(false);
 
     if (result.error) {
-      return setFormMessage({ type: "error", message: result.error.message || 'reset fail.' });
+      return setFormMessage({
+        type: "error",
+        message: result.error.message || "reset fail.",
+      });
     }
 
     setResetInfo({
-      email: '',
-      verificationCode: '',
-      verificationToken: '',
+      email: "",
+      verificationCode: "",
+      verificationToken: "",
     });
     setStep(ResetPasswordSteps.RESET_PASSWORD_RESULT);
   };
@@ -99,8 +98,7 @@ const StepEnterNewPassword = ({ setStep }: StepComponentParams) => {
         <PasswordInput placeholder="Password" />
       </Form.Item>
       <Form.Item name="confirmPassword">
-        <PasswordInput 
-        placeholder="Confirm your password" />
+        <PasswordInput placeholder="Confirm your password" />
       </Form.Item>
 
       {formMessage.message && (

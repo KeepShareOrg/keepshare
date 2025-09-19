@@ -9,10 +9,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/server/constant"
-	"math/rand"
+	"github.com/google/uuid"
 	"net/http"
-	"net/url"
 	"regexp"
 	"time"
 
@@ -73,12 +73,11 @@ func NewManager(q *query.Query, api *api.API, d *hosts.Dependencies) *Manager {
 
 	m.initConfig()
 
-	m.Queue.RegisterHandler(taskTypeInviteSubAccount, asynq.HandlerFunc(m.inviteSubAccount))
+	m.Queue.RegisterHandler(taskTypeInviteSubAccount, asynq.HandlerFunc(m.inviteSubAccountByInvitetoken))
 
 	go m.checkMasterBuffer()
 	go m.checkWorkerBuffer()
 	go m.checkPremiumWorkerBuffer()
-
 	go m.keepTokenAliveWorker()
 	go m.registerRefreshTokenTask()
 
@@ -215,7 +214,7 @@ func (m *Manager) getWorkerWithEnoughCapacity(ctx context.Context, master string
 		where = append(where, w)
 	}
 
-	return t.WithContext(ctx).Where(where...).Order(t.UsedSize.SubCol(t.LimitSize)).Limit(1).Take()
+	return t.WithContext(ctx).Where(where...).Limit(1).Take()
 }
 
 type inviteSubAccountRequest struct {
@@ -286,15 +285,19 @@ func (m *Manager) createWorker(ctx context.Context, master string, status Status
 	}
 
 	now := time.Now().Round(time.Second)
-	updatedUUID := fmt.Sprintf("%v", rand.Intn(1e10))
+	updatedUUID := uuid.New().String()
+	if len(updatedUUID) > 20 {
+		updatedUUID = updatedUUID[:20]
+	}
 	ret, err := t.WithContext(ctx).
 		Where(where...).
 		Order(t.CreatedAt).
 		Limit(1).
-		Updates(&model.WorkerAccount{
-			MasterUserID: master,
-			UpdatedAt:    now,
-			UpdatedUUID:  updatedUUID,
+		Select(t.MasterUserID, t.UpdatedAt, t.UpdatedUUID).
+		Updates(map[string]any{
+			t.MasterUserID.ColumnName().String(): master,
+			t.UpdatedAt.ColumnName().String():    now,
+			t.UpdatedUUID.ColumnName().String():  updatedUUID,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("bind new worker err: %w", err)
@@ -334,14 +337,18 @@ func (m *Manager) createWorker(ctx context.Context, master string, status Status
 
 // UpdateAccountInvalidUtil update worker invalid until
 func (m *Manager) UpdateAccountInvalidUtil(ctx context.Context, worker *model.WorkerAccount, until time.Time) error {
-	if _, err := m.q.WorkerAccount.WithContext(ctx).
-		Where(m.q.WorkerAccount.UserID.Eq(worker.UserID)).
-		Updates(&model.WorkerAccount{
-			InvalidUntil: until,
-		}); err != nil {
-		return fmt.Errorf("update worker err: %w", err)
+	if ok, _ := config.Redis().SetNX(ctx, fmt.Sprintf("w_%s", worker.UserID), 1, time.Minute).Result(); !ok {
+		log.WithContext(ctx).WithField("worker", worker).Debug("worker already updated")
+		return nil
 	}
-	return nil
+	ctx = log.DataContext(ctx)
+	wa := m.q.WorkerAccount
+	_, err := wa.
+		WithContext(ctx).
+		Where(wa.UserID.Eq(worker.UserID)).
+		Select(wa.InvalidUntil).
+		Update(wa.InvalidUntil, until)
+	return err
 }
 
 type (
@@ -391,65 +398,46 @@ func (m *Manager) CountWorkers(ctx context.Context, master string) (*CountWorker
 	return &resp, nil
 }
 
-func (m *Manager) inviteSubAccount(ctx context.Context, task *asynq.Task) (err error) {
+func (m *Manager) inviteSubAccountByInvitetoken(ctx context.Context, task *asynq.Task) (err error) {
 	var req inviteSubAccountRequest
 	_ = json.Unmarshal(task.Payload(), &req)
-	if req.MasterUserID == "" || req.WorkerEmail == "" {
+	if req.MasterUserID == "" || req.WorkerUserID == "" {
 		log.WithContext(ctx).Debugf("task: %s, invalid msg: %s", task.Type(), task.Payload())
 		return nil
 	}
-
-	l := log.WithContext(ctx).WithFields(log.Fields{
-		"master": req.MasterUserID,
-		"worker": req.WorkerUserID,
-		"email":  req.WorkerEmail,
-	})
+	l := log.WithContext(ctx)
 	defer func() {
 		if err != nil {
-			l.WithError(err).Error("inviteSubAccount err")
+			l.WithError(err).Error("inviteSubAccountByInvitetoken err")
 		} else {
-			l.Debug("inviteSubAccount ok")
+			l.Debug("inviteSubAccountByInvitetoken ok")
 		}
 	}()
-
-	// send invite email
-	sendTime := time.Now()
-	err = m.api.InviteSubAccount(ctx, req.MasterUserID, req.WorkerEmail)
+	//get invite token
+	var res *api.GetInviteTokenResponse
+	res, err = m.api.GetInviteToken(ctx, req.MasterUserID)
 	if err != nil {
-		if api.IsHasJoinedReferralErr(err) {
-			return nil
-		}
-		return fmt.Errorf("send invite request err: %w", err)
+		err = fmt.Errorf("get invite token err: %w", err)
+		return
+	} else if res == nil {
+		err = fmt.Errorf("invite token res is nil")
+		return
+	} else if res.InviteToken == "" {
+		err = fmt.Errorf("invite token is null")
+		return
 	}
-
-	// verify email
-	var verifyURL string
-	for i := 0; i < 5; i++ {
-		time.Sleep(time.Second)
-		verifyURL, _, err = m.getInviteURL(ctx, req.WorkerEmail, sendTime)
-		if verifyURL != "" {
-			break
-		}
-	}
-	if verifyURL == "" {
-		return fmt.Errorf("invite sub account email not found err: %v", err)
-	}
-
-	u, err := url.Parse(verifyURL)
-	if err != nil || u.RawQuery == "" {
-		return fmt.Errorf("invalid verify url: %s", verifyURL)
-	}
-
-	token := u.Query().Get("token")
-	if len(token) < 10 {
-		return fmt.Errorf("invalid verify url: %s", verifyURL)
-	}
-
-	err = m.api.VerifyInviteSubAccountToken(ctx, token)
+	err = m.api.VerifyInviteSubAccountTokenByInviteToken(ctx, res.InviteToken, req.WorkerUserID)
 	if err != nil {
-		return fmt.Errorf("verify invite url err: %w", err)
+		err = fmt.Errorf("verify invite url err: %w", err)
+		return
 	}
-	return nil
+
+	l.WithFields(log.Fields{
+		"master":       req.MasterUserID,
+		"worker":       req.WorkerUserID,
+		"invite_token": res.InviteToken,
+	})
+	return
 }
 
 var (

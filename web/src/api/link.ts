@@ -32,6 +32,11 @@ export interface SharedLinkInfo {
   original_link: string;
   host_shared_link: string;
   last_visited_at: string;
+  screenshot: string;
+  screenshots: {
+    time: number;
+    screenshot: string;
+  }[];
 }
 export interface QuerySharedLinksParams {
   // KeepShare search dsl string: eg. size=123456;status="ok";
