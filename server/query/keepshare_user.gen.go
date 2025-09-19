@@ -32,9 +32,9 @@ func newUser(db *gorm.DB, opts ...gen.DOOption) user {
 	_user.Email = field.NewString(tableName, "email")
 	_user.PasswordHash = field.NewString(tableName, "password_hash")
 	_user.Channel = field.NewString(tableName, "channel")
+	_user.EmailVerified = field.NewInt32(tableName, "email_verified")
 	_user.CreatedAt = field.NewTime(tableName, "created_at")
 	_user.UpdatedAt = field.NewTime(tableName, "updated_at")
-	_user.EmailVerified = field.NewInt32(tableName, "email_verified")
 
 	_user.fillFieldMap()
 
@@ -50,9 +50,9 @@ type user struct {
 	Email         field.String
 	PasswordHash  field.String
 	Channel       field.String
+	EmailVerified field.Int32
 	CreatedAt     field.Time
 	UpdatedAt     field.Time
-	EmailVerified field.Int32
 
 	fieldMap map[string]field.Expr
 }
@@ -74,9 +74,9 @@ func (u *user) updateTableName(table string) *user {
 	u.Email = field.NewString(table, "email")
 	u.PasswordHash = field.NewString(table, "password_hash")
 	u.Channel = field.NewString(table, "channel")
+	u.EmailVerified = field.NewInt32(table, "email_verified")
 	u.CreatedAt = field.NewTime(table, "created_at")
 	u.UpdatedAt = field.NewTime(table, "updated_at")
-	u.EmailVerified = field.NewInt32(table, "email_verified")
 
 	u.fillFieldMap()
 
@@ -99,9 +99,9 @@ func (u *user) fillFieldMap() {
 	u.fieldMap["email"] = u.Email
 	u.fieldMap["password_hash"] = u.PasswordHash
 	u.fieldMap["channel"] = u.Channel
+	u.fieldMap["email_verified"] = u.EmailVerified
 	u.fieldMap["created_at"] = u.CreatedAt
 	u.fieldMap["updated_at"] = u.UpdatedAt
-	u.fieldMap["email_verified"] = u.EmailVerified
 }
 
 func (u user) clone(db *gorm.DB) user {

@@ -19,7 +19,6 @@ var (
 	Q             = new(Query)
 	DeleteQueue   *deleteQueue
 	File          *file
-	LinkStatus    *linkStatus
 	MasterAccount *masterAccount
 	RedeemCode    *redeemCode
 	SharedLink    *sharedLink
@@ -31,7 +30,6 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
 	DeleteQueue = &Q.DeleteQueue
 	File = &Q.File
-	LinkStatus = &Q.LinkStatus
 	MasterAccount = &Q.MasterAccount
 	RedeemCode = &Q.RedeemCode
 	SharedLink = &Q.SharedLink
@@ -44,7 +42,6 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		db:            db,
 		DeleteQueue:   newDeleteQueue(db, opts...),
 		File:          newFile(db, opts...),
-		LinkStatus:    newLinkStatus(db, opts...),
 		MasterAccount: newMasterAccount(db, opts...),
 		RedeemCode:    newRedeemCode(db, opts...),
 		SharedLink:    newSharedLink(db, opts...),
@@ -58,7 +55,6 @@ type Query struct {
 
 	DeleteQueue   deleteQueue
 	File          file
-	LinkStatus    linkStatus
 	MasterAccount masterAccount
 	RedeemCode    redeemCode
 	SharedLink    sharedLink
@@ -73,7 +69,6 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		db:            db,
 		DeleteQueue:   q.DeleteQueue.clone(db),
 		File:          q.File.clone(db),
-		LinkStatus:    q.LinkStatus.clone(db),
 		MasterAccount: q.MasterAccount.clone(db),
 		RedeemCode:    q.RedeemCode.clone(db),
 		SharedLink:    q.SharedLink.clone(db),
@@ -95,7 +90,6 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		db:            db,
 		DeleteQueue:   q.DeleteQueue.replaceDB(db),
 		File:          q.File.replaceDB(db),
-		LinkStatus:    q.LinkStatus.replaceDB(db),
 		MasterAccount: q.MasterAccount.replaceDB(db),
 		RedeemCode:    q.RedeemCode.replaceDB(db),
 		SharedLink:    q.SharedLink.replaceDB(db),
@@ -107,7 +101,6 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 type queryCtx struct {
 	DeleteQueue   IDeleteQueueDo
 	File          IFileDo
-	LinkStatus    ILinkStatusDo
 	MasterAccount IMasterAccountDo
 	RedeemCode    IRedeemCodeDo
 	SharedLink    ISharedLinkDo
@@ -119,7 +112,6 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
 		DeleteQueue:   q.DeleteQueue.WithContext(ctx),
 		File:          q.File.WithContext(ctx),
-		LinkStatus:    q.LinkStatus.WithContext(ctx),
 		MasterAccount: q.MasterAccount.WithContext(ctx),
 		RedeemCode:    q.RedeemCode.WithContext(ctx),
 		SharedLink:    q.SharedLink.WithContext(ctx),

@@ -98,18 +98,17 @@ func autoSharingLink(c *gin.Context) {
 	})
 	defer report.Done()
 
-	shouldRedirectToWhatsLinkInfoPage := false
+	shouldSkipCreateLink := false
 	if c.Query("wsl") != "" {
-		shouldRedirectToWhatsLinkInfoPage = true
+		shouldSkipCreateLink = true
 	}
 	warningChannels := viper.GetStringSlice("warning_channels")
 	if warningChannels != nil {
 		log.Debugf("warning channels: %v", channel)
-		shouldRedirectToWhatsLinkInfoPage = slices.Contains(warningChannels, channel)
+		shouldSkipCreateLink = slices.Contains(warningChannels, channel)
 	}
 
 	l := log.WithContext(ctx)
-	shouldSkipCreateLink := shouldRedirectToWhatsLinkInfoPage
 	// if the channel and the link are warning, forbid to create shared link
 	hitForbidden := checkForbiddenRules(ctx, channel, link)
 	if hitForbidden {
@@ -128,7 +127,7 @@ func autoSharingLink(c *gin.Context) {
 	l = l.WithFields(Map{constant.SharedLink: sh.HostSharedLink, constant.ShareStatus: sh.State})
 
 	// if the link refer to the warning channel id, we need redirect to the whatslink info page
-	if shouldRedirectToWhatsLinkInfoPage {
+	if shouldSkipCreateLink {
 		l.Debug("redirect to whatslink info page")
 		c.Redirect(http.StatusFound, fmt.Sprintf("https://%s/console/shared/wsl-status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID))
 		return
@@ -188,7 +187,7 @@ func checkForbiddenRules(ctx context.Context, channelID, link string) bool {
 		return false
 	}
 	hit = lo.SomeBy(rule.FilenameContain, func(item string) bool {
-		return strings.Contains(info.Name, item)
+		return strings.Contains(strings.ToLower(info.Name), strings.ToLower(item))
 	})
 
 	return hit
@@ -213,6 +212,7 @@ func queryLinkInfoByWhatsLinks(ctx context.Context, link string) (*WhatsLinkInfo
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("referer", "https://whatslink.info/")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -244,20 +244,12 @@ func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.H
 	}
 
 	var sh *model.SharedLink
-	if res, err := query.SharedLinkComplete.WithContext(ctx).Where(
-		query.SharedLinkComplete.UserID.Eq(userID),
-		query.SharedLinkComplete.OriginalLinkHash.Eq(linkHash),
-	).Take(); err == nil {
-		sh = (*model.SharedLink)(res)
-	}
-	if sh == nil {
-		sh, err = query.SharedLink.WithContext(ctx).Where(
-			query.SharedLink.UserID.Eq(userID),
-			query.SharedLink.OriginalLinkHash.Eq(linkHash),
-		).Take()
-		if err != nil && !gormutil.IsNotFoundError(err) {
-			return nil, "", fmt.Errorf("query shared link error: %w", err)
-		}
+	sh, err = query.SharedLink.WithContext(ctx).Where(
+		query.SharedLink.UserID.Eq(userID),
+		query.SharedLink.OriginalLinkHash.Eq(linkHash),
+	).Take()
+	if err != nil && !gormutil.IsNotFoundError(err) {
+		return nil, "", fmt.Errorf("query shared link error: %w", err)
 	}
 
 	lastStatus = share.StatusNotFound
@@ -370,8 +362,8 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 	}
 	log.WithContext(ctx).WithField("shared_record", s).Info("create shared record done")
 
-	isWarningChannel := ctx.Value(constant.IsShouldSkipCreateLink)
-	if isWarningChannel != "true" {
+	skipCreateLink := ctx.Value(constant.IsShouldSkipCreateLink)
+	if skipCreateLink == true {
 		return s, nil
 	}
 	go func() {
