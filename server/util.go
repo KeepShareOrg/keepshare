@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/KeepShareOrg/keepshare/config"
+	"github.com/KeepShareOrg/keepshare/pkg/httputil"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"math/rand"
@@ -40,8 +41,21 @@ func VerifyRecaptchaToken(token string) bool {
 	return data["success"].(bool)
 }
 
-func makeKeepSharingLink(channel, originalLink string) string {
-	return fmt.Sprintf("https://%s/%s/%s", config.RootDomain(), channel, url.QueryEscape(originalLink))
+// makeKeepSharingLink builds a Keep share link of the form
+// "https://<host>/<channel>/<url-escaped original>" using the provided host.
+func makeKeepSharingLink(channel, originalLink, host string) string {
+	return fmt.Sprintf("https://%s/%s/%s", host, channel, url.QueryEscape(originalLink))
+}
+
+// hostOrDefault returns the inbound request's host, falling back to
+// config.RootDomain() when the request has no usable host (e.g. synthetic
+// requests in tests, malformed inbound traffic). Avoids producing
+// malformed URLs like "https:///...".
+func hostOrDefault(r *http.Request) string {
+	if h := httputil.RequestHost(r); h != "" {
+		return h
+	}
+	return config.RootDomain()
 }
 
 func getOriginalLinks(src []string) (original, invalid []string) {
@@ -57,7 +71,7 @@ func getOriginalLinks(src []string) (original, invalid []string) {
 		}
 
 		// is auto sharing link
-		if u.Host == config.RootDomain() {
+		if config.IsRootDomain(u.Host) {
 			_, link, ok := getChannelAndLinkFromURL(u)
 			if !ok {
 				invalid = append(invalid, raw)

@@ -3,7 +3,8 @@
 # Available configurations:
 
 # Domain for this project, including web pages or keep sharing links.
-root_domain: localhost
+root_domains:
+    - localhost
 
 # HTTP server listen address.
 listen_http: ':8080'

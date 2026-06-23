@@ -6,7 +6,6 @@ package server
 
 import (
 	"fmt"
-	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"github.com/KeepShareOrg/keepshare/server/constant"
@@ -40,7 +39,7 @@ func sendVerificationLink(c *gin.Context) {
 
 	verifyString := fmt.Sprintf("%v-%v-%v-%v", user.Email, user.ID, expiresTime, salt)
 	hash := CalcSha265Hash(verifyString, salt.(string))
-	verifyLink := fmt.Sprintf("https://%v/api/verification?token=%v&email=%v&expires=%v", config.RootDomain(), hash, user.Email, expiresTime)
+	verifyLink := buildVerifyLink(hostOrDefault(c.Request), hash, user.Email, expiresTime)
 	log.WithContext(ctx).Debugf("verify link: %s", verifyLink)
 
 	emailClient, err := GetEmailClient()
@@ -62,10 +61,20 @@ func sendVerificationLink(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
+// buildVerifyLink formats the email verification link sent to users.
+func buildVerifyLink(host, hash, email string, expires int64) string {
+	return fmt.Sprintf("https://%s/api/verification?token=%s&email=%s&expires=%d", host, hash, email, expires)
+}
+
+// buildResultPageAddr formats the post-verification result page URL.
+func buildResultPageAddr(host string) string {
+	return fmt.Sprintf("https://%s/console/email-verification", host)
+}
+
 func verifyAccount(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	resultPageAddr := fmt.Sprintf("https://%v/console/email-verification", config.RootDomain())
+	resultPageAddr := buildResultPageAddr(hostOrDefault(c.Request))
 	successAddr := fmt.Sprintf("%v?success=1", resultPageAddr)
 	failedAddr := fmt.Sprintf("%v?success=0", resultPageAddr)
 	expiresAddr := fmt.Sprintf("%v?expired=1", resultPageAddr)

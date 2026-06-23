@@ -24,6 +24,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/hosts"
 	"github.com/KeepShareOrg/keepshare/pkg/async"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
+	"github.com/KeepShareOrg/keepshare/pkg/httputil"
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
@@ -137,7 +138,9 @@ func autoSharingLink(c *gin.Context) {
 	// if the link refer to the warning channel id, we need redirect to the whatslink info page
 	if shouldSkipCreateLink {
 		l.Debug("redirect to whatslink info page")
-		c.Redirect(http.StatusFound, fmt.Sprintf("https://%s/console/shared/wsl-status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID))
+		host := hostOrDefault(c.Request)
+		scheme := httputil.RequestScheme(c.Request)
+		c.Redirect(http.StatusFound, fmt.Sprintf("%s://%s/console/shared/wsl-status?id=%d&request_id=%s", scheme, host, sh.AutoID, requestID))
 		return
 	}
 
@@ -155,7 +158,9 @@ func autoSharingLink(c *gin.Context) {
 	default: // include StatusSensitive
 		l.Debug("share status:", sh.State)
 		RecordLinkAccessLog(ctx, sh.OriginalLinkHash, GetRequestIP(c.Request))
-		statusPage := fmt.Sprintf("https://%s/console/shared/status?id=%d&request_id=%s", config.RootDomain(), sh.AutoID, requestID)
+		host := hostOrDefault(c.Request)
+		scheme := httputil.RequestScheme(c.Request)
+		statusPage := fmt.Sprintf("%s://%s/console/shared/status?id=%d&request_id=%s", scheme, host, sh.AutoID, requestID)
 		// skip the status page loading if not yet create host task
 		if lastState == share.StatusCreated {
 			// st: slow task, tasks that have been created for a while but have not yet been completed

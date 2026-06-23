@@ -65,7 +65,7 @@ func getBlackList(c *gin.Context) {
 	for _, r := range ret {
 		resp.List = append(resp.List, &blackListLink{
 			OriginalLink:    r.OriginalLink,
-			KeepSharingLink: makeKeepSharingLink(channel, r.OriginalLink),
+			KeepSharingLink: makeKeepSharingLink(channel, r.OriginalLink, hostOrDefault(c.Request)),
 			CreatedAt:       r.CreatedAt,
 		})
 	}

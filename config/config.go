@@ -16,7 +16,36 @@ import (
 // define main configs.
 var (
 	DefaultHost = func() string { return viper.GetString("host_default") }
-	RootDomain  = func() string { return viper.GetString("root_domain") }
+
+	// RootDomains returns the allowlist of valid root domains.
+	// root_domains (preferred) takes precedence over the legacy root_domain
+	// single-value entry, which is normalized to a one-element list.
+	RootDomains = func() []string {
+		if v := viper.GetStringSlice("root_domains"); len(v) > 0 {
+			return v
+		}
+		if v := strings.TrimSpace(viper.GetString("root_domain")); v != "" {
+			return []string{v}
+		}
+		return []string{"localhost"}
+	}
+
+	// IsRootDomain reports whether host is one of the configured root domains.
+	// Comparison is case-insensitive; surrounding whitespace is ignored.
+	IsRootDomain = func(host string) bool {
+		host = strings.ToLower(strings.TrimSpace(host))
+		for _, d := range RootDomains() {
+			if strings.ToLower(strings.TrimSpace(d)) == host {
+				return true
+			}
+		}
+		return false
+	}
+
+	// RootDomain returns the first entry of RootDomains. Deprecated: use
+	// RootDomains() directly when iterating or IsRootDomain() when checking
+	// membership. Kept for backward compatibility with existing call sites.
+	RootDomain  = func() string { return RootDomains()[0] }
 	ListenHTTP  = func() string { return viper.GetString("listen_http") }
 	ListenHTTPS = func() string { return viper.GetString("listen_https") }
 
@@ -39,6 +68,7 @@ var (
 
 var configs = map[string]properties{
 	"root_domain":  {"localhost", "Domain for this project, including web pages or keep sharing links"},
+	"root_domains": {[]string{}, "Allowlist of root domains. Takes precedence over root_domain."},
 	"host_default": {"pikpak", "When no host is specified, this host is used by default"},
 	"listen_http":  {":8080", "HTTP server listen address"},
 	"listen_https": {"", "HTTPS server listen address"},
@@ -83,6 +113,8 @@ func Load() error {
 		return err
 	}
 
+	log.WithField("root_domains", RootDomains()).Info("loaded root domain allowlist")
+
 	log.SetLevel(LogLevel())
 	log.SetFormatter(LogFormat(), LogPretty())
 	log.SetOutput(LogOutput(), &log.OutputOptions{
@@ -119,6 +151,12 @@ func loadConfig() error {
 		}
 	}
 	return nil
+}
+
+// GetConfigsForTest returns the package-level configs map. Test-only helper;
+// production code should not depend on this.
+func GetConfigsForTest() map[string]properties {
+	return configs
 }
 
 // Help get help messages.

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
-	"net/http/httputil"
+	nethttputil "net/http/httputil"
 	"net/url"
 	"os"
 	"os/signal"
@@ -26,6 +26,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/hosts"
 	"github.com/KeepShareOrg/keepshare/locale"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
+	"github.com/KeepShareOrg/keepshare/pkg/httputil"
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
 	q "github.com/KeepShareOrg/keepshare/pkg/queue"
@@ -185,7 +186,9 @@ func consoleRouter(router *gin.Engine) {
 			autoID, err := strconv.Atoi(c.Request.URL.Query().Get("id"))
 			if err == nil && slices.Contains(forbiddenAutoIDs, int(autoID)) {
 				requestID, _ := log.RequestIDFromContext(c.Request.Context())
-				c.Redirect(http.StatusFound, fmt.Sprintf("https://%s/console/shared/wsl-status?id=%d&request_id=%s", config.RootDomain(), autoID, requestID))
+				host := hostOrDefault(c.Request)
+				scheme := httputil.RequestScheme(c.Request)
+				c.Redirect(http.StatusFound, fmt.Sprintf("%s://%s/console/shared/wsl-status?id=%d&request_id=%s", scheme, host, autoID, requestID))
 				return
 			}
 		}
@@ -213,7 +216,7 @@ func consoleProxy() func(c *gin.Context) {
 	if strings.HasSuffix(proxyURL, "/") {
 		proxyURL = proxyURL[:len(proxyURL)-1]
 	}
-	handler := httputil.ReverseProxy{
+	handler := nethttputil.ReverseProxy{
 		Director: func(request *http.Request) {
 			link, _ := url.Parse(proxyURL + request.URL.Path + "?" + request.URL.RawQuery)
 			request.URL = link
