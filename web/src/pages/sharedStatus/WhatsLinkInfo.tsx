@@ -125,7 +125,7 @@ const WhatsLinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
               document.referrer && (
                 <Button
                   icon={<ArrowLeftOutlined />}
-                  onClick={() => window.history.back()}
+                  onClick={() => history.length > 1 ? history.go(-1): location.href=document.referrer}
                 >
                   {t('6Krkunr0j0BHryv1p8p7e')}
                 </Button>

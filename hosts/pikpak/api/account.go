@@ -7,6 +7,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"regexp"
 	"time"
 
@@ -235,7 +236,7 @@ func (api *API) signup(ctx context.Context, email, code, token, password, device
 		"password":           password,
 		"client_id":          webClientID,
 	})
-	body, err := resCli.R().
+	resp, err := resCli.R().
 		SetContext(ctx).
 		SetError(&r).
 		SetResult(&r).
@@ -265,13 +266,16 @@ func (api *API) signup(ctx context.Context, email, code, token, password, device
 		return nil, fmt.Errorf("signup err: %w", err)
 	}
 
-	log.WithContext(ctx).Debugf("signup resp body: %s", body.Body())
+	log.WithContext(ctx).Debugf("signup resp body: %s", resp.Body())
 
 	if err = r.Error(); err != nil {
 		return nil, fmt.Errorf("signup err: %w", err)
 	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("signup code err: %s", resp.Body())
+	}
 	if r.UserID == "" {
-		return nil, fmt.Errorf("signup got unexpected response: %s", body.Body())
+		return nil, fmt.Errorf("signup got unexpected response: %s", resp.Body())
 	}
 
 	return &UserInfo{
