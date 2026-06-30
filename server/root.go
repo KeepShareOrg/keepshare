@@ -25,6 +25,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/hosts"
 	"github.com/KeepShareOrg/keepshare/locale"
+	"github.com/KeepShareOrg/keepshare/pkg/forward"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	"github.com/KeepShareOrg/keepshare/pkg/httputil"
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
@@ -110,7 +111,21 @@ func Start() error {
 	asyncTaskRunner := NewAsyncTaskRunner()
 	go asyncTaskRunner.Run()
 	go asyncTaskRunner.ListenCompleteFiles()
-	return serveGraceful(srv)
+
+	// Master account email forwarder. Disabled by default; only starts a
+	// goroutine when forward_mails.enable is true.
+	forwardCtx, forwardCancel := context.WithCancel(context.Background())
+	defer forwardCancel()
+	if config.ForwardMailsEnable() {
+		log.WithField("monitor_url", config.ForwardMailsMonitorURL()).Info("[forward] listener starting")
+		go func() {
+			if err := forward.Run(forwardCtx, config.MySQL(), config.Redis(), config.Mailer()); err != nil {
+				log.WithError(err).Error("[forward] listener exited")
+			}
+		}()
+	}
+
+	return serveGraceful(srv, forwardCancel)
 }
 
 func sessionRouter(router *gin.Engine) {
@@ -246,7 +261,7 @@ func autoRouter(c *gin.Context) {
 	}
 }
 
-func serveGraceful(srv *http.Server) error {
+func serveGraceful(srv *http.Server, onShutdown func()) error {
 	errChan := make(chan error, 1)
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
@@ -276,6 +291,10 @@ func serveGraceful(srv *http.Server) error {
 		defer cancel()
 		if err := srv.Shutdown(ctx); err != nil {
 			log.Warn("shutdown server err:", err)
+		}
+
+		if onShutdown != nil {
+			onShutdown()
 		}
 
 		log.Warn("server stopped")

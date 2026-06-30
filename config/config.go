@@ -87,6 +87,10 @@ var configs = map[string]properties{
 	"db_redis":    {"redis://localhost:6379?dial_timeout=2s&read_timeout=2s&max_retries=2", "Redis url"},
 	"mail_server": {"http://localhost", "Mail server to receive and send emails"},
 
+	"forward_mails.enable":      {false, "Master switch for forwarding master-account emails"},
+	"forward_mails.monitor_url": {"", "WebSocket monitor endpoint; defaults to mail_server host with /api/v1/monitor/messages"},
+	"forward_mails.notice":      {"---------- Forwarded message ----------\nThis is an automatically forwarded message, not sent by KeepShare.\nFrom: <FROM>\nDate: <DATE>\nSubject: <SUBJECT>\nOriginal recipient (pikpak master account): <TO>\nPlease verify the original sender on your own.\n--------------------------------------\n", "Plain-text notice prepended to every forwarded body"},
+
 	"console_proxy_url": {"", "If not empty, all the `/console/*` requests will be proxy to this url, mainly used for local testing."},
 }
 

@@ -115,3 +115,39 @@ verify_code_expires: 10m
 
 # Verification code length
 verification_code_length: 6
+
+# Master account email forwarder: forward PikPak master-account-bound notification
+# emails (From = noreply@accounts.mypikpak.com) to each keepshare user's email.
+# Disabled by default; enable explicitly if you want to relay these emails.
+# See docs/forward.md for the operator guide.
+forward_mails:
+  # Master switch. When false, no goroutine is started and no SMTP traffic emitted.
+  enable: false
+
+  # WebSocket endpoint of the mail monitor service. When empty, the program
+  # derives the URL from `mail_server` (http->ws, https->wss) + path
+  # `/api/v1/monitor/messages`.
+  monitor_url: ""
+
+  # Notice prepended to every forwarded body. Supported tokens, substituted
+  # from the original message: `<FROM>` (sender), `<DATE>` (send time),
+  # `<SUBJECT>`, and `<TO>` (the PikPak master-account email so the recipient
+  # can identify which of their master accounts the notification is for).
+  notice: |
+    ---------- Forwarded message ----------
+    This is an automatically forwarded message, not sent by KeepShare.
+    From: <FROM>
+    Date: <DATE>
+    Subject: <SUBJECT>
+    Original recipient (pikpak master account): <TO>
+    Please verify the original sender on your own.
+    --------------------------------------
+
+  # Sender accounts for outgoing mail. Round-robin rotation; failed accounts
+  # are temporarily skipped (cooldown 5m) instead of being removed.
+  accounts: []
+  #  - username: "Forwarder No.1"
+  #    server: "smtp.gmail.com"
+  #    port: 587
+  #    email: "fwd1@gmail.com"
+  #    password: "..."
