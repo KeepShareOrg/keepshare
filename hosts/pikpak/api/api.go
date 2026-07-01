@@ -7,16 +7,17 @@ package api
 import (
 	"crypto/md5"
 	"fmt"
-	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
-	"github.com/KeepShareOrg/keepshare/pkg/log"
-	"github.com/samber/lo"
-	"gorm.io/gen"
-	"gorm.io/gorm/clause"
 	"math/rand"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
+	"github.com/KeepShareOrg/keepshare/pkg/log"
+	"github.com/samber/lo"
+	"gorm.io/gen"
+	"gorm.io/gorm/clause"
 
 	"github.com/KeepShareOrg/keepshare/hosts"
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/query"
@@ -27,8 +28,6 @@ import (
 
 // configs.
 const (
-	userServer     = "https://user.mypikpak.com"
-	apiServer      = "https://api-drive.mypikpak.com"
 	referralServer = "https://api-referral.mypikpak.com"
 	clientID       = "YNxT9w7GMdWvEOKa"
 	acceptLanguage = "en,en-US;q=0.9"
@@ -37,6 +36,11 @@ const (
 )
 
 var (
+	// userServer and apiServer can be overridden by `pikpak.user_server` and
+	// `pikpak.api_server` in the configuration file.
+	userServer = "https://user.mypikpak.com"
+	apiServer  = "https://api-drive.mypikpak.com"
+
 	deviceID  = "c858a46bfca5c5f61b1702ed6c303acb"
 	userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
 
@@ -70,6 +74,13 @@ func New(q *query.Query, d *hosts.Dependencies) *API {
 		q:            q,
 		Dependencies: d,
 		cache:        freecache.NewCache(50 * 1024 * 1024),
+	}
+
+	if v := viper.GetString("pikpak.user_server"); v != "" {
+		userServer = v
+	}
+	if v := viper.GetString("pikpak.api_server"); v != "" {
+		apiServer = v
 	}
 
 	if v := viper.GetString("pikpak.device_id"); v != "" {
