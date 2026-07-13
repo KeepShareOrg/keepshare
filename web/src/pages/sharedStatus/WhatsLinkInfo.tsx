@@ -3,13 +3,12 @@ import type {
   SharedLinkInfo,
 } from "@/api/link";
 import UnknownIcon from "@/assets/images/file-unknown.png";
-import { copyToClipboard, formatBytes } from "@/util";
-import { Button, Space, message, theme, Typography } from "antd";
+import { formatBytes } from "@/util";
+import { Button, Space, theme, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ResourceLink, WslBannerImage, WslBannerWrapper, WslInfoWrapper } from "./style";
-import { CopyOutlined, ArrowLeftOutlined } from "@ant-design/icons";
-import linkPngUrl from "@/assets/images/icon-link.png";
+import { WslBannerImage, WslBannerWrapper, WslInfoWrapper } from "./style";
+import { ArrowLeftOutlined } from "@ant-design/icons";
 import { getShareIcon } from "./LinkInfo";
 
 const { Text } = Typography;
@@ -31,21 +30,11 @@ const WhatsLinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
 
   const size = formatBytes((storage as number) || 0);
   const { token } = theme.useToken();
-  const link = fileInfo.original_link;
 
   const [shareIcon, setShareIcon] = useState(UnknownIcon);
   useEffect(() => {
     getShareIcon(fileInfo.fileType!).then(setShareIcon);
   }, [fileInfo]);
-
-  const handleCopyLink = () => {
-    try {
-      link && copyToClipboard(link);
-      message.success(t("xKhHo2JwfdzWgJXiJ0GeI"));
-    } catch {
-      message.error(t("aiCd4EgbrLDu4cdLlBy"));
-    }
-  };
 
   const [blocks, setBlocks] = useState<LinkInfoBlock[]>([
     "banner",
@@ -112,13 +101,7 @@ const WhatsLinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
             align="start"
             style={{ marginTop: token.marginLG, maxWidth: "680px" }}
           >
-            <img
-              src={linkPngUrl}
-              alt="link"
-              width="24"
-              style={{ marginTop: "5px" }}
-            />
-            <ResourceLink href={link}>{link}</ResourceLink>
+            <Text style={{fontSize: token.fontSizeXL}}>{t('sR8nK3mP5wL9xR2vB6jFa')}</Text>
           </Space>
           <Space style={{ marginTop: token.margin }}>
             {
@@ -131,13 +114,6 @@ const WhatsLinkInfo = ({ fileInfo, visibleBlocks }: LinkInfoInterface) => {
                 </Button>
               )
             }
-            <Button
-              type="primary"
-              icon={<CopyOutlined />}
-              onClick={handleCopyLink}
-            >
-              {t("fbWqi7mJuMCxEw3SwCf_0")}
-            </Button>
           </Space>
         </>
       )}
