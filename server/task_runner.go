@@ -116,18 +116,21 @@ func (r *AsyncTaskRunner) Run() {
 	}
 }
 
-// WalkDBTasksByState walk db tasks
+// WalkDBTasksByState repeatedly scans tasks in creation order using AutoID to break timestamp ties.
 func (r *AsyncTaskRunner) WalkDBTasksByState(ctx context.Context, states []string, fn func(tasks []*model.SharedLink) error) {
-	var currentAutoID int64 = 0
+	var currentCreatedAt time.Time
+	var currentAutoID int64
 
 	for {
-		ret, err := query.SharedLink.WithContext(ctx).
-			Where(
-				query.SharedLink.AutoID.Gt(currentAutoID),
-				query.SharedLink.State.In(states...),
-			).Order(query.SharedLink.AutoID).
-			Limit(1000).
-			Find()
+		t := query.SharedLink
+		stmt := t.WithContext(ctx).Where(t.State.In(states...))
+		if currentAutoID > 0 {
+			stmt = stmt.Where(
+				t.Where(t.CreatedAt.Gt(currentCreatedAt)).
+					Or(t.CreatedAt.Eq(currentCreatedAt), t.AutoID.Gt(currentAutoID)),
+			)
+		}
+		ret, err := stmt.Order(t.CreatedAt, t.AutoID).Limit(1000).Find()
 
 		if err != nil {
 			log.Errorf("query un complete task err: %v", err)
@@ -136,10 +139,13 @@ func (r *AsyncTaskRunner) WalkDBTasksByState(ctx context.Context, states []strin
 		}
 
 		if len(ret) <= 0 {
+			currentCreatedAt = time.Time{}
 			currentAutoID = 0
 			time.Sleep(time.Second)
 		} else {
-			currentAutoID = ret[len(ret)-1].AutoID
+			last := ret[len(ret)-1]
+			currentCreatedAt = last.CreatedAt
+			currentAutoID = last.AutoID
 		}
 
 		if err := fn(ret); err != nil {

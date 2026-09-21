@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS `pikpak_file`
 	UNIQUE KEY (`worker_user_id`, `original_link_hash`),
 	UNIQUE KEY (`unique_hash`),
 	KEY (`task_id`),
-	KEY (`status`, `updated_at`)
+	KEY (`status`, `updated_at`),
+    KEY (`status`, `worker_user_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_bin;
