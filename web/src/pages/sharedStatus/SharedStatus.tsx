@@ -69,6 +69,7 @@ const SharedStatus = () => {
       href={`https://mypikpak.com/drive/url-checker?url=${window.encodeURIComponent(
         link || "",
       )}`}
+      target="_blank"
       style={{ color: token.colorPrimary }}
     >
       {t("hDvGl13AlFfsLIi2jQ3xP")}
