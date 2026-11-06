@@ -97,6 +97,7 @@ func autoSharingLink(c *gin.Context) {
 		keyHostLink:     "error",
 		keyRedirectType: "error",
 		keyState:        "error",
+		"refer":         c.Request.Referer(),
 	})
 	defer report.Done()
 
