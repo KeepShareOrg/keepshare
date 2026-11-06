@@ -7,7 +7,8 @@ import {
   getLinkInfoFromWhatsLink,
   getSharedLinkInfo,
 } from "@/api/link";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { RoutePaths } from "@/router";
 import { getSupportLanguage } from "@/util";
 import useStore from "@/store";
 import { Trans, useTranslation } from "react-i18next";
@@ -52,12 +53,12 @@ const SharedStatus = () => {
 
   const [params] = useSearchParams();
 
-  const [requestId, setRequestId] = useState("");
+  const requestId = params.get("request_id") || "";
+  const navigate = useNavigate();
   const setThemeMode = useStore((state) => state.setThemeMode);
   // status page keep light mode
   useEffect(() => {
     setThemeMode("light");
-    setRequestId(params.get("request_id") || "");
   }, []);
 
   const { original_link: link } = fileInfo;
@@ -78,6 +79,32 @@ const SharedStatus = () => {
   const [status, setStatus] = useState<SharedLinkStatus>("PENDING");
   const { title, subtitle } = useStatusDescribeText(status, remoteDownload);
 
+  useEffect(() => {
+    if (!link) {
+      return;
+    }
+    let active = true;
+    getLinkInfoFromWhatsLink(link)
+      .then(({ data, error }) => {
+        if (!active || error || !data) {
+          return;
+        }
+        setFileInfo((current) => ({
+          ...current,
+          title: current.title || data.name,
+          size: current.size || data.size,
+          screenshot: data.screenshots?.[0]?.screenshot,
+          fileType: data.file_type || "unknown",
+        }));
+      })
+      .catch((err) => {
+        console.warn("get link info from whatslink error: ", err);
+      });
+    return () => {
+      active = false;
+    };
+  }, [link]);
+
   const MAX_LOOP_TIMES = 20;
   const [loopTimes, setLoopTimes] = useState(0);
   useEffect(() => {
@@ -88,29 +115,52 @@ const SharedStatus = () => {
 
     const isLoopEnd = loopTimes > MAX_LOOP_TIMES;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let active = true;
     // Get data from keepshare server, but the data may be incomplete (returned from PikPak)
     getSharedLinkInfo(autoId, requestId, isLoopEnd).then(
       ({ data: newFileInfo, error }) => {
+        if (!active) {
+          return;
+        }
         if (newFileInfo) {
+          if (newFileInfo.resource_only) {
+            active = false;
+            timer && clearTimeout(timer);
+            const search = new URLSearchParams({
+              id: autoId,
+              request_id: requestId,
+            });
+            navigate(
+              { pathname: RoutePaths.WhatsLinkStatus, search: `?${search}` },
+              { replace: true },
+            );
+            return;
+          }
           if (loopTimes <= MAX_LOOP_TIMES) {
             timer = setTimeout(() => {
-              setLoopTimes(loopTimes + 1);
-              timer && clearTimeout(timer);
+              timer = null;
+              if (active) {
+                setLoopTimes((times) => times + 1);
+              }
             }, 2000);
           }
 
           const newStatus = newFileInfo.state;
-          if (status === newStatus) {
-            return;
-          }
 
           const hostSharedLink = newFileInfo.host_shared_link;
           if (newStatus === "OK" && hostSharedLink) {
+            active = false;
             location.href = hostSharedLink;
             timer && clearTimeout(timer);
+            return;
           } else {
             setStatus(newStatus);
-            setFileInfo(Object.assign({}, fileInfo, newFileInfo));
+            setFileInfo((current) => ({
+              ...current,
+              ...newFileInfo,
+              title: newFileInfo.title || current.title,
+              size: newFileInfo.size || current.size,
+            }));
           }
 
           if (loopTimes === MAX_LOOP_TIMES) {
@@ -118,35 +168,14 @@ const SharedStatus = () => {
           }
         }
 
-        // Get data from whatsLink website
-        if (!error) {
-          getLinkInfoFromWhatsLink(newFileInfo?.original_link || "")
-            .then(({ data, error }) => {
-              try {
-                if (error) {
-                  return;
-                }
-                setFileInfo(
-                  Object.assign({}, newFileInfo, {
-                    title: fileInfo?.title || data?.name,
-                    size: fileInfo?.size || data?.size,
-                    screenshot: data?.screenshots?.[0]?.screenshot,
-                    fileType: data?.file_type || "unknown",
-                  }),
-                );
-              } catch (e) {
-                console.error("get link info error: ", e);
-              }
-            })
-            .catch((err) => {
-              console.warn("get link info from whatslink error: ", err);
-            });
-        }
-
         error && message.error(error.message);
       },
     );
-  }, [loopTimes]);
+    return () => {
+      active = false;
+      timer && clearTimeout(timer);
+    };
+  }, [loopTimes, params, navigate, requestId]);
 
   useEffect(() => {
     i18n.changeLanguage(getSupportLanguage());

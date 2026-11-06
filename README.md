@@ -16,6 +16,7 @@
       - [Build and Run](#build-and-run)
       - [Configuration](#configuration)
   - [Usage](#usage)
+  - [Global magnet blacklist](#global-magnet-blacklist)
 - [Documentation](#documentation)
 - [Supported file hosting providers](#supported-file-hosting-providers)
 - [Roadmap](#roadmap)
@@ -151,6 +152,49 @@ require MySQL create/drop-database privileges:
 KEEPSHARE_TEST_MYSQL_DSN='user:password@tcp(127.0.0.1:3306)/?parseTime=true' \
   go test ./server -run 'Test(LinkVisitorIPHash|RecordLinkVisit.*|LinkVisitsExistingInstallMigrationMySQL|LandingPageDocumentVisitsMySQL|ProxiedLandingPageVisitsMySQL)$'
 ```
+### Global magnet blacklist
+
+Operators with access to the service configuration and database can block a magnet across all users and channels. This is separate from each user's Link Blacklist. The commands use the existing `KS_DB_MYSQL` / `KS_DB_REDIS` environment variables or `./conf/config.yaml` / `/etc/keepshare/config.yaml`; they do not start the HTTP server or background workers.
+
+Deploy in this order:
+
+1. Build the frontend (`cd web && pnpm install --frozen-lockfile && pnpm run build`), then build the backend from the repository root (`go build -mod=mod -o keepshare .`).
+2. Before starting the new backend, create the additional table using its configured database:
+   ```sh
+   ./keepshare tables create keepshare_magnet_blacklist
+   ```
+   For an **existing** `pikpak_file` table, apply the key-width migration to the same database before deploying the backend:
+   ```sh
+   mysql --host=127.0.0.1 --user=keepshare --password keepshare < migrations/20261106_pikpak_file_unique_hash.sql
+   ```
+   Replace the connection options/database with the configured values. The migration preserves existing rows and indexes and widens `unique_hash` from 50 to 57 characters (16-character user ID + `:` + 40-character BTIH). Re-running it is safe; schedule the `ALTER TABLE` for an appropriate maintenance window because it can wait on table locks. Fresh installations use the new width automatically. `tables create` skips existing tables and does **not** apply this migration. Do not use `--drop-empty` for this deployment.
+3. Deploy the new backend and frontend to **all** instances before using the blacklist commands. Older instances do not enforce global blocks.
+4. Check a blocked resource through its auto-share URL, old status-page URL, and `/api/shared_link?id=...`; it must show resource information without returning a PikPak share URL. Also check an unblocked base32 magnet and a status page whose Whatslink lookup takes longer than a polling interval.
+
+```sh
+./keepshare magnet-blacklist add 'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567'
+./keepshare magnet-blacklist list
+./keepshare magnet-blacklist remove 'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567'
+```
+
+Quote the entire URI, including any `&dn=` or tracker parameters. BTIH hexadecimal/base32 encoding, letter case, display names, and trackers do not change the blocked resource. Invalid or conflicting BTIH topics are rejected before connecting to the database.
+
+All commands emit JSON on stdout and return a nonzero exit status on failure. `add` first persists the global block, then revokes matching native PikPak shares across accounts. It **does not delete cloud files**. Successful revocations clear local share URLs/status caches while preserving personal blocks and resource display records. The read-only resource page queries Whatslink, not PikPak.
+
+An `add` result can contain `local_blocked: true` and `error.code: "revocation_incomplete"`: local access is already blocked, but some native shares or cleanup operations failed. Inspect `remote.failures` (`worker_user_id`, `share_id`, and `stage`), restore the worker credentials or database/Redis availability, and run the same `add` again. It retries remaining mappings even if the magnet is already blocked. A `mapping` failure requires recovering the account/share mapping; the tool does not guess a worker or claim an untracked share was revoked. Preserve the failure output for that recovery.
+
+Revocation is not atomic with the remote service. An in-flight share creation is checked again on completion and compensated by revoking the new share; failed compensation remains discoverable for a repeated `add`. Already distributed native URLs remain usable until their remote revocation succeeds. Successful revocation is irreversible: `remove` only lifts the global block; it does not restore old share URLs, remove personal/channel restrictions, or change cloud files. Database errors fail closed rather than creating or disclosing a share.
+
+Native-share publication and revocation cleanup lock the same share mapping. A callback arriving after successful revocation cannot restore the old URL even if the global block has since been removed; a newly created native share can still complete after unblocking. Status polling and Whatslink metadata loading have separate lifetimes, so a slow metadata response is retained while polling continues.
+
+The MySQL migration/publication regressions use `KS_TEST_MYSQL_DSN` and create/drop uniquely named temporary databases; point this variable only at a disposable MySQL instance with `CREATE DATABASE` permission:
+```sh
+KS_TEST_MYSQL_DSN='root@tcp(127.0.0.1:3306)/keepshare?parseTime=True&loc=Local' \
+  go test -vet=off ./server -run 'Test(MagnetTaskKeyMigration|RevokedNativeShare|NativePublication)'
+```
+Without the variable, these database-dependent tests are skipped.
+
+Do not roll back to a backend that does not enforce the blacklist while any global blocks remain active. Deploy the table first: a missing table intentionally prevents magnet access instead of silently allowing it.
 
 ## Documentation
 

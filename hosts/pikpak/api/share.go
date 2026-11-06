@@ -15,15 +15,34 @@ import (
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
+	"github.com/KeepShareOrg/keepshare/pkg/magnetblock"
 	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/KeepShareOrg/keepshare/server/constant"
+	"gorm.io/gorm/clause"
+	"gorm.io/plugin/dbresolver"
 )
 
 // CreateShare create a sharing link by files.
 func (api *API) CreateShare(ctx context.Context, master string, worker string, fileID string) (sharedLink string, err error) {
+	var hashes []string
+	if err := api.Mysql.WithContext(ctx).Clauses(dbresolver.Write).Model(&model.File{}).
+		Where("worker_user_id = ? AND file_id = ?", worker, fileID).
+		Pluck("original_link_hash", &hashes).Error; err != nil {
+		return "", fmt.Errorf("get share source hashes: %w", err)
+	}
+	if len(hashes) == 0 {
+		return "", errors.New("share source file not found")
+	}
+	if err := api.checkShareHashes(ctx, hashes); err != nil {
+		return "", err
+	}
+
 	token, err := api.getToken(ctx, worker, false)
 	if err != nil {
+		return "", err
+	}
+	if err := api.checkShareHashes(ctx, hashes); err != nil {
 		return "", err
 	}
 
@@ -48,6 +67,9 @@ func (api *API) CreateShare(ctx context.Context, master string, worker string, f
 	if err != nil {
 		return "", fmt.Errorf("create share err: %w", err)
 	}
+	if !body.IsSuccess() {
+		return "", fmt.Errorf("create share failed: HTTP %d", body.StatusCode())
+	}
 
 	if err = e.Error(); err != nil {
 		// TODO token expired
@@ -58,9 +80,15 @@ func (api *API) CreateShare(ctx context.Context, master string, worker string, f
 		return "", fmt.Errorf("unexpected body: %s", body.Body())
 	}
 
-	id, _ := getShareIDFromLink(r.SharedLink)
+	id, err := ShareIDFromLink(r.SharedLink)
+	if err != nil {
+		return "", fmt.Errorf("create share returned an invalid URL: %w", err)
+	}
 
-	err = api.q.SharedLink.WithContext(ctx).Create(&model.SharedLink{
+	// The remote share must remain discoverable even when the caller is canceled.
+	cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+	defer cancel()
+	err = api.q.SharedLink.WithContext(cleanupCtx).Clauses(clause.OnConflict{DoNothing: true}).Create(&model.SharedLink{
 		ShareID:      id,
 		FileID:       fileID,
 		MasterUserID: master,
@@ -68,14 +96,17 @@ func (api *API) CreateShare(ctx context.Context, master string, worker string, f
 		CreatedAt:    time.Now(),
 	})
 	if err != nil {
-		return "", err
+		return "", api.discardCreatedShare(ctx, worker, id, fmt.Errorf("store created share mapping: %w", err))
+	}
+	if err := api.checkShareHashes(cleanupCtx, hashes); err != nil {
+		return "", api.discardCreatedShare(ctx, worker, id, err)
 	}
 	return r.SharedLink, nil
 }
 
 // GetShareStatus returns the statuses of the shared link.
 func (api *API) GetShareStatus(ctx context.Context, sharedLink string) (status share.State, worker string, err error) {
-	id, err := getShareIDFromLink(sharedLink)
+	id, err := ShareIDFromLink(sharedLink)
 	if err != nil {
 		return share.StatusUnknown, "", err
 	}
@@ -130,7 +161,7 @@ func (api *API) GetShareStatus(ctx context.Context, sharedLink string) (status s
 
 // GetStatistics returns the statistics of each shared links.
 func (api *API) GetStatistics(ctx context.Context, sharedLink string) (*share.Statistics, error) {
-	id, err := getShareIDFromLink(sharedLink)
+	id, err := ShareIDFromLink(sharedLink)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +231,8 @@ func (api *API) GetStatistics(ctx context.Context, sharedLink string) (*share.St
 	return st, nil
 }
 
-func getShareIDFromLink(link string) (id string, err error) {
+// ShareIDFromLink extracts the native share identity, excluding URL action parameters.
+func ShareIDFromLink(link string) (id string, err error) {
 	u, _ := url.Parse(link)
 	if u == nil || !strings.HasPrefix(u.Path, "/s/") {
 		return "", errors.New("invalid link")
@@ -214,15 +246,33 @@ func getShareIDFromLink(link string) (id string, err error) {
 	return id, nil
 }
 
-// DeleteShare create a sharing link by files.
+// DeleteShare revokes native shares and removes only their local share mappings.
 func (api *API) DeleteShare(ctx context.Context, worker string, shareIDs []string) error {
+	if len(shareIDs) == 0 {
+		return nil
+	}
+	if err := api.deleteShareRemote(ctx, worker, shareIDs); err != nil {
+		return err
+	}
+	_, err := api.q.SharedLink.WithContext(ctx).Where(
+		api.q.SharedLink.WorkerUserID.Eq(worker),
+		api.q.SharedLink.ShareID.In(shareIDs...),
+	).Delete()
+	if err != nil {
+		return fmt.Errorf("delete share from db err: %w", err)
+	}
+	return nil
+}
+
+func (api *API) deleteShareRemote(ctx context.Context, worker string, shareIDs []string) error {
 	if len(shareIDs) == 0 {
 		return nil
 	}
 
 	token, err := api.getToken(ctx, worker, false)
 	if err != nil {
-		return err
+		// Credential responses can contain tokens; do not include them in CLI errors.
+		return errors.New("worker credential lookup or refresh failed")
 	}
 
 	var e RespErr
@@ -230,16 +280,19 @@ func (api *API) DeleteShare(ctx context.Context, worker string, shareIDs []strin
 		SetContext(ctx).
 		SetAuthToken(token).
 		SetError(&e).
+		SetResult(&e).
 		SetBody(JSON{"ids": shareIDs}).
 		Post(apiURL("/drive/v1/share:batchDelete"))
 
 	if err != nil {
 		return fmt.Errorf("delete share from server err: %w", err)
 	}
+	if !body.IsSuccess() {
+		return fmt.Errorf("delete share failed: HTTP %d (code %d)", body.StatusCode(), e.ErrorCode)
+	}
 
-	if err = e.Error(); err != nil {
-		// TODO token expired
-		return fmt.Errorf("delete share from server err: %w", err)
+	if e.ErrorCode > 0 || e.Error() != nil {
+		return fmt.Errorf("delete share rejected (code %d)", e.ErrorCode)
 	}
 
 	if log.IsDebugEnabled() {
@@ -247,10 +300,6 @@ func (api *API) DeleteShare(ctx context.Context, worker string, shareIDs []strin
 			"worker":    worker,
 			"share_ids": shareIDs,
 		}).Debugf("delete share resp body: %s", body)
-	}
-	_, err = api.q.SharedLink.WithContext(ctx).Where(api.q.SharedLink.ShareID.In(shareIDs...)).Delete()
-	if err != nil {
-		return fmt.Errorf("delete share from db err: %w", err)
 	}
 	return nil
 }
@@ -277,4 +326,23 @@ func (api *API) DeleteShareByFileIDs(ctx context.Context, worker string, fileIDs
 		shareIDs = append(shareIDs, v.ShareID)
 	}
 	return api.DeleteShare(ctx, worker, shareIDs)
+}
+
+func (api *API) checkShareHashes(ctx context.Context, hashes []string) error {
+	blocked, err := magnetblock.FindBlocked(ctx, api.Mysql, hashes)
+	if err != nil {
+		return err
+	}
+	for _, hash := range hashes {
+		if blocked[hash] {
+			return magnetblock.ErrBlocked
+		}
+	}
+	return nil
+}
+
+func (api *API) discardCreatedShare(ctx context.Context, worker, id string, cause error) error {
+	cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+	defer cancel()
+	return errors.Join(cause, api.DeleteShare(cleanupCtx, worker, []string{id}))
 }

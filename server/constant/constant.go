@@ -57,7 +57,3 @@ const (
 	TaskQueuePikPak = "pikpak"
 	TaskTypePPTask  = "pp_task"
 )
-
-const (
-	IsShouldSkipCreateLink = "skip_create_link"
-)

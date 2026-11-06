@@ -16,6 +16,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
+	"github.com/KeepShareOrg/keepshare/pkg/magnetblock"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/hibiken/asynq"
 	"github.com/spf13/cast"
@@ -49,7 +50,11 @@ func (p *PikPak) Delete(ctx context.Context, userID string, originalLinks []stri
 	for _, l := range originalLinks {
 		l = strings.TrimSpace(l)
 		if l != "" {
-			hashes = append(hashes, lk.Hash(l))
+			if hash, err := magnetblock.Normalize(l); err == nil {
+				hashes = append(hashes, magnetblock.Aliases(hash)...)
+			} else {
+				hashes = append(hashes, lk.Hash(l))
+			}
 		}
 	}
 	if len(hashes) == 0 {

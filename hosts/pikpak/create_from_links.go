@@ -7,6 +7,7 @@ package pikpak
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,6 +23,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
+	"github.com/KeepShareOrg/keepshare/pkg/magnetblock"
 	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/samber/lo"
@@ -43,6 +45,14 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 			log.WithContext(ctx).Error("CreateFromLinks err:", err)
 		}
 	}()
+
+	for _, link := range originalLinks {
+		if blocked, checkErr := magnetblock.IsBlocked(ctx, p.Mysql, link); checkErr != nil {
+			return nil, checkErr
+		} else if blocked {
+			return nil, magnetblock.ErrBlocked
+		}
+	}
 
 	var newOriginalLinks []string
 	for _, v := range originalLinks {
@@ -69,9 +79,16 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 	hashToLink := make(map[string]string, len(originalLinks))
 	hashes := make([]string, 0, len(originalLinks))
 	for _, v := range originalLinks {
-		h := lk.Hash(v)
-		hashes = append(hashes, h)
-		hashToLink[h] = v
+		if hash, err := magnetblock.Normalize(v); err == nil {
+			for _, alias := range magnetblock.Aliases(hash) {
+				hashes = append(hashes, alias)
+				hashToLink[alias] = v
+			}
+		} else {
+			h := lk.Hash(v)
+			hashes = append(hashes, h)
+			hashToLink[h] = v
+		}
 	}
 
 	files, err := p.q.File.WithContext(ctx).Where(
@@ -136,7 +153,7 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 		file, err := p.createFromLink(ctx, master, link, size, []string{})
 		log.WithContext(ctx).Infof("CreateFromLinks  link:%+v,  file:%+v, err:%+v", link, file, err)
 		if err != nil {
-			return nil, fmt.Errorf("create from link error: %v, link: %s", err, link)
+			return nil, fmt.Errorf("create from link error: %w, link: %s", err, link)
 		}
 
 		linksStatusNotCompleted[link] = file
@@ -191,6 +208,15 @@ func (p *PikPak) CreateFromLinks(ctx context.Context, keepShareUserID string, or
 			sh.State = share.StatusSensitive
 		}
 		sharedLinks[originalLink] = sh
+	}
+
+	for _, link := range originalLinks {
+		if blocked, checkErr := magnetblock.IsBlocked(ctx, p.Mysql, link); checkErr != nil {
+			return nil, checkErr
+		} else if blocked {
+			_, revokeErr := p.api.RevokeMagnetShares(ctx, link)
+			return nil, errors.Join(magnetblock.ErrBlocked, revokeErr)
+		}
 	}
 
 	return sharedLinks, nil
@@ -262,6 +288,9 @@ func (p *PikPak) createFromLink(ctx context.Context, master *model.MasterAccount
 	log.Debugf("use worker: %v, account type: %v for link: %s", worker, workerAccountType, link)
 	file, err = p.api.CreateFilesFromLink(ctx, master.UserID, worker.UserID, link)
 	if err != nil {
+		if errors.Is(err, magnetblock.ErrBlocked) {
+			return nil, err
+		}
 		invalidUntil, match := getInvalidUntilByCreateLinkError(err, workerAccountType)
 		log.Debugf("match result %v: %v, invalidUntil: %v", worker.UserID, match, invalidUntil)
 		if match {

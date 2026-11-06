@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/pkg/httputil"
-	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"math/rand"
 	"net/http"
@@ -80,7 +79,12 @@ func getOriginalLinks(src []string) (original, invalid []string) {
 			raw = link
 		}
 
-		original = append(original, lk.Simplify(raw))
+		simple, _, ok := validateLink(raw)
+		if !ok {
+			invalid = append(invalid, raw)
+			continue
+		}
+		original = append(original, simple)
 	}
 	return
 }

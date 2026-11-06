@@ -17,6 +17,7 @@ export interface SharedLinkInfo {
   auto_id: number;
   user_id: string;
   state: SharedLinkStatus;
+  resource_only?: boolean;
   host: string;
   created_by: string;
   created_at: string;
@@ -94,10 +95,21 @@ export const createShareLink = (links: string[]) => {
 };
 
 // get shared link info by auto id
-export const getSharedLinkInfo = (id: string, requestId: string, isEnd: boolean) => {
+export const getSharedLinkInfo = (
+  id: string,
+  requestId: string,
+  isEnd: boolean,
+  infoOnly = false,
+) => {
+  const params = new URLSearchParams({
+    id,
+    request_id: requestId,
+    is_end: String(isEnd),
+    info_only: String(infoOnly),
+  });
   return axiosWrapper<SharedLinkInfo>({
     method: "GET",
-    url: `/api/shared_link?id=${id}&request_id=${requestId}&is_end=${isEnd}`,
+    url: `/api/shared_link?${params.toString()}`,
   });
 };
 

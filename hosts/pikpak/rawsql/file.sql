@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `pikpak_file`
 	`created_at`         datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at`         datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`original_link_hash` char(40)     NOT NULL,
-	`unique_hash`        char(50)     NOT NULL COMMENT "format: keepshare_uid:original_link_hash",
+	`unique_hash`        char(57)     NOT NULL COMMENT "format: keepshare_uid:original_link_hash",
 	`error`              text,
 	PRIMARY KEY (`auto_id`),
 	UNIQUE KEY (`master_user_id`, `original_link_hash`),

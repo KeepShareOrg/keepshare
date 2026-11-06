@@ -16,6 +16,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
+	"github.com/KeepShareOrg/keepshare/pkg/magnetblock"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"gorm.io/gen"
 	"gorm.io/gorm/clause"
@@ -53,6 +54,11 @@ func (t *fileTask) toFile(keepshareUserID, master, worker, link string) *model.F
 		status = comm.StatusRunning // make sure all not finished files are running
 	}
 
+	originalHash := lk.Hash(link)
+	if hash, err := magnetblock.Normalize(link); err == nil {
+		originalHash = hash
+	}
+
 	now := time.Now()
 	f := &model.File{
 		MasterUserID:     master,
@@ -65,8 +71,8 @@ func (t *fileTask) toFile(keepshareUserID, master, worker, link string) *model.F
 		Name:             t.FileName,
 		CreatedAt:        now,
 		UpdatedAt:        now,
-		OriginalLinkHash: lk.Hash(link),
-		UniqueHash:       fmt.Sprintf("%s:%s", keepshareUserID, lk.Hash(link)),
+		OriginalLinkHash: originalHash,
+		UniqueHash:       fmt.Sprintf("%s:%s", keepshareUserID, originalHash),
 	}
 	if t.Status == comm.StatusError {
 		f.Error = t.Message
@@ -88,6 +94,12 @@ func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link st
 		}
 	}()
 
+	if blocked, checkErr := magnetblock.IsBlocked(ctx, api.Mysql, link); checkErr != nil {
+		return nil, checkErr
+	} else if blocked {
+		return nil, magnetblock.ErrBlocked
+	}
+
 	token, err := api.getToken(ctx, worker, false)
 	if err != nil {
 		return nil, fmt.Errorf("get token err: %w", err)
@@ -96,6 +108,12 @@ func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link st
 	var e RespErr
 	var r struct {
 		Task fileTask `json:"task"`
+	}
+
+	if blocked, checkErr := magnetblock.IsBlocked(ctx, api.Mysql, link); checkErr != nil {
+		return nil, checkErr
+	} else if blocked {
+		return nil, magnetblock.ErrBlocked
 	}
 
 	requestID := uuid.New().String()
@@ -140,6 +158,12 @@ func (api *API) CreateFilesFromLink(ctx context.Context, master, worker, link st
 	// file_id may be empty.
 	if err = api.q.File.WithContext(ctx).Clauses(clause.OnConflict{UpdateAll: true}).Create(file); err != nil {
 		return nil, err
+	}
+
+	if blocked, checkErr := magnetblock.IsBlocked(ctx, api.Mysql, link); checkErr != nil {
+		return nil, checkErr
+	} else if blocked {
+		return nil, magnetblock.ErrBlocked
 	}
 
 	return file, nil

@@ -119,7 +119,7 @@ func addToBlackList(c *gin.Context) {
 			CreatedAt:        now,
 		}
 		rows = append(rows, r)
-		hashes = append(hashes, r.OriginalLinkHash)
+		hashes = append(hashes, resourceHashAliases(v)...)
 	}
 
 	ctx := c.Request.Context()
@@ -198,7 +198,7 @@ func removeFromBlackList(c *gin.Context) {
 
 	hashes := make([]string, 0, len(original))
 	for _, v := range original {
-		hashes = append(hashes, lk.Hash(v))
+		hashes = append(hashes, resourceHashAliases(v)...)
 	}
 
 	ctx := c.Request.Context()

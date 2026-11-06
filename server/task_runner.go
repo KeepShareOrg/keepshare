@@ -10,7 +10,9 @@ import (
 	"github.com/KeepShareOrg/keepshare/hosts"
 	pm "github.com/KeepShareOrg/keepshare/hosts/pikpak/model"
 	pq "github.com/KeepShareOrg/keepshare/hosts/pikpak/query"
+	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
+	"github.com/KeepShareOrg/keepshare/pkg/magnetblock"
 	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	"github.com/KeepShareOrg/keepshare/server/model"
@@ -57,6 +59,24 @@ func (r *AsyncTaskRunner) Run() {
 			// just handle pending task, create status have limit conidtion
 			share.StatusPending.String(),
 		}, func(tasks []*model.SharedLink) error {
+			hashes := make([]string, 0, len(tasks))
+			for _, task := range tasks {
+				hashes = append(hashes, task.OriginalLinkHash)
+			}
+			blocked, err := magnetblock.FindBlocked(ctx, config.MySQL(), hashes)
+			if err != nil {
+				return err
+			}
+			allowed := tasks[:0]
+			for _, task := range tasks {
+				if !blocked[task.OriginalLinkHash] {
+					allowed = append(allowed, task)
+				}
+			}
+			tasks = allowed
+			if len(tasks) == 0 {
+				return nil
+			}
 			// update by unique_hash
 			pp := pq.Use(config.MySQL())
 			uniqueHashes := make([]string, 0, len(tasks))
@@ -161,6 +181,13 @@ func (r *AsyncTaskRunner) handleCompleteUniqueTasks(ctx context.Context, files [
 	host := hosts.Get(config.DefaultHost())
 
 	for _, v := range files {
+		blocked, err := magnetblock.IsHashBlocked(ctx, config.MySQL(), v.OriginalLinkHash)
+		if err != nil {
+			return err
+		}
+		if blocked {
+			continue
+		}
 		ok, err := config.Redis().SetNX(ctx, fmt.Sprintf("cs_%s", v.UniqueHash), 1, time.Minute).Result()
 		if err != nil {
 			log.Errorf("set cs_%s error: %v", v.UniqueHash, err)
@@ -185,16 +212,12 @@ func (r *AsyncTaskRunner) handleCompleteUniqueTasks(ctx context.Context, files [
 		}
 
 		uid, ohs := strings.Split(v.UniqueHash, ":")[0], v.OriginalLinkHash
-		if _, err := query.SharedLink.WithContext(ctx).
-			Where(
-				query.SharedLink.UserID.Eq(uid),
-				query.SharedLink.OriginalLinkHash.Eq(ohs),
-			).
-			Updates(&model.SharedLink{
-				State:          share.StatusOK.String(),
-				HostSharedLink: sharedLink,
-				UpdatedAt:      time.Now(),
-			}); err != nil {
+		if err := updateSharedLink(config.MySQL().WithContext(ctx), uid, host.Name(), ohs, &model.SharedLink{
+			State:              share.StatusOK.String(),
+			HostSharedLink:     sharedLink,
+			HostSharedLinkHash: lk.Hash(sharedLink),
+			UpdatedAt:          time.Now(),
+		}); err != nil {
 			log.Errorf("update keepshare_shared_link state error: %v", err)
 			continue
 		}
@@ -214,7 +237,7 @@ func (r *AsyncTaskRunner) handleErrorUniqueHashes(ctx context.Context, hashes []
 		return []string{uid, ohs}
 	})
 
-	_, err := query.SharedLink.WithContext(ctx).Where(
+	_, err := query.SharedLink.WithContext(ctx).Where(query.SharedLink.State.Neq(share.StatusBlocked.String())).Where(
 		query.SharedLink.WithContext(ctx).
 			Columns(query.SharedLink.UserID, query.SharedLink.OriginalLinkHash).
 			In(field.Values(tupleConditions)),
@@ -237,6 +260,14 @@ func (r *AsyncTaskRunner) createNotExistsHostTasks(ctx context.Context, tasks ch
 
 	for ksl := range tasks {
 		eg.Go(func() error {
+			blocked, err := magnetblock.IsBlocked(ctx, config.MySQL(), ksl.OriginalLink)
+			if err != nil {
+				log.Errorf("check magnet blacklist: %v", err)
+				return err
+			}
+			if blocked {
+				return nil
+			}
 			rdsKey := fmt.Sprintf("create_not_exists_%s:%s", ksl.UserID, ksl.OriginalLinkHash)
 			if ok, _ := config.Redis().SetNX(ctx, rdsKey, 1, time.Minute).Result(); !ok {
 				log.Infof("create not exists task is handling by other: %s", ksl.OriginalLink)
@@ -258,13 +289,12 @@ func (r *AsyncTaskRunner) createNotExistsHostTasks(ctx context.Context, tasks ch
 
 				log.Errorf("create share from links err: %v", err)
 
-				if _, err = query.SharedLink.WithContext(ctx).
-					Where(query.SharedLink.AutoID.Eq(ksl.AutoID)).
+				if err = writableSharedLinks(config.MySQL().WithContext(ctx), ksl.UserID, ksl.Host, ksl.OriginalLinkHash).
 					Updates(&model.SharedLink{
 						State:     share.StatusError.String(),
 						Error:     err.Error(),
 						UpdatedAt: time.Now(),
-					}); err != nil {
+					}).Error; err != nil {
 					log.Errorf("update keepshare_shared_link state error: %v", err)
 				}
 			} else {
@@ -272,14 +302,14 @@ func (r *AsyncTaskRunner) createNotExistsHostTasks(ctx context.Context, tasks ch
 				// update keepshare shared link info
 				sh, ok := sharedLinks[ksl.OriginalLink]
 				if ok {
-					if _, err = query.SharedLink.WithContext(ctx).
-						Where(query.SharedLink.AutoID.Eq(ksl.AutoID)).
-						Updates(&model.SharedLink{
-							State:     sh.State.String(),
-							Title:     sh.Title,
-							Size:      sh.Size,
-							UpdatedAt: time.Now(),
-						}); err != nil {
+					if err = updateSharedLink(config.MySQL().WithContext(ctx), ksl.UserID, ksl.Host, ksl.OriginalLinkHash, &model.SharedLink{
+						State:              sh.State.String(),
+						Title:              sh.Title,
+						Size:               sh.Size,
+						HostSharedLink:     sh.HostSharedLink,
+						HostSharedLinkHash: lk.Hash(sh.HostSharedLink),
+						UpdatedAt:          time.Now(),
+					}); err != nil {
 						log.Errorf("update keepshare_shared_link state error: %v", err)
 					}
 				}

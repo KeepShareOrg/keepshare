@@ -27,9 +27,9 @@ import (
 	"github.com/KeepShareOrg/keepshare/locale"
 	"github.com/KeepShareOrg/keepshare/pkg/forward"
 	"github.com/KeepShareOrg/keepshare/pkg/gormutil"
-	"github.com/KeepShareOrg/keepshare/pkg/httputil"
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
+	"github.com/KeepShareOrg/keepshare/pkg/magnetblock"
 	q "github.com/KeepShareOrg/keepshare/pkg/queue"
 	mdw "github.com/KeepShareOrg/keepshare/server/middleware"
 	"github.com/KeepShareOrg/keepshare/server/query"
@@ -175,8 +175,9 @@ func apiRouter(router *gin.Engine) {
 }
 
 func consoleRouter(router *gin.Engine) {
+	console := router.Group("/console", redirectBlockedStatus)
 	if config.ConsoleProxyURL() != "" {
-		router.GET("/console/*path", recordLandingPageVisit(config.MySQL()), consoleProxy())
+		console.GET("/*path", recordLandingPageVisit(config.MySQL()), consoleProxy())
 		return
 	}
 
@@ -193,20 +194,9 @@ func consoleRouter(router *gin.Engine) {
 		panic(err)
 	}
 
-	router.GET("/console/*path", recordLandingPageVisit(config.MySQL()), func(c *gin.Context) {
+	console.GET("/*path", recordLandingPageVisit(config.MySQL()), func(c *gin.Context) {
 		path := c.Request.URL.Path
 		c.Set(mdw.SkipAccessLog, false)
-		if c.Request.URL.Path == "/console/shared/status" {
-			forbiddenAutoIDs := viper.GetIntSlice("forbidden_auto_id")
-			autoID, err := strconv.Atoi(c.Request.URL.Query().Get("id"))
-			if err == nil && slices.Contains(forbiddenAutoIDs, int(autoID)) {
-				requestID, _ := log.RequestIDFromContext(c.Request.Context())
-				host := hostOrDefault(c.Request)
-				scheme := httputil.RequestScheme(c.Request)
-				c.Redirect(http.StatusFound, fmt.Sprintf("%s://%s/console/shared/wsl-status?id=%d&request_id=%s", scheme, host, autoID, requestID))
-				return
-			}
-		}
 
 		switch {
 		case strings.HasPrefix(path, "/console/assets"):
@@ -222,6 +212,43 @@ func consoleRouter(router *gin.Engine) {
 			c.Data(http.StatusOK, "text/html", indexPage)
 		}
 	})
+}
+
+func redirectBlockedStatus(c *gin.Context) {
+	if c.Request.URL.Path != "/console/shared/status" {
+		return
+	}
+	autoID, err := strconv.ParseInt(c.Query("id"), 10, 64)
+	if err != nil {
+		return
+	}
+	resourceOnly := slices.Contains(viper.GetIntSlice("forbidden_auto_id"), int(autoID))
+	if !resourceOnly {
+		record, err := query.SharedLink.WithContext(c.Request.Context()).
+			Where(query.SharedLink.AutoID.Eq(autoID)).Take()
+		if gormutil.IsNotFoundError(err) {
+			return
+		}
+		if err != nil {
+			mdw.RespInternal(c, err.Error())
+			c.Abort()
+			return
+		}
+		resourceOnly, err = magnetblock.IsBlocked(c.Request.Context(), config.MySQL(), record.OriginalLink)
+		if err != nil {
+			mdw.RespInternal(c, err.Error())
+			c.Abort()
+			return
+		}
+	}
+	if resourceOnly {
+		requestID := c.Query("request_id")
+		if requestID == "" {
+			requestID, _ = log.RequestIDFromContext(c.Request.Context())
+		}
+		c.Redirect(http.StatusFound, statusPageURL("wsl-status", autoID, requestID))
+		c.Abort()
+	}
 }
 
 var mockViteContentType = regexp.MustCompile(`(?i)\.(json|png)`)

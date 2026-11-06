@@ -12,6 +12,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/hosts"
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
+	"github.com/KeepShareOrg/keepshare/pkg/magnetblock"
 	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/KeepShareOrg/keepshare/server/constant"
@@ -51,6 +52,20 @@ func createSharedLinks(c *gin.Context) {
 			links = append(links, simple)
 		}
 	}
+	if len(links) == 0 {
+		c.JSON(http.StatusBadRequest, mdw.ErrResp(c, "links_is_empty"))
+		return
+	}
+	hashes := make([]string, 0, len(links))
+	for _, link := range links {
+		hashes = append(hashes, lk.Hash(link))
+	}
+	ctx := c.Request.Context()
+	blocked, err := magnetblock.FindBlocked(ctx, config.MySQL(), hashes)
+	if err != nil {
+		mdw.RespInternal(c, err.Error())
+		return
+	}
 
 	userID := c.GetString(constant.UserID)
 	tasks := make([]*model.SharedLink, 0)
@@ -69,18 +84,25 @@ func createSharedLinks(c *gin.Context) {
 			HostSharedLink:     "",
 		}
 		tasks = append(tasks, t)
+		if blocked[t.OriginalLinkHash] {
+			t.State = share.StatusCreated.String()
+		}
 	}
 
-	ctx := c.Request.Context()
 	if err := query.SharedLink.WithContext(ctx).
 		Clauses(clause.Insert{Modifier: "IGNORE"}).
 		Create(tasks...); err != nil {
 		mdw.RespInternal(c, err.Error())
 		return
 	}
+	responses, err := sharedLinkResponses(ctx, tasks, false)
+	if err != nil {
+		mdw.RespInternal(c, err.Error())
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "ok",
-		"links":   tasks,
+		"links":   responses,
 	})
 }

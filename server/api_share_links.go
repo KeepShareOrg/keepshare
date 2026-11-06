@@ -21,6 +21,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
+	"github.com/KeepShareOrg/keepshare/pkg/magnetblock"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/KeepShareOrg/keepshare/server/constant"
 	mdw "github.com/KeepShareOrg/keepshare/server/middleware"
@@ -78,13 +79,10 @@ func listSharedLinks(c *gin.Context) {
 		return
 	}
 
-	if len(ret) > 0 {
-		hashes := make([]string, 0, len(ret))
-		for _, v := range ret {
-			hashes = append(hashes, v.OriginalLinkHash)
-		}
-		t := query.Blacklist
-		t.WithContext(ctx).Where(t.UserID.Eq(userID), t.OriginalLinkHash.In(hashes...))
+	responses, err := sharedLinkResponses(ctx, ret, false)
+	if err != nil {
+		mdw.RespInternal(c, err.Error())
+		return
 	}
 
 	log.WithContext(ctx).WithField("shared_records", ret).Debugf("condition query result")
@@ -92,7 +90,7 @@ func listSharedLinks(c *gin.Context) {
 	c.JSON(http.StatusOK, Map{
 		"total":     total,
 		"page_size": len(ret),
-		"list":      ret,
+		"list":      responses,
 	})
 }
 
@@ -130,6 +128,18 @@ func querySharedLinkInfo(c *gin.Context) {
 		return
 	}
 
+	responses, err := sharedLinkResponses(ctx, []*model.SharedLink{res}, c.Query("info_only") == "true")
+	if err != nil {
+		report.Set(constant.Error, err)
+		mdw.RespInternal(c, err.Error())
+		return
+	}
+	response := responses[0]
+	if response.ResourceOnly || res.State == share.StatusBlocked.String() {
+		c.JSON(http.StatusOK, response)
+		return
+	}
+
 	report.Sets(Map{
 		constant.UserID: res.UserID,
 		constant.Link:   res.OriginalLink,
@@ -146,31 +156,47 @@ func querySharedLinkInfo(c *gin.Context) {
 		})
 		res.HostSharedLink = hostLink
 	}
-	go manualQueryFileStatus(context.Background(), res, c.ClientIP())
+	if res.State != share.StatusOK.String() {
+		go manualQueryFileStatus(context.Background(), res, c.ClientIP())
+	}
 
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, response)
 }
 
 func manualQueryFileStatus(ctx context.Context, sharedLink *model.SharedLink, ip string) {
-	if sharedLink == nil || sharedLink.State == share.StatusOK.String() {
+	if sharedLink == nil || sharedLink.State == share.StatusOK.String() || sharedLink.State == share.StatusBlocked.String() {
+		return
+	}
+	blocked, err := magnetblock.IsBlocked(ctx, config.MySQL(), sharedLink.OriginalLink)
+	if err != nil {
+		log.Errorf("check magnet blacklist: %v", err)
+		return
+	}
+	if blocked {
 		return
 	}
 	if ok, _ := config.Redis().SetNX(ctx, fmt.Sprintf("manual_query:%v", sharedLink.OriginalLink), 1, time.Second*20).Result(); !ok {
 		return
 	}
-	host := hosts.Get(config.DefaultHost())
-	sharedLinks, err := host.CreateFromLinks(context.Background(), sharedLink.UserID, []string{sharedLink.OriginalLink}, sharedLink.CreatedBy, ip)
+	host := hosts.Get(sharedLink.Host)
+	if host == nil {
+		return
+	}
+	sharedLinks, err := host.CreateFromLinks(ctx, sharedLink.UserID, []string{sharedLink.OriginalLink}, sharedLink.CreatedBy, ip)
 	if err != nil {
 		log.Errorf("shared links still not ok: %v", err)
 		return
 	}
 	log.Debugf("complete shared links: %#v", sharedLinks)
 	if v, ok := sharedLinks[sharedLink.OriginalLink]; ok && v.State == share.StatusOK {
-		query.SharedLink.WithContext(ctx).Where(query.SharedLink.AutoID.Eq(sharedLink.AutoID)).Updates(&model.SharedLink{
-			State:          share.StatusOK.String(),
-			HostSharedLink: v.HostSharedLink,
-			UpdatedAt:      time.Now(),
-		})
+		if err := updateSharedLink(config.MySQL().WithContext(ctx), sharedLink.UserID, sharedLink.Host, sharedLink.OriginalLinkHash, &model.SharedLink{
+			State:              share.StatusOK.String(),
+			HostSharedLink:     v.HostSharedLink,
+			HostSharedLinkHash: lk.Hash(v.HostSharedLink),
+			UpdatedAt:          time.Now(),
+		}); err != nil {
+			log.Errorf("update queried share: %v", err)
+		}
 	}
 }
 
@@ -193,7 +219,7 @@ func batchQuerySharedLinksInfo(c *gin.Context) {
 
 	hashes := make([]string, 0)
 	for _, link := range req.Links {
-		hashes = append(hashes, lk.Hash(link))
+		hashes = append(hashes, resourceHashAliases(link)...)
 	}
 
 	userID := c.GetString(constant.UserID)
@@ -202,14 +228,19 @@ func batchQuerySharedLinksInfo(c *gin.Context) {
 		query.SharedLink.UserID.Eq(userID),
 	}
 
-	ret, err := query.SharedLink.Where(conditions...).Find()
+	ret, err := query.SharedLink.WithContext(c.Request.Context()).Where(conditions...).Find()
+	if err != nil {
+		mdw.RespInternal(c, err.Error())
+		return
+	}
+	responses, err := sharedLinkResponses(c.Request.Context(), ret, false)
 	if err != nil {
 		mdw.RespInternal(c, err.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"list": ret,
+		"list": responses,
 	})
 }
 
@@ -532,7 +563,7 @@ func deleteSharedLinksWithHost(ctx context.Context, userID string, host hosts.Ho
 
 	hashes := make([]string, 0, len(original))
 	for _, link := range original {
-		hashes = append(hashes, lk.Hash(link))
+		hashes = append(hashes, resourceHashAliases(link)...)
 	}
 
 	conditions := []gen.Condition{

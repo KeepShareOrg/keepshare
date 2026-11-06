@@ -70,6 +70,16 @@ type API struct {
 
 // New returns server api instance.
 func New(q *query.Query, d *hosts.Dependencies) *API {
+	api := NewMaintenance(q, d)
+
+	autoUpdateCreateLinkLimitOptions(api, q)
+	autoGetCreateLinkLimitOptions(api, q)
+	go api.updatePremiumExpirationBackground()
+	return api
+}
+
+// NewMaintenance returns an API without account maintenance or background tasks.
+func NewMaintenance(q *query.Query, d *hosts.Dependencies) *API {
 	api := &API{
 		q:            q,
 		Dependencies: d,
@@ -92,9 +102,6 @@ func New(q *query.Query, d *hosts.Dependencies) *API {
 		resCli = resCli.SetHeader("User-Agent", userAgent)
 	}
 
-	autoUpdateCreateLinkLimitOptions(api, q)
-	autoGetCreateLinkLimitOptions(api, q)
-	go api.updatePremiumExpirationBackground()
 	return api
 }
 

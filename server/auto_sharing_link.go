@@ -28,6 +28,7 @@ import (
 	"github.com/KeepShareOrg/keepshare/pkg/i18n"
 	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
+	"github.com/KeepShareOrg/keepshare/pkg/magnetblock"
 	"github.com/KeepShareOrg/keepshare/pkg/share"
 	"github.com/KeepShareOrg/keepshare/pkg/util"
 	"github.com/KeepShareOrg/keepshare/server/constant"
@@ -101,25 +102,25 @@ func autoSharingLink(c *gin.Context) {
 	})
 	defer report.Done()
 
-	shouldSkipCreateLink := false
-	if c.Query("wsl") != "" {
-		shouldSkipCreateLink = true
+	blocked, err := magnetblock.IsBlocked(ctx, config.MySQL(), linkRaw)
+	if err != nil {
+		mdw.RespInternal(c, err.Error())
+		return
 	}
-	warningChannels := viper.GetStringSlice("warning_channels")
-	if warningChannels != nil {
-		log.Debugf("warning channels: %v", channel)
-		shouldSkipCreateLink = slices.Contains(warningChannels, channel)
-	}
-
+	shouldSkipCreateLink := blocked || c.Query("wsl") != "" ||
+		slices.Contains(viper.GetStringSlice("warning_channels"), channel)
 	l := log.WithContext(ctx)
-	// if the channel and the link are warning, forbid to create shared link
-	hitForbidden := checkForbiddenRules(ctx, channel, link)
-	if hitForbidden {
+	if !shouldSkipCreateLink && checkForbiddenRules(ctx, channel, linkRaw) {
 		shouldSkipCreateLink = true
 	}
 
-	ctx = context.WithValue(ctx, constant.IsShouldSkipCreateLink, shouldSkipCreateLink)
-	sh, lastState, err := createShareLinkIfNotExist(ctx, user.ID, host, link, share.AutoShare, c.ClientIP())
+	var sh *model.SharedLink
+	var lastState share.State
+	if shouldSkipCreateLink {
+		sh, err = resourceSharedLink(ctx, user.ID, hostName, linkRaw)
+	} else {
+		sh, lastState, err = createShareLinkIfNotExist(ctx, user.ID, host, linkRaw, share.AutoShare, c.ClientIP())
+	}
 	if err != nil {
 		report.Set(constant.Error, err.Error())
 		mdw.RespInternal(c, err.Error())
@@ -130,10 +131,13 @@ func autoSharingLink(c *gin.Context) {
 	l = l.WithFields(Map{constant.SharedLink: sh.HostSharedLink, constant.ShareStatus: sh.State})
 
 	if !shouldSkipCreateLink {
-		forbiddenAutoIDs := viper.GetIntSlice("forbidden_auto_id")
-		if slices.Contains(forbiddenAutoIDs, int(sh.AutoID)) {
-			shouldSkipCreateLink = true
+		// Recheck before publishing an existing URL; a ban may have arrived during the host lookup.
+		blocked, err = magnetblock.IsBlocked(ctx, config.MySQL(), linkRaw)
+		if err != nil {
+			mdw.RespInternal(c, err.Error())
+			return
 		}
+		shouldSkipCreateLink = blocked || slices.Contains(viper.GetIntSlice("forbidden_auto_id"), int(sh.AutoID))
 	}
 
 	// if the link refer to the warning channel id, we need redirect to the whatslink info page
@@ -308,7 +312,8 @@ func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.H
 	var sh *model.SharedLink
 	sh, err = query.SharedLink.WithContext(ctx).Where(
 		query.SharedLink.UserID.Eq(userID),
-		query.SharedLink.OriginalLinkHash.Eq(linkHash),
+		query.SharedLink.OriginalLinkHash.In(resourceHashAliases(linkRaw)...),
+		query.SharedLink.Host.Eq(host.Name()),
 	).Take()
 	if err != nil && !gormutil.IsNotFoundError(err) {
 		return nil, "", fmt.Errorf("query shared link error: %w", err)
@@ -316,6 +321,9 @@ func createShareLinkIfNotExist(ctx context.Context, userID string, host *hosts.H
 
 	lastStatus = share.StatusNotFound
 	if sh != nil {
+		if slices.Contains(viper.GetIntSlice("forbidden_auto_id"), int(sh.AutoID)) {
+			return sh, share.State(sh.State), nil
+		}
 		lastStatus = getShareStatus(ctx, userID, host, sh)
 		go updateVisitTimeAndState(ctx, sh, lastStatus)
 		switch lastStatus {
@@ -352,8 +360,8 @@ func getChannelAndLinkFromURL(u *url.URL) (channel, link string, ok bool) {
 	}
 
 	// compatible for not url encoded magnet
-	if link == "magnet:" {
-		link = link + "?xt=" + u.Query().Get("xt")
+	if strings.EqualFold(link, "magnet:") {
+		link += "?" + u.RawQuery
 	}
 
 	u, err := url.Parse(link)
@@ -382,6 +390,13 @@ func validateLink(link string) (simple string, hash string, ok bool) {
 	u, _ := url.Parse(link)
 	if u == nil || u.Scheme == "" {
 		return "", "", false
+	}
+	if strings.EqualFold(u.Scheme, "magnet") {
+		canonical, err := magnetblock.Normalize(link)
+		if err != nil {
+			return "", "", false
+		}
+		return "magnet:?xt=urn:btih:" + canonical, canonical, true
 	}
 
 	simple = lk.Simplify(link)
@@ -424,10 +439,6 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 	}
 	log.WithContext(ctx).WithField("shared_record", s).Info("create shared record done")
 
-	skipCreateLink := ctx.Value(constant.IsShouldSkipCreateLink)
-	if skipCreateLink == true {
-		return s, nil
-	}
 	go func() {
 		ctx = context.Background()
 		sharedLinks, err := host.CreateFromLinks(ctx, userID, []string{link}, createBy, ip)
@@ -455,9 +466,8 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 			Error:              sh.Error,
 		}
 		log.WithContext(ctx).WithField("shared_record", s).Infof("sharedLinks update :%+v", update)
-		_, err = t.WithContext(ctx).Where(t.AutoID.Eq(s.AutoID)).Updates(update)
-		if err != nil {
-			log.WithContext(ctx).WithField("shared_record", s).WithField("autoID", s.AutoID).Error(errors.New("get nil share"))
+		if err := updateSharedLink(config.MySQL().WithContext(ctx), s.UserID, s.Host, s.OriginalLinkHash, update); err != nil {
+			log.WithContext(ctx).WithField("shared_record", s).WithField("autoID", s.AutoID).Error(err)
 			return
 		}
 	}()
@@ -467,6 +477,9 @@ func createShareByLink(ctx context.Context, userID string, host *hosts.HostWithP
 
 // ignore errors.
 func getShareStatus(ctx context.Context, userID string, host hosts.Host, record *model.SharedLink) share.State {
+	if record.State == share.StatusBlocked.String() {
+		return share.StatusBlocked
+	}
 	link := record.HostSharedLink
 	if link == "" {
 		return share.State(record.State)
@@ -523,5 +536,6 @@ func updateVisitTimeAndState(ctx context.Context, record *model.SharedLink, stat
 		return
 	}
 
-	_, _ = query.SharedLink.WithContext(ctx).Updates(updates)
+	_ = writableSharedLinks(config.MySQL().WithContext(ctx), record.UserID, record.Host, record.OriginalLinkHash).
+		Where("host_shared_link = ?", record.HostSharedLink).Updates(updates).Error
 }

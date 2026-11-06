@@ -3,7 +3,6 @@ import { Background, ContentWrapper, LogoPng } from "./style";
 import LogoIcon from "@/assets/images/logo-with-text.png";
 import { useEffect, useState } from "react";
 import {
-  SharedLinkStatus,
   getLinkInfoFromWhatsLink,
   getSharedLinkInfo,
 } from "@/api/link";
@@ -24,15 +23,12 @@ const WhatsLinkStatus = () => {
 
   const [params] = useSearchParams();
 
-  const [requestId, setRequestId] = useState("");
+  const requestId = params.get("request_id") || "";
   const setThemeMode = useStore((state) => state.setThemeMode);
   // status page keep light mode
   useEffect(() => {
     setThemeMode("light");
-    setRequestId(params.get("request_id") || "");
   }, []);
-
-  const [status, setStatus] = useState<SharedLinkStatus>("PENDING");
 
   useEffect(() => {
     const autoId = params.get("id") || "";
@@ -40,30 +36,29 @@ const WhatsLinkStatus = () => {
       return;
     }
 
-    // Get data from keepshare server, but the data may be incomplete (returned from PikPak)
-    getSharedLinkInfo(autoId, requestId, true).then(
+    let active = true;
+    getSharedLinkInfo(autoId, requestId, true, true).then(
       ({ data: newFileInfo, error }) => {
+        if (!active) {
+          return;
+        }
         if (newFileInfo) {
-          const newStatus = newFileInfo.state;
-          if (status === newStatus) {
-            return;
-          }
-          setStatus(newStatus);
-          setFileInfo(Object.assign({}, fileInfo, newFileInfo));
+          setFileInfo(newFileInfo);
         }
 
         // Get data from whatsLink website
-        if (!error) {
-          getLinkInfoFromWhatsLink(newFileInfo?.original_link || "")
+        if (!error && newFileInfo?.original_link) {
+          getLinkInfoFromWhatsLink(newFileInfo.original_link)
             .then(({ data, error }) => {
               try {
-                if (error) {
+                if (!active || error) {
                   return;
                 }
                 setFileInfo(
-                  Object.assign({}, newFileInfo, {
-                    title: fileInfo?.title || data?.name,
-                    size: fileInfo?.size || data?.size,
+                  (current) => ({
+                    ...current,
+                    title: current.title || data?.name,
+                    size: current.size || data?.size,
                     screenshot: data?.screenshots?.[0]?.screenshot,
                     screenshots: data?.screenshots,
                     fileType: data?.file_type || "unknown",
@@ -81,7 +76,10 @@ const WhatsLinkStatus = () => {
         error && message.error(error.message);
       },
     );
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [params, requestId]);
 
   useEffect(() => {
     i18n.changeLanguage(getSupportLanguage());
