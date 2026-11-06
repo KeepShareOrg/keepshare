@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS `keepshare_shared_link`
     `updated_at`            datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `size`                  bigint       NOT NULL DEFAULT 0,
     `visitor`               int          NOT NULL DEFAULT 0,
+    `page_views`            bigint       NOT NULL DEFAULT 0,
+    `visitor_ips`           bigint       NOT NULL DEFAULT 0,
     `stored`                int          NOT NULL DEFAULT 0,
     `first_visited_at`      datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `last_visited_at`       datetime     NOT NULL DEFAULT '2000-01-01 00:00:00',

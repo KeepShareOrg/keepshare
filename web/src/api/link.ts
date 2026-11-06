@@ -22,6 +22,8 @@ export interface SharedLinkInfo {
   created_at: string;
   updated_at: string;
   size: string | number;
+  page_views: number;
+  visitor_ips: number;
   visitor: number;
   stored: number;
   revenue: number;

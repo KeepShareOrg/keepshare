@@ -102,9 +102,55 @@ mysql -uroot -padmin -h127.0.0.1 -P3306 -e 'CREATE DATABASE keepshare'
 
 Run `./keepshare config` to view details.
 
+Client IPs use Gin's default behavior: `X-Forwarded-For`, then `X-Real-IP`,
+falling back to the connection's remote address. No extra proxy configuration is
+required. These headers are trusted without source checks, so Visitor IPs is a
+reference metric that can be inflated with forged headers, not a security or
+billing signal.
+
 ### Usage
 
 Same as [Getting started with our public server](#getting-started-with-our-public-server), except replace the console page address with the one you hosted and configured.
+
+### Shared Links landing-page statistics
+
+- **Page Views** counts successful GET document loads of `/console/shared/status`
+  and `/console/shared/wsl-status` for the sharing record, including refreshes.
+  Direct redirects to the hosting provider, status API polls, and static assets do
+  not count. These are page requests, not verified human visitors.
+- **Visitor IPs** counts distinct normalized IP addresses over the record's
+  lifetime. Equivalent IPv4/mapped IPv6 addresses share one visitor. Invalid IPs
+  do not increase this metric, but the page view still counts. Only link-scoped
+  SHA-256 fingerprints are retained for deduplication; this table stores no raw IPs.
+- **Host Visitors** is the existing hosting-provider `visitor` statistic, unchanged.
+- Both new columns are visible by default and available in column selection,
+  clipboard copy, and Excel export. Historical records start at zero when upgraded.
+- Landing documents use `Cache-Control: no-store`; do not override this policy in
+  a CDN or reverse proxy. A statistics write failure is logged without breaking
+  the page response. Deleting a sharing record also deletes its IP fingerprints.
+
+For an existing installation, apply `migrations/20261106_shared_link_visits.sql`
+once to the KeepShare MySQL database **before** deploying the updated backend,
+then deploy the frontend. For example:
+
+```sh
+mysql --host=YOUR_DB_HOST --user=YOUR_DB_USER --password YOUR_DB_NAME < migrations/20261106_shared_link_visits.sql
+```
+
+`keepshare tables create` includes the new schema for fresh installations, but
+does not alter existing tables. Back up the database before migration. Roll back
+application binaries without dropping the new columns or fingerprint table.
+The migration requires MySQL 8.0.29+ for instant column insertion and limits
+metadata-lock waits to five seconds. Unsupported instant DDL or lock contention
+fails instead of falling back to a rebuild of the sharing table.
+
+Counter and migration regression tests use an isolated temporary database and
+require MySQL create/drop-database privileges:
+
+```sh
+KEEPSHARE_TEST_MYSQL_DSN='user:password@tcp(127.0.0.1:3306)/?parseTime=true' \
+  go test ./server -run 'Test(LinkVisitorIPHash|RecordLinkVisit.*|LinkVisitsExistingInstallMigrationMySQL|LandingPageDocumentVisitsMySQL|ProxiedLandingPageVisitsMySQL)$'
+```
 
 ## Documentation
 

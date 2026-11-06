@@ -51,11 +51,11 @@ const Content = () => {
       );
       setTableData(shimTableData);
 
-      const localTotalSharedLinksKeys = totalSharedLinks.map((v) => v.auto_id);
-      const newTotalSharedLinks = shimTableData.filter(
-        (v) => !localTotalSharedLinksKeys.includes(v.auto_id),
+      const updatedSharedLinks = new Map(
+        totalSharedLinks.map((link) => [link.auto_id, link]),
       );
-      setTotalSharedLinks([...totalSharedLinks, ...newTotalSharedLinks]);
+      shimTableData.forEach((link) => updatedSharedLinks.set(link.auto_id, link));
+      setTotalSharedLinks([...updatedSharedLinks.values()]);
 
       totalSharedNum && setTotalSharedNum(totalSharedNum);
     }

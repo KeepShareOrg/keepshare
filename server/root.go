@@ -176,7 +176,7 @@ func apiRouter(router *gin.Engine) {
 
 func consoleRouter(router *gin.Engine) {
 	if config.ConsoleProxyURL() != "" {
-		router.GET("/console/*path", consoleProxy())
+		router.GET("/console/*path", recordLandingPageVisit(config.MySQL()), consoleProxy())
 		return
 	}
 
@@ -193,7 +193,7 @@ func consoleRouter(router *gin.Engine) {
 		panic(err)
 	}
 
-	router.GET("/console/*path", func(c *gin.Context) {
+	router.GET("/console/*path", recordLandingPageVisit(config.MySQL()), func(c *gin.Context) {
 		path := c.Request.URL.Path
 		c.Set(mdw.SkipAccessLog, false)
 		if c.Request.URL.Path == "/console/shared/status" {
@@ -237,6 +237,9 @@ func consoleProxy() func(c *gin.Context) {
 			request.URL = link
 		},
 		ModifyResponse: func(response *http.Response) error {
+			if isLandingPage(response.Request.URL.Path) {
+				response.Header.Del("Cache-Control")
+			}
 			if mockViteContentType.MatchString(response.Request.URL.Path) {
 				response.Header.Set("Content-Type", "application/javascript")
 			}

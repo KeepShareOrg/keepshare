@@ -53,6 +53,8 @@ const transformTableData = (
       .with(SharedLinkTableKey.CREATED_AT, () =>
         dayjs(data.created_at).format("YYYY-MM-DD HH:mm"),
       )
+      .with(SharedLinkTableKey.PAGE_VIEWS, () => data.page_views)
+      .with(SharedLinkTableKey.VISITOR_IPS, () => data.visitor_ips)
       .with(SharedLinkTableKey.VISITOR, () => data.visitor)
       .with(SharedLinkTableKey.STORED, () => data.stored)
       .with(SharedLinkTableKey.SIZE, () =>
@@ -148,7 +150,7 @@ const SharedLinkTableFooter = ({ refresh, selectedRows }: ComponentProps) => {
   ) => {
     const exportData: unknown[][] = [];
     if (includeHeader) {
-      exportData.push(Object.keys(selectedRows[0]));
+      exportData.push(selectedColumns);
     }
     selectedRows.forEach((rowData) => {
       const rowRet = transformTableData(rowData, selectedColumns, channelID);

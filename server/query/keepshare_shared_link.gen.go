@@ -36,6 +36,8 @@ func newSharedLink(db *gorm.DB, opts ...gen.DOOption) sharedLink {
 	_sharedLink.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_sharedLink.Size = field.NewInt64(tableName, "size")
 	_sharedLink.Visitor = field.NewInt32(tableName, "visitor")
+	_sharedLink.PageViews = field.NewInt64(tableName, "page_views")
+	_sharedLink.VisitorIps = field.NewInt64(tableName, "visitor_ips")
 	_sharedLink.Stored = field.NewInt32(tableName, "stored")
 	_sharedLink.FirstVisitedAt = field.NewTime(tableName, "first_visited_at")
 	_sharedLink.LastVisitedAt = field.NewTime(tableName, "last_visited_at")
@@ -66,6 +68,8 @@ type sharedLink struct {
 	UpdatedAt          field.Time
 	Size               field.Int64
 	Visitor            field.Int32
+	PageViews          field.Int64
+	VisitorIps         field.Int64
 	Stored             field.Int32
 	FirstVisitedAt     field.Time
 	LastVisitedAt      field.Time
@@ -102,6 +106,8 @@ func (s *sharedLink) updateTableName(table string) *sharedLink {
 	s.UpdatedAt = field.NewTime(table, "updated_at")
 	s.Size = field.NewInt64(table, "size")
 	s.Visitor = field.NewInt32(table, "visitor")
+	s.PageViews = field.NewInt64(table, "page_views")
+	s.VisitorIps = field.NewInt64(table, "visitor_ips")
 	s.Stored = field.NewInt32(table, "stored")
 	s.FirstVisitedAt = field.NewTime(table, "first_visited_at")
 	s.LastVisitedAt = field.NewTime(table, "last_visited_at")
@@ -129,7 +135,7 @@ func (s *sharedLink) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (s *sharedLink) fillFieldMap() {
-	s.fieldMap = make(map[string]field.Expr, 20)
+	s.fieldMap = make(map[string]field.Expr, 22)
 	s.fieldMap["auto_id"] = s.AutoID
 	s.fieldMap["user_id"] = s.UserID
 	s.fieldMap["state"] = s.State
@@ -139,6 +145,8 @@ func (s *sharedLink) fillFieldMap() {
 	s.fieldMap["updated_at"] = s.UpdatedAt
 	s.fieldMap["size"] = s.Size
 	s.fieldMap["visitor"] = s.Visitor
+	s.fieldMap["page_views"] = s.PageViews
+	s.fieldMap["visitor_ips"] = s.VisitorIps
 	s.fieldMap["stored"] = s.Stored
 	s.fieldMap["first_visited_at"] = s.FirstVisitedAt
 	s.fieldMap["last_visited_at"] = s.LastVisitedAt

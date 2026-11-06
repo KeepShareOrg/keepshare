@@ -7,6 +7,7 @@ package cmd
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/KeepShareOrg/keepshare/config"
@@ -57,54 +58,69 @@ func createTables(_ *cobra.Command, args []string, dropEmpty bool) {
 		stdLog.Fatal("get current tables err:", err)
 	}
 
-	for t, s := range loadStatements() {
-		if len(args) > 0 && !lo.Contains(args, t) {
-			continue
-		}
+	statements := loadStatements()
+	tables := sortedTableNames(statements, args)
+	existing := make(map[string]bool, len(current))
+	for _, t := range current {
+		existing[t] = true
+	}
 
-		if lo.Contains(current, t) {
-			if !dropEmpty {
-				stdLog.Printf("IGNORE exists table `%s`", t)
+	if dropEmpty {
+		// Drop children before parents, then recreate in the opposite order.
+		for i := len(tables) - 1; i >= 0; i-- {
+			t := tables[i]
+			if !existing[t] {
 				continue
 			}
-
-			// check if table is empty
 			var n int
-			err := db.Raw(fmt.Sprintf("SELECT 1 FROM `%s` LIMIT 1", t)).Scan(&n).Error
-			if err != nil {
+			if err := db.Raw(fmt.Sprintf("SELECT 1 FROM `%s` LIMIT 1", t)).Scan(&n).Error; err != nil {
 				stdLog.Fatal(err)
 			}
-			// not empty
-			if n == 1 {
-				stdLog.Printf("IGNORE exists and NON-EMPTY table `%s`", t)
+			if n != 0 {
 				continue
 			}
-			//is empty, drop it
-			err = db.Exec(fmt.Sprintf("DROP TABLE `%s`", t)).Error
-			if err != nil {
+			if t == "keepshare_shared_link" && existing["keepshare_shared_link_visitor_ip"] {
+				stdLog.Printf("IGNORE table `%s` referenced by keepshare_shared_link_visitor_ip; select both tables to recreate", t)
+				continue
+			}
+			if err := db.Exec(fmt.Sprintf("DROP TABLE `%s`", t)).Error; err != nil {
 				stdLog.Fatalf("DROP TABLE `%s` err: %v", t, err)
 			}
+			delete(existing, t)
 			stdLog.Printf("DROP TABLE `%s`", t)
 		}
+	}
 
-		err := db.Exec(s).Error
-		if err != nil {
-			stdLog.Fatalf("CREATE TABLE `%s` err: %v", t, err)
-		} else {
-			stdLog.Printf("CREATE TABLE `%s`", t)
+	for _, t := range tables {
+		if existing[t] {
+			stdLog.Printf("IGNORE exists table `%s`", t)
+			continue
 		}
+		if err := db.Exec(statements[t]).Error; err != nil {
+			stdLog.Fatalf("CREATE TABLE `%s` err: %v", t, err)
+		}
+		stdLog.Printf("CREATE TABLE `%s`", t)
 	}
 }
 
 func dumpTables(_ *cobra.Command, args []string) {
-	for t, s := range loadStatements() {
-		if len(args) > 0 && !lo.Contains(args, t) {
-			continue
-		}
-
-		stdLog.Println(s)
+	statements := loadStatements()
+	for _, t := range sortedTableNames(statements, args) {
+		stdLog.Println(statements[t])
 		stdLog.Println()
 	}
+}
+
+func sortedTableNames(statements map[string]string, args []string) []string {
+	tables := make([]string, 0, len(statements))
+	for t := range statements {
+		if len(args) == 0 || lo.Contains(args, t) {
+			tables = append(tables, t)
+		}
+	}
+	// keepshare_shared_link must precede its foreign-key child tables.
+	sort.Strings(tables)
+	return tables
 }
 
 func loadStatements() map[string]string {

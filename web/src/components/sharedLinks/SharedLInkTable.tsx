@@ -175,6 +175,20 @@ const getColumns = ({
     width: 155,
   },
   {
+    title: SharedLinkTableKey.PAGE_VIEWS,
+    key: SharedLinkTableKey.PAGE_VIEWS,
+    dataIndex: "page_views",
+    width: 120,
+    ellipsis: true,
+  },
+  {
+    title: SharedLinkTableKey.VISITOR_IPS,
+    key: SharedLinkTableKey.VISITOR_IPS,
+    dataIndex: "visitor_ips",
+    width: 120,
+    ellipsis: true,
+  },
+  {
     title: SharedLinkTableKey.VISITOR,
     key: SharedLinkTableKey.VISITOR,
     dataIndex: "visitor",
@@ -280,7 +294,7 @@ const SharedLinkTable = ({
         selectedSharedLinkKeys.includes(`${v.auto_id}`),
       ),
     );
-  }, [selectedSharedLinkKeys]);
+  }, [selectedSharedLinkKeys, totalSharedLinks]);
 
   const onSelectChange = (rowKeys: React.Key[]) => {
     const shouldRemoveKeys = tableData
@@ -340,7 +354,11 @@ const SharedLinkTable = ({
           marginBottom: isMobile ? "145px" : "65px",
         }}
         scroll={{
-          x: isMobile ? "100%" : "0",
+          x: columns.reduce(
+            (width, column) =>
+              width + (typeof column.width === "number" ? column.width : 120),
+            32,
+          ),
         }}
         loading={isLoading}
         pagination={{
