@@ -368,6 +368,11 @@ var httpClient = &http.Client{Timeout: 10 * time.Second}
 
 // queryFilesizeByLink query file size by link (call whatslink.info api)
 func (p *PikPak) queryFilesizeByLink(ctx context.Context, link string) (int64, error) {
+	// ed2k file links carry the file size, no remote lookup needed.
+	if f, ok := lk.ParseEd2k(link); ok {
+		return f.Size, nil
+	}
+
 	addr := fmt.Sprintf("https://whatslink.info/api/v1/link?url=%s", link)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, addr, nil)
 	if err != nil {

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/KeepShareOrg/keepshare/config"
 	"github.com/KeepShareOrg/keepshare/pkg/httputil"
+	lk "github.com/KeepShareOrg/keepshare/pkg/link"
 	"github.com/KeepShareOrg/keepshare/pkg/log"
 	"math/rand"
 	"net/http"
@@ -61,6 +62,17 @@ func getOriginalLinks(src []string) (original, invalid []string) {
 	original = make([]string, 0, len(src))
 	for _, raw := range src {
 		raw = strings.TrimSpace(raw)
+
+		// ed2k links contain raw '|' characters and are not RFC 3986 URLs.
+		if lk.IsEd2k(raw) {
+			simple, _, ok := validateLink(raw)
+			if !ok {
+				invalid = append(invalid, raw)
+				continue
+			}
+			original = append(original, simple)
+			continue
+		}
 
 		// check url
 		u, err := url.Parse(raw)

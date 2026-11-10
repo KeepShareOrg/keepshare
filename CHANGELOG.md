@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Reject ed2k file links without a valid `|/` terminator; keep later batch links
+  separate when an earlier ed2k link is incomplete.
 - feat: forward PikPak master-account-bound noreply emails (from
   `noreply@accounts.mypikpak.com`) to the matching keepshare user via a rotating
   SMTP pool configured under `forward_mails`. Disabled by default. See

@@ -85,7 +85,16 @@ export const formatBytes = (bytes: number, decimals: number = 2): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 };
 
-(window as any).dayJs = dayJs;
+declare global {
+  interface Window {
+    dayJs: typeof dayJs;
+  }
+}
+
+// the shim is only meaningful in a browser; keep the module importable in node (tests).
+if (typeof window !== "undefined") {
+  window.dayJs = dayJs;
+}
 // shim sharedLinks table data
 export const shimSharedLinksTableData = (
   data: SharedLinkInfo,
@@ -111,12 +120,26 @@ export const formatLinkWithType = (url: string, formatType: LinkFormatType) => {
     .exhaustive();
 };
 
-// parse magnets from string content
+// parse links from string content
 export const parseLinks = (content: string) => {
-  return content.split(/[\n\r\s]/).filter((v) => {
-    const content = v.trim();
-    return content.split("\n");
-  });
+  const links: string[] = [];
+  for (const line of content.split(/\r\n|\n|\r/)) {
+    let rest = line.trim();
+    while (rest) {
+      let end = rest.search(/\s/);
+      if (rest.toLowerCase().startsWith("ed2k://")) {
+        const terminator = rest.indexOf("|/");
+        const nextLink = rest.search(/\s+(?=[a-z][a-z\d+.-]*:(?:\/\/|\?))/i);
+        end = terminator >= 0 && (nextLink < 0 || terminator < nextLink)
+          ? terminator + 2
+          : nextLink;
+      }
+      if (end < 0) end = rest.length;
+      links.push(rest.slice(0, end).trimEnd());
+      rest = rest.slice(end).trimStart();
+    }
+  }
+  return links;
 };
 
 // copy text util function

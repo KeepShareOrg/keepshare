@@ -64,3 +64,48 @@ func TestPersonalBlockPrecedesHostStatusCache(t *testing.T) {
 		t.Fatalf("blocked resource became %q", got)
 	}
 }
+
+const (
+	testEd2kHash = "8549fd92d11e47e3d9c3379e5ec8f842"
+	testEd2k     = "ed2k://|file|The_Matrix.avi|735934464|8549FD92D11E47E3D9C3379E5EC8F842|/"
+	testEd2kStr  = "ed2k://|file|The_Matrix.avi|735934464|" + testEd2kHash + "|/"
+)
+
+func TestValidateEd2k(t *testing.T) {
+	simple, hash, ok := validateLink(testEd2k)
+	if !ok || simple != testEd2kStr || hash != testEd2kHash {
+		t.Fatalf("validateLink = %q, %q, %v", simple, hash, ok)
+	}
+
+	for _, raw := range []string{
+		"ed2k://|server|1.2.3.4|4661|/",
+		"ed2k://|file|a.bin|1024|8549fd92|/",
+		"ed2k://|file|a.bin|-1|" + testEd2kHash + "|/",
+	} {
+		if _, _, ok := validateLink(raw); ok {
+			t.Fatalf("validateLink(%q) must reject an invalid ed2k link", raw)
+		}
+	}
+}
+
+func TestAutoSharingEd2kUsesOneCanonicalResource(t *testing.T) {
+	for name, path := range map[string]string{
+		"unescaped": testEd2k,
+		"escaped":   url.QueryEscape(testEd2k),
+	} {
+		t.Run(name, func(t *testing.T) {
+			u, err := url.Parse("https://keepshare.invalid/deadbeef/" + path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			channel, link, ok := getChannelAndLinkFromURL(u)
+			if !ok || channel != "deadbeef" {
+				t.Fatalf("parse = %q, %q, %v", channel, link, ok)
+			}
+			simple, hash, ok := validateLink(link)
+			if !ok || simple != testEd2kStr || hash != testEd2kHash {
+				t.Fatalf("validate = %q, %q, %v", simple, hash, ok)
+			}
+		})
+	}
+}

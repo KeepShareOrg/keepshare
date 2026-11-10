@@ -364,8 +364,15 @@ func getChannelAndLinkFromURL(u *url.URL) (channel, link string, ok bool) {
 		link += "?" + u.RawQuery
 	}
 
-	u, err := url.Parse(link)
-	if err != nil || u.Scheme == "" {
+	// ed2k links contain raw '|' characters and are not RFC 3986 URLs.
+	if lk.IsEd2k(link) {
+		if _, ok := lk.ParseEd2k(link); !ok {
+			return "", "", false
+		}
+		return channel, link, true
+	}
+
+	if u, err := url.Parse(link); err != nil || u.Scheme == "" {
 		return "", "", false
 	}
 
@@ -385,6 +392,15 @@ func validateLink(link string) (simple string, hash string, ok bool) {
 
 	if len(link) == 0 {
 		return "", "", false
+	}
+
+	// ed2k links contain raw '|' characters and are not RFC 3986 URLs.
+	if lk.IsEd2k(link) {
+		f, ok := lk.ParseEd2k(link)
+		if !ok {
+			return "", "", false
+		}
+		return f.String(), f.Hash, true
 	}
 
 	u, _ := url.Parse(link)

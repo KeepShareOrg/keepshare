@@ -64,6 +64,25 @@ func TestGetOriginalLinks_RejectsUnknownDomain(t *testing.T) {
 	}
 }
 
+func TestGetOriginalLinks_AcceptsEd2k(t *testing.T) {
+	resetConfigForTest(t, []string{"keepshare.link"})
+
+	original, invalid := getOriginalLinks([]string{
+		"  ed2k://|file|The_Matrix.avi|735934464|8549FD92D11E47E3D9C3379E5EC8F842|/  ",
+		"ed2k://|server|1.2.3.4|4661|/",
+	})
+	if len(invalid) != 1 || invalid[0] != "ed2k://|server|1.2.3.4|4661|/" {
+		t.Errorf("invalid = %v, want only the ed2k server link", invalid)
+	}
+	if len(original) != 1 {
+		t.Fatalf("expected 1 original, got %d (%v)", len(original), original)
+	}
+	want := "ed2k://|file|The_Matrix.avi|735934464|8549fd92d11e47e3d9c3379e5ec8f842|/"
+	if original[0] != want {
+		t.Errorf("canonical ed2k link = %q, want %q", original[0], want)
+	}
+}
+
 func TestHostOrDefault_UsesRequestHost(t *testing.T) {
 	resetConfigForTest(t, []string{"primary.example"})
 	r := &http.Request{Host: "inbound.example"}
